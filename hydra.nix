@@ -21,6 +21,7 @@ in {
     hydraURL = "http://hydra.headcounter.org/";
     notificationSender = "hydra@headcounter.org";
     dbi = "dbi:Pg:dbname=hydra;";
+    listenHost = "localhost";
   };
 
   nix.distributedBuilds = true;
