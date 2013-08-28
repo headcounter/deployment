@@ -2,6 +2,8 @@
   network.description = "Headcounter Services";
   network.enableRollback = true;
 
+  resources.sshKeyPairs."hydra-build" = {};
+
   ultron = {
     deployment.targetEnv = "hetzner";
     deployment.hetzner.mainIPv4 = "5.9.105.142";
