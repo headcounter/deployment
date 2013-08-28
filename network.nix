@@ -18,7 +18,7 @@
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
 
-    require = [ ./common.nix ];
+    require = [ ./common.nix ./hydra.nix ];
   };
 
   benteflork = { pkgs, config, ... }: {
@@ -35,6 +35,6 @@
       raid / --level=1 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
     '';
 
-    require = [ ./common.nix ./hydra.nix ./hydra-slave.nix ];
+    require = [ ./common.nix ./hydra-slave.nix ];
   };
 }
