@@ -40,5 +40,7 @@
         build-cores = 0
       '';
     };
+
+    require = [ ./hydra.nix ];
   };
 }
