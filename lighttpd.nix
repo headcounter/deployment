@@ -71,6 +71,7 @@ in {
 
       config = mkOption {
         description = "Default configuration for ${desc} module.";
+        default = "";
       } // optionalAttrs (ex != null) {
         example = ex;
       } // optionalAttrs (def != null) {
