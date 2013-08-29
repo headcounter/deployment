@@ -18,7 +18,9 @@
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
 
-    require = [ ./common.nix ./hydra.nix ];
+    services.headcounter.lighttpd.enable = true;
+
+    require = [ ./common.nix ./hydra.nix ./lighttpd.nix ];
   };
 
   benteflork = { pkgs, config, ... }: {
