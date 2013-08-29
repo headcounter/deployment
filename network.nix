@@ -18,6 +18,22 @@
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
 
+    headcounter.subnets.eth0 = {
+      prefix = 29;
+      addrs = let
+        ip = num: "78.47.32.${builtins.toString num}";
+      in { # subnet 78.47.32.128/29
+        https       = ip 128;
+        jabber      = ip 129;
+        headcounter = ip 130;
+        aszlig      = ip 131;
+        noicq       = ip 132;
+        "no-icq"    = ip 133;
+        nolabel1    = ip 134;
+        nolabel2    = ip 135;
+      };
+    };
+
     services.headcounter.lighttpd = {
       enable = true;
       modules.proxy.enable = true;
@@ -35,7 +51,7 @@
       };
     };
 
-    require = [ ./common.nix ./hydra.nix ./lighttpd.nix ];
+    require = [ ./common.nix ./hydra.nix ./lighttpd.nix ./subnets.nix ];
   };
 
   benteflork = { pkgs, config, ... }: {
