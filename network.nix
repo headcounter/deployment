@@ -4,7 +4,7 @@
 
   resources.sshKeyPairs."hydra-build" = {};
 
-  ultron = {
+  ultron = { pkgs, config, ... }: {
     deployment.hetzner.mainIPv4 = "5.9.105.142";
     deployment.hetzner.partitions = ''
       clearpart --all --initlabel --drives=sda,sdb
@@ -18,7 +18,22 @@
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
 
-    services.headcounter.lighttpd.enable = true;
+    services.headcounter.lighttpd = {
+      enable = true;
+      modules.proxy.enable = true;
+
+      virtualHosts = with pkgs.lib; singleton {
+        type = "static";
+        on = "hydra.headcounter.org";
+        configuration = ''
+          proxy.balance = "hash"
+          proxy.server = ("" => ((
+            "host" => "127.0.0.1",
+            "port" => 3000
+          )))
+        '';
+      };
+    };
 
     require = [ ./common.nix ./hydra.nix ./lighttpd.nix ];
   };
