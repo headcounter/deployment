@@ -36,7 +36,9 @@ let
     in
       ''
         $HTTP["host"] ${op} ${lightyEscape h.on} {
+          ${optionalString (h ? docroot) ''
           server.document-root = ${lightyEscape h.docroot}
+          ''}
           ${if h ? configuration then h.configuration else ""}
         }
       '';
