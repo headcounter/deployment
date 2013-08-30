@@ -13,6 +13,18 @@ let
     + "mgxLHhrFU4zm/W/ej1yB1CAThd4xUfgJu4touJROjvcD1zzlmLeat0fp2k5mC"
     + "uiLKcTKi0vxKWiiopF9nvBBK+7ODPC7 buildfarm@nixos";
 
+  nixosSigningKey = ''
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyXbrCIozgXV/pn651+Sy
+    W8GT11JhPrZWCKx5N2OF9t/Bqy5G1+j1eqil5hZvKQ45eg7meR+ujknUhOZ2B0LQ
+    vecYbR43lpzktMTsxPtjuNLeX2cB7XchW4CXTOAj4HCl3/wwgSBYgem4K7iY/POS
+    wWdESLX8LZujzJK4U8UaIFvVd7uz04yv9j8zWLcCqx0yUtSuXnofipkelD0W6P4k
+    smmd8af+Sd33hhEx0qqxqVD7X4OdgsrKEZdZkcqaPxaDzGgpAsO6S8zRjqFwhgK8
+    6+EfLYdDbXlrJBd06CHxbC1baY515J2ZgVOJD1RoDfIX8hS9gu7/2bU/j+/ynJIX
+    8QIDAQAB
+    -----END PUBLIC KEY-----
+  '';
+
 in {
   users.extraUsers.hydrabuild = {
     description = "Hydra build user";
@@ -26,4 +38,6 @@ in {
       nixosSSHKey
     ];
   };
+
+  environment.etc."nix/signing-key.pub".text = nixosSigningKey;
 }
