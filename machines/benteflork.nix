@@ -1,0 +1,3 @@
+{
+  require = [ ../hydra-slave.nix ];
+}
