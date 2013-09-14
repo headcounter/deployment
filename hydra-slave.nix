@@ -34,7 +34,7 @@ in {
     createHome = true;
     isSystemUser = false;
     openssh.authorizedKeys.keys = [
-      resources.sshKeyPairs."hydra-build".public_key
+      resources.sshKeyPairs."hydra-build".publicKey
       nixosSSHKey
     ];
   };

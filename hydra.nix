@@ -11,7 +11,7 @@ let
   isBuildNode = name: node: hasAttr buildUser node.config.users.extraUsers;
   buildNodes = filterAttrs isBuildNode nodes;
 
-  buildKey = resources.sshKeyPairs."hydra-build".private_key;
+  buildKey = resources.sshKeyPairs."hydra-build".privateKey;
 in {
   require = [ ./hydra/hydra-module.nix ];
 
