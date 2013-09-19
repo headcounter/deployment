@@ -51,4 +51,12 @@ in {
       fi
     '';
   };
+
+  nix.gc.automatic = true;
+  nix.gc.dates = "0/6:0";
+  nix.gc.options = let
+    minSpace = 200; # the minimum of free space we want to have available in GB
+    avail = "$(df -k -BG --output=avail /nix/store | sed -ne '$s/[^0-9]//gp')";
+    maxFreed = "${toString minSpace} - ${avail}";
+  in "--max-freed \"$(((${maxFreed}) * 1024 ** 3))\"";
 }
