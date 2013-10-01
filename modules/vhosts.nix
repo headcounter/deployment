@@ -51,7 +51,44 @@ let
         Network device to assign this virtual host to.
       '';
     };
+
+    ssl = {
+      privateKey = mkOption {
+        default = null;
+        type = types.nullOr types.string;
+        description = ''
+          The PEM-encoded private key as a string value.
+        '';
+        apply = key: if (key == null) then null else {
+          path = "/run/keys/${getPrivkeyFilename key}";
+          value = key;
+        };
+      };
+
+      publicKey = mkOption {
+        default = null;
+        type = types.nullOr types.string;
+        description = ''
+          The X.509 public certificate as a string value.
+        '';
+        apply = key: if (key == null) then null else {
+          path = pkgs.writeText "pubkey.pem";
+          value = key;
+        };
+      };
+
+      intermediateCert = mkOption {
+        default = null;
+        type = types.nullOr types.string;
+        description = ''
+          Intermediate X.509 certificate chain of the CA as a string value.
+        '';
+        apply = pkgs.writeText "intermediate.pem";
+      };
+    };
   };
+
+  getPrivkeyFilename = key: "ssl-${builtins.hashString "sha256" key}.key";
 
   mkNetConfig = name: cfg: let
     cidr4 = "${cfg.ipv4}/${toString cfg.ipv4prefix}";
@@ -83,4 +120,12 @@ in {
   };
 
   config.networking.localCommands = mkFooter netConfig;
+
+  config.deployment.keys = let
+    hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
+    getPrivkey = name: attrs: {
+      name = getPrivkeyFilename attrs.ssl.privateKey.value;
+      value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
+    };
+  in mapAttrs' getPrivkey (filterAttrs hasPrivKey config.vhosts);
 }
