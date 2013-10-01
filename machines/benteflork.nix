@@ -1,4 +1,4 @@
 {
-  require = [ ../hydra-slave.nix ];
+  imports = [ ../hydra-slave.nix ];
   deployment.alwaysActivate = false;
 }

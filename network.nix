@@ -18,7 +18,7 @@
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
 
-    require = [ ./common.nix ./machines/ultron.nix ];
+    imports = [ ./common.nix ./machines/ultron.nix ];
   };
 
   benteflork = { pkgs, config, ... }: {
@@ -35,6 +35,6 @@
       raid / --level=1 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
     '';
 
-    require = [ ./common.nix ./machines/benteflork.nix ];
+    imports = [ ./common.nix ./machines/benteflork.nix ];
   };
 }

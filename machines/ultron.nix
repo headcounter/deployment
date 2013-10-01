@@ -3,7 +3,7 @@
 with pkgs.lib;
 
 {
-  require = [ ../hydra.nix ../lighttpd.nix ../domains.nix ];
+  imports = [ ../hydra.nix ../lighttpd.nix ../domains.nix ];
 
   services.headcounter.lighttpd = {
     enable = true;

@@ -13,7 +13,7 @@ let
 
   buildKey = resources.sshKeyPairs."hydra-build".privateKey;
 in {
-  require = [ ./hydra/hydra-module.nix ];
+  imports = [ ./hydra/hydra-module.nix ];
 
   services.hydra = {
     inherit hydra;

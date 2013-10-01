@@ -1,5 +1,5 @@
 {
-  require = [ ./modules/vhosts.nix ];
+  imports = [ ./modules/vhosts.nix ];
 
   vhosts = {
     headcounter = {
