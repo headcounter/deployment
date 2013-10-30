@@ -4,7 +4,7 @@ with pkgs.lib;
 
 let
   cfg = config.services.headcounter.lighttpd;
-  lighttpd = pkgs.lighttpd;
+  lighttpd = pkgs.lighttpd.override { enableMagnet = true; };
   lightyCfgFile = pkgs.writeText "lighttpd.conf" lightyConf;
 
   lightyEscape = value: "\"${escape ["\""] value}\"";
@@ -191,6 +191,7 @@ in {
       '';
       fastcgi = mkOptModule "FastCGI";
       flv_streaming = mkOptModule "FLV streaming";
+      magnet = mkOptModule "Magnet";
       mysql_vhost = mkOptModuleEx "MySQL virtual hosting" ''
         mysql-vhost.db       = "lighttpd"
         mysql-vhost.user     = "lighttpd"
