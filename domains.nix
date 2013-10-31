@@ -36,7 +36,7 @@ in {
     };
 
     no_icq = withSSL {
-      fqdn = "noicq.org";
+      fqdn = "no-icq.org";
       ipv4 = "78.47.32.133";
       ipv6 = "2a01:4f8:162:4187::5";
     };
