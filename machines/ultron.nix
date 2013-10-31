@@ -23,6 +23,14 @@ in {
 
   boot.kernelPackages = pkgs.linuxPackages_3_10;
 
+  fileSystems."/".options = concatStringsSep "," [
+    "autodefrag"
+    "space_cache"
+    "inode_cache"
+    "compress=lzo"
+    "noatime"
+  ];
+
   services.headcounter.lighttpd = {
     enable = true;
 
