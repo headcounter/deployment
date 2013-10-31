@@ -41,7 +41,7 @@ let
         else if vhost.type == "regex" then "=~"
         else if vhost.type == "!regex" then "!~"
         else throw "Unknown virtual host match type ${vhost.type}!";
-    in ''
+    in optionalString (vhost ? type) ''
       $HTTP["host"] ${op} ${lightyEscape vhost.on} {
         ${optionalString (vhost ? docroot) ''
         server.document-root = ${lightyEscape vhost.docroot}
