@@ -303,6 +303,7 @@ in {
         ${concatMapStrings createDir cfg.uploadDirs}
         ${createDir cfg.compressCacheDir}
         ${createDir cfg.logDir}
+        ${lighttpd}/sbin/lighttpd -t -f "${lightyCfgFile}"
       '';
 
       serviceConfig.PrivateTmp = true;
