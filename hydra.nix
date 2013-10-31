@@ -18,7 +18,7 @@ in {
   services.hydra = {
     inherit hydra;
     enable = true;
-    hydraURL = "http://hydra.headcounter.org/";
+    hydraURL = "https://headcounter.org/hydra/";
     notificationSender = "hydra@headcounter.org";
     dbi = "dbi:Pg:dbname=hydra;";
     listenHost = "localhost";
