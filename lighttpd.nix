@@ -19,7 +19,6 @@ let
     server.modules = (${toLightyList (map (x: "mod_" + x) enabledModules)})
     server.username = ${lightyEscape cfg.user}
     server.groupname = ${lightyEscape cfg.group}
-    server.errorlog = ${lightyEscape (cfg.logDir + "/errors.log")}
     server.upload-dirs = (${toLightyList cfg.uploadDirs})
     index-file.names = (${toLightyList cfg.indexFileNames})
     ${concatStringsSep "\n" modulesConfig}
