@@ -24,12 +24,6 @@ in {
   services.headcounter.lighttpd = {
     enable = true;
 
-    # only listen internally
-    defaultPort = 80;
-    configuration = ''
-      server.bind = "127.0.0.1"
-    '';
-
     modules.proxy.enable = true;
     modules.magnet.enable = true;
     modules.setenv.enable = true;
@@ -54,6 +48,11 @@ in {
       else $HTTP["url"] =~ "" {
         url.redirect = ( "^/(.*)" => "https://jabber.headcounter.org/$1" )
       }
-    '';
+    '' ++ singleton {
+      socket = ":80";
+      socketConfig = ''
+        url.redirect = ( "^/(.*)" => "https://jabber.headcounter.org/$1" )
+      '';
+    };
   };
 }
