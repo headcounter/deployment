@@ -24,6 +24,7 @@ in {
     listenHost = "localhost";
   };
 
+  nix.maxJobs = mkForce 0;
   nix.distributedBuilds = true;
   nix.buildMachines = flip mapAttrsToList buildNodes (hostName: node: {
     inherit hostName;
