@@ -27,23 +27,38 @@ let
   '';
 
   mkVirtualHosts = vhosts: let
-    genVHost = h: let
+    vhostsBySocket = let
+      sockets = uniqList {
+        inputList = catAttrs "socket" vhosts;
+      };
+      genSocket = socket: let
+        sockvhost = filter (x: (x.socket or null) == socket) vhosts;
+      in nameValuePair socket sockvhost;
+    in listToAttrs (map genSocket sockets);
+
+    genVHost = vhost: let
       op =
-        if h.type == "static" then "=="
-        else if h.type == "!static" then "!="
-        else if h.type == "regex" then "=~"
-        else if h.type == "!regex" then "!~"
-        else throw "Unknown virtual host match type ${h.type}!";
-    in
-      ''
-        $HTTP["host"] ${op} ${lightyEscape h.on} {
-          ${optionalString (h ? docroot) ''
-          server.document-root = ${lightyEscape h.docroot}
-          ''}
-          ${if h ? configuration then h.configuration else ""}
-        }
-      '';
-  in concatStringsSep "else " (map genVHost vhosts);
+        if vhost.type == "static" then "=="
+        else if vhost.type == "!static" then "!="
+        else if vhost.type == "regex" then "=~"
+        else if vhost.type == "!regex" then "!~"
+        else throw "Unknown virtual host match type ${vhost.type}!";
+    in ''
+      $HTTP["host"] ${op} ${lightyEscape vhost.on} {
+        ${optionalString (vhost ? docroot) ''
+        server.document-root = ${lightyEscape vhost.docroot}
+        ''}
+        ${vhost.configuration or ""}
+      }
+    '';
+
+    genSocket = socket: sockvhosts: ''
+      $SERVER["socket"] == ${lightyEscape socket} {
+      ${concatMapStrings (v: v.socketConfig or "") sockvhosts}
+      ${concatStringsSep "else " (map genVHost sockvhosts)}
+      }
+    '';
+  in concatStringsSep "else " (mapAttrsToList genSocket vhostsBySocket);
 
   getCfgList = check: getter: attrs:
     attrValues (mapAttrs getter (filterAttrs (_: check) attrs));
