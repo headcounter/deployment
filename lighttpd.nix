@@ -13,9 +13,7 @@ let
 
   lightyConf = ''
     server.document-root = ${lightyEscape cfg.defaultDocroot}
-    ${optionalString (cfg.defaultPort != null) ''
     server.port = ${toString cfg.defaultPort}
-    ''}
     server.modules = (${toLightyList (map (x: "mod_" + x) enabledModules)})
     server.username = ${lightyEscape cfg.user}
     server.groupname = ${lightyEscape cfg.group}
