@@ -10,9 +10,9 @@ let
       socket = "${sock}:443";
 
       socketConfig = ''
-        ssl.engine      = "enable"
-        ssl.pemfile     = "${vhost.ssl.privateKey.path}"
-        ssl.ca-file     = "${vhost.ssl.intermediateCert}"
+        ssl.engine  = "enable"
+        ssl.pemfile = "${vhost.ssl.privateKey.path}"
+        ssl.ca-file = "${vhost.ssl.intermediateCert}"
       '';
 
       inherit configuration;
