@@ -21,6 +21,8 @@ let
 in {
   imports = [ ../hydra.nix ../lighttpd.nix ../domains.nix ];
 
+  boot.kernelPackages = pkgs.linuxPackages_3_10;
+
   services.headcounter.lighttpd = {
     enable = true;
 
