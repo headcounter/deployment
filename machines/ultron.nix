@@ -7,6 +7,13 @@ with pkgs.lib;
 
   services.headcounter.lighttpd = {
     enable = true;
+
+    # only listen internally
+    defaultPort = 80;
+    configuration = ''
+      server.bind = "127.0.0.1"
+    '';
+
     modules.proxy.enable = true;
     modules.magnet.enable = true;
     modules.setenv.enable = true;
