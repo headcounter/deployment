@@ -307,8 +307,8 @@ in {
       '';
 
       serviceConfig.PrivateTmp = true;
-      serviceConfig.ExecStart = "${lighttpd}/sbin/lighttpd "
-                              + "-D -f ${lightyCfgFile}";
+      serviceConfig.ExecStart = "@${lighttpd}/sbin/lighttpd lighttpd"
+                              + " -D -f ${lightyCfgFile}";
       serviceConfig.ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
       serviceConfig.KillSignal = "SIGINT";
       serviceConfig.Restart = "always";
