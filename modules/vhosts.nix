@@ -119,7 +119,20 @@ in {
     '';
   };
 
-  config.networking.localCommands = mkFooter netConfig;
+  config.systemd.services."post-network-setup" = {
+    description = "Network virtual host setup";
+
+    after = [ "network-setup.service" ];
+    before = [ "network.target" ];
+    wantedBy = [ "network.target" ];
+
+    path = [ pkgs.iproute ];
+
+    serviceConfig.Type = "oneshot";
+    serviceConfig.RemainAfterExit = true;
+
+    script = netConfig;
+  };
 
   config.deployment.keys = let
     hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
