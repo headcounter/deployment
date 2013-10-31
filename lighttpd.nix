@@ -67,10 +67,12 @@ in {
     mkOptModuleFull = desc: ex: def: {
       enable = mkOption {
         default = false;
+        type = types.bool;
         description = "Enable the ${desc} module.";
       };
 
       config = mkOption {
+        type = types.lines;
         description = "Default configuration for ${desc} module.";
         default = "";
       } // optionalAttrs (ex != null) {
@@ -85,26 +87,31 @@ in {
   in {
     enable = mkOption {
       default = false;
+      type = types.bool;
       description = "Enable the lighttpd web server.";
     };
 
     user = mkOption {
       default = "lighttpd";
+      type = types.str;
       description = "User under which lighttpd runs.";
     };
 
     group = mkOption {
       default = "lighttpd";
+      type = types.str;
       description = "Group under which lighttpd runs.";
     };
 
     defaultPort = mkOption {
       default = 80;
+      type = types.int;
       description = "Default port where lighttpd should listen on.";
     };
 
     virtualHosts = mkOption {
       default = [];
+      # TODO: Flesh out type information!
       description = "Virtual host definitions.";
       example = [
         {
@@ -122,6 +129,7 @@ in {
 
     configuration = mkOption {
       default = "";
+      type = types.lines;
       description = "Additional lighttpd configuration.";
       example = ''
         server.max-keep-alive-requests = 4
@@ -131,26 +139,31 @@ in {
 
     defaultDocroot = mkOption {
       default = pkgs.runCommand "empty" {} "ensureDir $out";
+      type = types.path;
       description = "Default document root.";
     };
 
     indexFileNames = mkOption {
       default = [ "index.html" "index.htm" "default.htm" ];
+      type = types.listOf types.str;
       description = "List of files to search for if a directory is requested.";
     };
 
     logDir = mkOption {
       default = "/var/log/lighttpd";
+      type = types.path;
       description = "Directory where lighttpd will place log files";
     };
 
     uploadDirs = mkOption {
       default = [ "/var/cache/lighttpd/uploads" ];
+      type = types.listOf types.path;
       description = "Directories where uploaded files will be stored.";
     };
 
     compressCacheDir = mkOption {
       default = "/var/cache/lighttpd/compress";
+      type = types.path;
       description = "Directories where compressed files are cached.";
     };
 
