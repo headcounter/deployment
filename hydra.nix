@@ -33,8 +33,11 @@ in {
     sshUser = buildUser;
   });
 
+  deployment.keys."signkey.priv" = readFile ./ssl/signing-key.sec;
   deployment.keys."buildkey.priv" = buildKey;
   deployment.storeKeysOnMachine = false;
+
+  environment.etc."nix/signing-key.sec".source = "/run/keys/signkey.priv";
 
   services.postgresql.enable = true;
   services.postgresql.package = pkgs.postgresql92;

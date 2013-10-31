@@ -15,13 +15,13 @@ let
 
   nixosSigningKey = ''
     -----BEGIN PUBLIC KEY-----
-    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyXbrCIozgXV/pn651+Sy
-    W8GT11JhPrZWCKx5N2OF9t/Bqy5G1+j1eqil5hZvKQ45eg7meR+ujknUhOZ2B0LQ
-    vecYbR43lpzktMTsxPtjuNLeX2cB7XchW4CXTOAj4HCl3/wwgSBYgem4K7iY/POS
-    wWdESLX8LZujzJK4U8UaIFvVd7uz04yv9j8zWLcCqx0yUtSuXnofipkelD0W6P4k
-    smmd8af+Sd33hhEx0qqxqVD7X4OdgsrKEZdZkcqaPxaDzGgpAsO6S8zRjqFwhgK8
-    6+EfLYdDbXlrJBd06CHxbC1baY515J2ZgVOJD1RoDfIX8hS9gu7/2bU/j+/ynJIX
-    8QIDAQAB
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvXmUhovC36OJ9a/3oTaV
+    2IvS5gvD87fyG64W/iFKlz2nKWi0JDxq58DNZtaIxSL4sVzQ4pO3M+2Zpgs8+sZ4
+    x2mekrlk78VAz3qy8ZZRr0ksw51kL/Ub829ajgnG+2sFedmBBhnRTtGtxLikDQ/D
+    x4g4XMgaa11lmobmmwv5mN1ygG0v2GC04lwuMfNNgOCaOTaszRRRKFEdrPhKfHRW
+    Ns2nflWz990H/3ohfEDdDMYJ8VBsolI78KrjnttfXu2tqxj7lXZL9XJ1R4vPkpcC
+    H3JFbERPXgqIFVxbasYWidpfil/sHjVZgyv2l9CznVDet2eDDgI5NgJQjR+S/wHz
+    owIDAQAB
     -----END PUBLIC KEY-----
   '';
 
