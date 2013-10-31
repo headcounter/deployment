@@ -33,6 +33,7 @@ in {
     modules.proxy.enable = true;
     modules.magnet.enable = true;
     modules.setenv.enable = true;
+    modules.redirect.enable = true;
 
     virtualHosts = with config.vhosts; genSSLVHost headcounter ''
       $HTTP["url"] =~ "^/hydra(?:$|/)" {
@@ -49,6 +50,9 @@ in {
           "host" => "127.0.0.1",
           "port" => 3000
         )))
+      } # http://redmine.lighttpd.net/issues/1268
+      else $HTTP["url"] =~ "" {
+        url.redirect = ( "^/(.*)" => "https://jabber.headcounter.org/$1" )
       }
     '';
   };
