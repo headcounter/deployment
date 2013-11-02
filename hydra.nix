@@ -29,7 +29,9 @@ in {
   nix.buildMachines = flip mapAttrsToList buildNodes (hostName: node: {
     inherit hostName;
     inherit (node.config.nix) maxJobs;
-    inherit (node.config.nixpkgs) system;
+    systems = if node.config.nixpkgs.system == "x86_64-linux"
+              then [ "i686-linux" "x86_64-linux" ]
+              else singleton node.config.nixpkgs.system;
     sshKey = "/run/keys/buildkey.priv";
     sshUser = buildUser;
   });
