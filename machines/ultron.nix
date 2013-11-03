@@ -19,7 +19,7 @@ let
     };
   in [ (genConf vhost.ipv4) (genConf "[${vhost.ipv6}]") ];
 in {
-  imports = [ ../hydra.nix ../lighttpd.nix ../domains.nix ];
+  imports = [ ../hydra.nix ../modules/services/lighttpd.nix ../domains.nix ];
 
   boot.kernelPackages = pkgs.linuxPackages_3_10;
 
