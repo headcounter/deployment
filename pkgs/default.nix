@@ -6,7 +6,7 @@ let
   self = rec {
     buildErlang = callPackage ./build-support/build-erlang.nix {};
 
-    mongooseim = callPackage ./mongooseim.nix {};
+    mongooseim = callPackage ./mongooseim {};
 
     # dependencies for mongooseim
     alarms = callPackage ./erldeps/alarms.nix {};
