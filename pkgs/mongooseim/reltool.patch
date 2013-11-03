@@ -1,0 +1,23 @@
+diff --git a/rel/reltool.config b/rel/reltool.config
+index 6c0872b..3f171e6 100644
+--- a/rel/reltool.config
++++ b/rel/reltool.config
+@@ -58,7 +58,8 @@
+        {app, folsom, [{incl_cond, include}]},
+        {app, mochijson2, [{incl_cond, include}]},
+        {app, syntax_tools, [{incl_cond, include}]},
+-       {app, alarms, [{incl_cond, include}]}
++       {app, alarms, [{incl_cond, include}]},
++       {excl_lib, otp_root}
+       ]}.
+ 
+ {target_dir, "ejabberd"}.
+@@ -73,7 +74,5 @@
+            {copy, "files/ejabberdctl", "bin/ejabberdctl"},
+            {copy, "files/app.config", "etc/app.config"},
+            {template, "files/vm.args", "etc/vm.args"},
+-           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"},
+-           {mkdir, "var"},
+-           {mkdir, "var/log"}
++           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"}
+           ]}.
