@@ -25,4 +25,9 @@
     imports = [ ./common.nix ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.61.117";
   };
+
+  benteflork = { pkgs, config, ... }: {
+    imports = [ ./common.nix ./hydra-slave.nix ];
+    deployment.hetzner.mainIPv4 = "144.76.202.147";
+  };
 }
