@@ -3,7 +3,7 @@
   deployment.targetEnv = "hetzner";
 
   environment.systemPackages = with pkgs; [
-    htop
+    htop iotop
   ];
 
   nix = {
