@@ -22,19 +22,7 @@
   };
 
   benteflork = { pkgs, config, ... }: {
-    deployment.hetzner.mainIPv4 = "144.76.61.117";
-    deployment.hetzner.partitions = ''
-      clearpart --all --initlabel --drives=sda,sdb
-
-      part swap1 --size=20000 --label=swap1 --fstype=swap --ondisk=sda
-      part swap2 --size=20000 --label=swap2 --fstype=swap --ondisk=sdb
-
-      part raid.1 --grow --ondisk=sda
-      part raid.2 --grow --ondisk=sdb
-
-      raid / --level=1 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
-    '';
-
     imports = [ ./common.nix ./hydra-slave.nix ];
+    deployment.hetzner.mainIPv4 = "144.76.61.117";
   };
 }
