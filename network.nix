@@ -21,7 +21,7 @@
     imports = [ ./common.nix ./machines/ultron.nix ];
   };
 
-  benteflork = { pkgs, config, ... }: {
+  taalo = { pkgs, config, ... }: {
     imports = [ ./common.nix ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.61.117";
   };
