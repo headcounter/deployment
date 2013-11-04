@@ -34,6 +34,7 @@ in {
               else singleton node.config.nixpkgs.system;
     sshKey = "/run/keys/buildkey.priv";
     sshUser = buildUser;
+    supportedFeatures = [ "kvm" "nixos-test" ];
   });
 
   deployment.keys."signkey.priv" = readFile ./ssl/signing-key.sec;
