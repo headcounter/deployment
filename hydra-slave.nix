@@ -37,7 +37,7 @@ in {
     part raid.1 --grow --ondisk=sda
     part raid.2 --grow --ondisk=sdb
 
-    raid / --level=1 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
+    raid / --level=0 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
   '';
 
   users.extraUsers.hydrabuild = {
