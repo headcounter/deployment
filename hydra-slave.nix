@@ -26,6 +26,8 @@ let
   '';
 
 in {
+  deployment.alwaysActivate = false;
+
   users.extraUsers.hydrabuild = {
     description = "Hydra build user";
     group = "users";

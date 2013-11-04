@@ -35,6 +35,6 @@
       raid / --level=1 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
     '';
 
-    imports = [ ./common.nix ./machines/benteflork.nix ];
+    imports = [ ./common.nix ./hydra-slave.nix ];
   };
 }
