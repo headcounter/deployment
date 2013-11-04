@@ -35,6 +35,8 @@ in {
     sshKey = "/run/keys/buildkey.priv";
     sshUser = buildUser;
     supportedFeatures = [ "kvm" "nixos-test" ];
+  } // optionalAttrs (hostName == "benteflork") {
+    speedFactor = 2;
   });
 
   deployment.keys."signkey.priv" = readFile ./ssl/signing-key.sec;
