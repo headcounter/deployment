@@ -15,6 +15,12 @@ in {
       description = "Enable the MongooseIM service.";
     };
 
+    configFile = mkOption {
+      default = "${package}/etc/ejabberd.cfg";
+      type = types.path;
+      description = "Path to the main configuration file.";
+    };
+
     databaseDir = mkOption {
       default = "/var/db/mongoose";
       type = types.path;
@@ -40,7 +46,7 @@ in {
       environment.EMU = "beam";
       environment.ROOTDIR = package;
       environment.PROGNAME = "ejabberd";
-      environment.EJABBERD_CONFIG_PATH = "${package}/etc/ejabberd.cfg";
+      environment.EJABBERD_CONFIG_PATH = cfg.configFile;
 
       serviceConfig.User = "mongoose";
       serviceConfig.Group = "mongoose";
