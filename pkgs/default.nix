@@ -21,5 +21,8 @@ let
     mochijson2 = callPackage ./erldeps/mochijson2.nix {};
     ranch = callPackage ./erldeps/ranch.nix {};
     redo = callPackage ./erldeps/redo.nix {};
+
+    # utilities for testing mongooseim
+    testXMPP = callPackage ./test-xmpp {};
   };
 in self
