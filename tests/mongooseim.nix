@@ -143,8 +143,7 @@ let
     {access, local, [{allow, local}]}.
     {access, c2s, [{deny, blocked},
                    {allow, all}]}.
-    {access, c2s_shaper, [{none, admin},
-                          {normal, all}]}.
+    {access, c2s_shaper, [{fast, all}]}.
     {access, s2s_shaper, [{fast, all}]}.
     {access, muc_admin, [{allow, admin}]}.
     {access, muc_create, [{allow, local}]}.
