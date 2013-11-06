@@ -7,12 +7,30 @@ let
   package = (import ../../pkgs {
     inherit pkgs;
   }).mongooseim;
+
+  vmArgsFile = pkgs.writeText "vm.args" ''
+    -sname ${cfg.nodeName}
+    # XXX: sensitve stuff!
+    -setcookie ejabberd
+    +K true
+    +A 5
+    +P 10000000
+    -env ERL_MAX_PORTS 250000
+    -env ERL_FULLSWEEP_AFTER 2
+    -sasl sasl_error_logger false
+  '';
 in {
   options.services.headcounter.mongooseim = {
     enable = mkOption {
       default = false;
       type = types.bool;
       description = "Enable the MongooseIM service.";
+    };
+
+    nodeName = mkOption {
+      default = "ejabberd@${config.networking.hostName}";
+      type = types.str;
+      description = "Erlang OTP node name";
     };
 
     configFile = mkOption {
@@ -60,7 +78,7 @@ in {
         "-boot ${package}/releases/0.1/ejabberd"
         "-boot_var RELTOOL_EXT_LIB ${package}/lib"
         "-config ${package}/etc/app.config"
-        "-args_file ${package}/etc/vm.args"
+        "-args_file ${vmArgsFile}"
         "-embedded"
         "-noinput"
         "-smp"
