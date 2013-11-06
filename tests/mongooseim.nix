@@ -204,10 +204,16 @@ in {
     $client->succeed('cp -Lr ${localPkgs.mongooseimTests}/deps/* tests/');
     $client->succeed('cp "${localPkgs.mongooseimTests}/etc/vcard.config" .');
     $client->succeed('cp "${escalusConfig}" test.config');
+
     $client->succeed('sed -i '.
                      '-e \'s/ejabberd@localhost/${nodeName}/g\' '.
                      '-e \'s/localhost/${server1}/g\' '.
                      'tests/*.erl vcard.config');
+
+    my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
+    chomp $clientip;
+    $client->succeed("sed -i -e 's/127\\.0\\.0\\.1/$clientip/' ".
+                     "tests/sic_SUITE.erl");
 
     $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
                      '-setcookie ${cookie} -sname ejabberd@client '.
