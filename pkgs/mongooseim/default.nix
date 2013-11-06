@@ -24,6 +24,9 @@ buildErlang rec {
     { rev = "e6508cab7e94a3d6359c30481f86c234f2fb87e0";
       sha256 = "1ay02qh3xpqhv5g4fny7n95h8gvd4kbbp4m449r0zzd3yzb0lkzf";
     }
+    { rev = "0385349f41791f558e802adf809d4fbf65ae360f";
+      sha256 = "0knza0mv62gkqnjyb1lnl4l9rwdjdbcqv14xwmr3c2nq6vzfihrm";
+    }
   ]) ++ [ ./reltool.patch ./journald.patch ];
 
   buildInputs = [ pam zlib openssl expat ];
