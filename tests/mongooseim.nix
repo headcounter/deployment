@@ -193,8 +193,10 @@ in {
 
   testScript = ''
     startAll;
-    $server1->waitForOpenPort(5222);
-    $server2->waitForOpenPort(5222);
+    foreach my $waitport (5222, 5269, 5280, 5288) {
+      $server1->waitForOpenPort($waitport);
+      $server2->waitForOpenPort($waitport);
+    }
 
     $client->succeed('cp -Lr "${localPkgs.mongooseimTests}/tests" .');
     $client->succeed('cp -Lr ${localPkgs.mongooseimTests}/deps/* tests/');
