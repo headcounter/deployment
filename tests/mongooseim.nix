@@ -215,6 +215,9 @@ in {
     $client->succeed("sed -i -e 's/127\\.0\\.0\\.1/$clientip/' ".
                      "tests/sic_SUITE.erl");
 
+    $client->succeed('sed -i -e \'/wait_for_stanza/s/10000/&0/\' '.
+                     'tests/s2s_SUITE.erl');
+
     $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
                      '-setcookie ${cookie} -sname ejabberd@client '.
                      '-eval "pong = net_adm:ping(\'${nodeName}\'), '.
