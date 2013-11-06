@@ -1,18 +1,28 @@
 { pkgs, ... }:
 
 let
+  localPkgs = import ../pkgs {
+    inherit pkgs;
+  };
+
+  server1 = "server1";
+  server2 = "server2";
+
+  nodeName = "ejabberd@server1";
+  cookie = "ejabberd"; # XXX! Also remember: It's an atom!
+
   mkConfig = serverName: pkgs.writeText "ejabberd.cfg" ''
-    {loglevel, 5}.
+    {loglevel, 4}.
     {hosts, ["${serverName}"]}.
 
     {listen, [
       {5280, mod_bosh, [{num_acceptors, 10}]},
-        {5222, ejabberd_c2s, [{access, c2s}, {shaper, c2s_shaper},
-                              {max_stanza_size, 65536}]},
-        {{5288, ws}, mod_websockets, [{host, "${serverName}"},
-                                      {prefix, "/ws-xmpp"}]},
-        {5269, ejabberd_s2s_in, [{shaper, s2s_shaper},
-                                 {max_stanza_size, 131072}]}
+      {5222, ejabberd_c2s, [{access, c2s}, {shaper, c2s_shaper},
+                            {max_stanza_size, 65536}]},
+      {{5288, ws}, mod_websockets, [{host, "${serverName}"},
+                                    {prefix, "/ws-xmpp"}]},
+      {5269, ejabberd_s2s_in, [{shaper, s2s_shaper},
+                               {max_stanza_size, 131072}]}
     ]}.
 
     {s2s_default_policy, allow}.
@@ -67,7 +77,7 @@ in {
       imports = [ ../modules/services/mongooseim.nix ];
       services.headcounter.mongooseim = {
         enable = true;
-        configFile = mkConfig "server1";
+        configFile = mkConfig server1;
       };
     };
 
@@ -75,7 +85,7 @@ in {
       imports = [ ../modules/services/mongooseim.nix ];
       services.headcounter.mongooseim = {
         enable = true;
-        configFile = mkConfig "server2";
+        configFile = mkConfig server2;
       };
     };
 
