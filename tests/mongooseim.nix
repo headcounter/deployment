@@ -104,7 +104,7 @@ let
   '';
 
   mkConfig = serverName: pkgs.writeText "ejabberd.cfg" ''
-    {loglevel, 4}.
+    {loglevel, 3}.
     {hosts, ["${serverName}"]}.
 
     {listen, [
