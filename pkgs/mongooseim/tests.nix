@@ -12,7 +12,6 @@ buildErlang {
 
   postPatch = ''
     sed -i -e '/exml/s|"2\.0\.0"|"2.0.1"|' rebar.config
-    sed -i -e '/,/{h;N;/system_monitor_SUITE/{g;s/,//}}' run_common_test.erl
   '';
 
   postBuild = ''
