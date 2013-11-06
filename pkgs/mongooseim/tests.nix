@@ -14,6 +14,10 @@ buildErlang {
     sed -i -e '/exml/s|"2\.0\.0"|"2.0.1"|' rebar.config
   '';
 
+  postBuild = ''
+    erlc -Ideps/exml/include -o ebin run_common_test.erl
+  '';
+
   erlangDeps = [ escalus exml mustache ];
 
   postInstall = ''
