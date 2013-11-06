@@ -27,7 +27,7 @@ let
     {ejabberd_cookie, ${cookie}}.
     {ejabberd_domain, <<"${server1}">>}.
     {ejabberd_secondary_domain, <<"${server2}">>}.
-    {ejabberd_metrics_rest_port, 5280}.
+    {ejabberd_metrics_rest_port, 5281}.
 
     {escalus_users, [
       {alice, [
@@ -71,7 +71,7 @@ let
         {host, <<"${server1}">>},
         {password, <<"witcher">>},
         {transport, ws},
-        {port, 5280},
+        {port, 5288},
         {wspath, <<"/ws-xmpp">>}
       ]}
     ]}.
@@ -81,14 +81,14 @@ let
         {username, <<"alice">>},
         {server, <<"${server2}">>},
         {host, <<"${server2}">>},
-        {port, 5232},
+        {port, 5222},
         {password, <<"makota2">>}
       ]},
       {bob2, [
         {username, <<"bob">>},
         {server, <<"micha?">>},
         {host, <<"${server2}">>},
-        {port, 5232},
+        {port, 5222},
         {password, <<"makota3">>}
       ]}
     ]}.
