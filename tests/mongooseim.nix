@@ -105,7 +105,15 @@ let
 
   mkConfig = serverName: pkgs.writeText "ejabberd.cfg" ''
     {loglevel, 3}.
-    {hosts, ["${serverName}"]}.
+
+    {hosts, ["${serverName}", "anonymous.${serverName}"]}.
+    {auth_method, internal}.
+
+    {host_config, "anonymous.${serverName}", [
+      {auth_method, [anonymous]},
+      {allow_multiple_connections, true},
+      {anonymous_protocol, both}
+    ]}.
 
     {listen, [
       {5280, mod_bosh, [{num_acceptors, 10}]},
@@ -120,7 +128,6 @@ let
     {s2s_default_policy, allow}.
     {outgoing_s2s_port, 5269}.
     {sm_backend, {mnesia, []}}.
-    {auth_method, internal}.
 
     {shaper, normal, {maxrate, 1000}}.
     {shaper, fast, {maxrate, 50000}}.
