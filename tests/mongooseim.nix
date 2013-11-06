@@ -106,7 +106,10 @@ let
   mkConfig = serverName: pkgs.writeText "ejabberd.cfg" ''
     {loglevel, 3}.
 
-    {hosts, ["${serverName}", "anonymous.${serverName}"]}.
+    {hosts, ["${serverName}",
+             "${serverName}.bis",
+             "anonymous.${serverName}"]}.
+
     {auth_method, internal}.
 
     {host_config, "anonymous.${serverName}", [
