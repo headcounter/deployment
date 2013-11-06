@@ -86,7 +86,7 @@ let
       ]},
       {bob2, [
         {username, <<"bob">>},
-        {server, <<"micha?">>},
+        {server, <<"${server2}">>},
         {host, <<"${server2}">>},
         {port, 5222},
         {password, <<"makota3">>}
