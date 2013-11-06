@@ -23,7 +23,7 @@ stdenv.mkDerivation (attrs // {
   configurePhase = let
     getDeps = drv: [drv] ++ (map getDeps drv.erlangDeps);
     recursiveDeps = uniqList {
-       inputList = flatten (map getDeps erlangDeps);
+      inputList = flatten (map getDeps erlangDeps);
     };
   in ''
     runHook preConfigure
