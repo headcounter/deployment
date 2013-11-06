@@ -229,6 +229,18 @@ in {
       my $rval = ($client->execute_($testCmd))[0];
       my $out = $ENV{'out'};
 
+      my $rawugly = $client->succeed(
+        'find ct_report -name \'*@*\' -print | '.
+        'xargs -I{} sh -c \'mv "{}" "$(echo "{}" | '.
+        'tr @ _)" && basename "{}"\' '
+      );
+      chomp $rawugly;
+      my @uglynames = split "\n", $rawugly;
+      foreach my $ugly (@uglynames) {
+        $client->succeed('find ct_report -type f -exec '.
+                         "sed -i -e 's|$ugly|".($ugly =~ s/\@/_/gr)."|' {} +");
+      }
+
       $client->succeed('tar cf /tmp/xchg/ct_report.tar ct_report && sync');
       system("tar xf vm-state-client/xchg/ct_report.tar -C '$out'");
 
