@@ -11,6 +11,98 @@ let
   nodeName = "ejabberd@server1";
   cookie = "ejabberd"; # XXX! Also remember: It's an atom!
 
+  testRunner = pkgs.lib.concatStringsSep " " ([
+    "${pkgs.erlang}/bin/erl"
+    "-sname test@client"
+    "-noinput"
+    "-setcookie ejabberd"
+    "-pa ${localPkgs.mongooseimTests}/tests"
+    "${localPkgs.mongooseimTests}/ebin"
+    "${localPkgs.mongooseimTests}/deps/*/ebin" # */
+    "-s run_common_test ct"
+  ]);
+
+  escalusConfig = pkgs.writeText "test.config" ''
+    {ejabberd_node, '${nodeName}'}.
+    {ejabberd_cookie, ${cookie}}.
+    {ejabberd_domain, <<"${server1}">>}.
+    {ejabberd_secondary_domain, <<"${server2}">>}.
+    {ejabberd_metrics_rest_port, 5280}.
+
+    {escalus_users, [
+      {alice, [
+        {username, <<"alice">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"makota">>},
+        {compression, <<"zlib">>}
+      ]},
+      {bob, [
+        {username, <<"bob">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"makrolika">>},
+        {ssl, optional}
+      ]},
+      {carol, [
+        {username, <<"carol">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"jinglebells">>},
+        {transport, bosh},
+        {path, <<"/http-bind">>},
+        {port, 5280}
+      ]},
+      {kate, [
+        {username, <<"kate">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"makrowe;p">>}
+      ]},
+      {mike, [
+        {username, <<"mike">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"nicniema">>}
+      ]},
+      {geralt, [
+        {username, <<"geralt">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"witcher">>},
+        {transport, ws},
+        {port, 5280},
+        {wspath, <<"/ws-xmpp">>}
+      ]}
+    ]}.
+
+    {escalus_server2_users, [
+      {alice2, [
+        {username, <<"alice">>},
+        {server, <<"${server2}">>},
+        {host, <<"${server2}">>},
+        {port, 5232},
+        {password, <<"makota2">>}
+      ]},
+      {bob2, [
+        {username, <<"bob">>},
+        {server, <<"micha?">>},
+        {host, <<"${server2}">>},
+        {port, 5232},
+        {password, <<"makota3">>}
+      ]}
+    ]}.
+
+    {escalus_anon_users, [
+      {jon, [
+        {username, <<"jon">>},
+        {server, <<"anonymous.${server1}">>},
+        {host, <<"${server1}">>},
+        {auth_method, <<"SASL-ANON">>}
+      ]}
+    ]}.
+  '';
+
   mkConfig = serverName: pkgs.writeText "ejabberd.cfg" ''
     {loglevel, 4}.
     {hosts, ["${serverName}"]}.
@@ -89,28 +181,59 @@ in {
       };
     };
 
-    client1 = { config, pkgs, ... }: {
-      environment.systemPackages = pkgs.lib.singleton (import ../pkgs {
-        inherit pkgs;
-      }).testXMPP;
-    };
-
-    client2 = { config, pkgs, ... }: {
-      environment.systemPackages = pkgs.lib.singleton (import ../pkgs {
-        inherit pkgs;
-      }).testXMPP;
-    };
+    client = {};
   };
 
   testScript = ''
     startAll;
-    $server1->waitForUnit("mongooseim.service");
-    $server2->waitForUnit("mongooseim.service");
+    $server1->waitForOpenPort(5222);
+    $server2->waitForOpenPort(5222);
 
-    $client1->waitUntilSucceeds("netcat -z server1 5222");
-    $client2->waitUntilSucceeds("netcat -z server2 5222");
+    $client->succeed('cp -Lr "${localPkgs.mongooseimTests}/tests" .');
+    $client->succeed('cp -Lr ${localPkgs.mongooseimTests}/deps/* tests/');
+    $client->succeed('cp "${localPkgs.mongooseimTests}/etc/vcard.config" .');
+    $client->succeed('cp "${escalusConfig}" test.config');
+    $client->succeed('sed -i '.
+                     '-e \'s/ejabberd@localhost/${nodeName}/g\' '.
+                     '-e \'s/localhost/${server1}/g\' '.
+                     'tests/*.erl vcard.config');
 
-    $client1->succeed('test-xmpp testuser1@server1 register');
-    $client2->succeed('test-xmpp testuser2@server2 register');
+    $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
+                     '-setcookie ${cookie} -sname ejabberd@client '.
+                     '-eval "pong = net_adm:ping(\'${nodeName}\'), '.
+                            'erlang:halt()"');
+
+    my $testCmd = 'mkdir -p ct_report && ${testRunner} >&2';
+
+    $client->nest("running test suite: $testCmd", sub {
+      my $rval = ($client->execute_($testCmd))[0];
+      my $out = $ENV{'out'};
+
+      $client->succeed('tar cf /tmp/xchg/ct_report.tar ct_report && sync');
+      system("tar xf vm-state-client/xchg/ct_report.tar -C '$out'");
+
+      open HYDRA_PRODUCTS, ">>$out/nix-support/hydra-build-products";
+      print HYDRA_PRODUCTS "report ct-tests $out/ct_report\n";
+      close HYDRA_PRODUCTS;
+
+      my @summaries = <$out/ct_report/ct_run.*/*.logs/run.*/suite.summary>;
+      my @stats;
+      foreach my $stat (@summaries) {
+        open STAT, $stat;
+        my @row = split(/\D+/, <STAT>);
+        $stats[$_] += $row[$_ + 1] for (0 .. ($#row - 1));
+        close STAT
+      }
+
+      my $total = $stats[0] + $stats[1];
+      my $skip = $stats[2] + $stats[3];
+      $client->log("$stats[0] out of $total tests succeeded ($skip skipped)");
+
+      if ($rval != 0 || $stats[0] < $total) {
+        $client->log("$stats[1] tests failed (test runner ".
+                     "exited with exit code $rval)");
+        die;
+      }
+    });
   '';
 }
