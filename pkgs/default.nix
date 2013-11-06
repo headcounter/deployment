@@ -35,8 +35,5 @@ let
     reloader = callPackage ./erldeps/reloader.nix {};
     wsecli = callPackage ./erldeps/wsecli.nix {};
     wsock = callPackage ./erldeps/wsock.nix {};
-
-    # utilities for testing mongooseim
-    testXMPP = callPackage ./test-xmpp {};
   };
 in self
