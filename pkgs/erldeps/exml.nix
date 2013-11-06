@@ -14,4 +14,8 @@ buildErlang rec {
   '';
 
   buildInputs = [ expat ];
+
+  postInstall = ''
+    ln -s exml_drv.so "$out/priv/exml.so"
+  '';
 }
