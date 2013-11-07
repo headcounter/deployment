@@ -66,6 +66,8 @@ in {
       environment.PROGNAME = "ejabberd";
       environment.EJABBERD_CONFIG_PATH = cfg.configFile;
 
+      serviceConfig.Type = "notify";
+      serviceConfig.NotifyAccess = "all";
       serviceConfig.User = "mongoose";
       serviceConfig.Group = "mongoose";
       serviceConfig.PrivateTmp = true;

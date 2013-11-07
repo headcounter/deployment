@@ -1,0 +1,21 @@
+diff --git a/apps/ejabberd/src/ejabberd_app.erl b/apps/ejabberd/src/ejabberd_app.erl
+index da18651..5cd6107 100644
+--- a/apps/ejabberd/src/ejabberd_app.erl
++++ b/apps/ejabberd/src/ejabberd_app.erl
+@@ -68,7 +68,15 @@ start(normal, _Args) ->
+     start_modules(),
+     ejabberd_listener:start_listeners(),
+     ejabberd_admin:start(),
+-    ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
++
++    %% Notify systemd about startup
++    Message = io_lib:format("ejabberd ~s is started on node ~p",
++                            [?VERSION, node()]),
++    EscMessage = lists:flatmap(fun($') -> [$', $\\, $', $'];
++                                  (C)  -> [C] end, Message),
++    SdNotify = "systemd-notify --ready --status='" ++ EscMessage ++ "'",
++    os:cmd(SdNotify),
++
+     Sup;
+ start(_, _) ->
+     {error, badarg}.

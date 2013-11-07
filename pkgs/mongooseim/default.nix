@@ -27,7 +27,7 @@ buildErlang rec {
     { rev = "0385349f41791f558e802adf809d4fbf65ae360f";
       sha256 = "0knza0mv62gkqnjyb1lnl4l9rwdjdbcqv14xwmr3c2nq6vzfihrm";
     }
-  ]) ++ [ ./reltool.patch ./journald.patch ];
+  ]) ++ [ ./reltool.patch ./journald.patch ./systemd.patch ];
 
   buildInputs = [ pam zlib openssl expat ];
   erlangDeps = [ cuesport redo exml lager cowboy folsom mochijson2 alarms ];
