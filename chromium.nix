@@ -14,7 +14,7 @@ in {
   systemd.timers."chromium-update" = {
     wantedBy = [ "timers.target" ];
     timerConfig.OnActiveSec = 0;
-    timerConfig.OnUnitActiveSec = 300;
+    timerConfig.OnUnitActiveSec = "1h";
   };
 
   systemd.services."chromium-update" = {
