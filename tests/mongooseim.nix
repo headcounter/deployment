@@ -27,7 +27,7 @@ let
     {ejabberd_cookie, ${cookie}}.
     {ejabberd_domain, <<"${server1}">>}.
     {ejabberd_secondary_domain, <<"${server2}">>}.
-    {ejabberd_metrics_rest_port, 5281}.
+    {ejabberd_metrics_rest_port, 8081}.
 
     {escalus_users, [
       {alice, [
@@ -195,7 +195,7 @@ in {
 
   testScript = ''
     startAll;
-    foreach my $waitport (5222, 5269, 5280, 5288) {
+    foreach my $waitport (5222, 5269, 5280, 5288, 8081) {
       $server1->waitForOpenPort($waitport);
       $server2->waitForOpenPort($waitport);
     }
