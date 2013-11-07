@@ -19,7 +19,10 @@ let
     };
   in [ (genConf vhost.ipv4) (genConf "[${vhost.ipv6}]") ];
 in {
-  imports = [ ../hydra.nix ../modules/services/lighttpd.nix ../domains.nix ];
+  imports = [
+    ../modules/services/lighttpd.nix
+    ../hydra.nix ../domains.nix ../chromium.nix
+  ];
 
   deployment.hetzner.partitions = ''
     clearpart --all --initlabel --drives=sda,sdb
