@@ -196,7 +196,8 @@ in {
 
   testScript = ''
     startAll;
-    $machine->waitForUnit("mongooseim.service");
+    $server1->waitForUnit("mongooseim.service");
+    $server2->waitForUnit("mongooseim.service");
 
     $client->succeed('cp -Lr "${localPkgs.mongooseimTests}/tests" .');
     $client->succeed('cp -Lr ${localPkgs.mongooseimTests}/deps/* tests/');
