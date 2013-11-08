@@ -223,6 +223,23 @@ in {
       '';
     };
 
+    authMethod = mkOption {
+      type = types.str;
+      default = "internal";
+      example = "ldap";
+      description = ''
+        Method used to authenticate the users.
+
+        Valid options are:
+      '' + enumDoc {
+        internal = "Against internal Mnesia database";
+        external = "Using external script";
+        odbc = "Using Open Database Connectivity";
+        pam = "Using Pluggable Authentication Modules";
+        ldap = "Using Lightweight Directory Access Protocol";
+      };
+    };
+
     generatedConfigFile = mkOption {
       type = types.nullOr types.path;
       default = null;
@@ -273,7 +290,10 @@ in {
     % S2S options
     ${s2sOptions}
 
-    % Session backend
+    % session backend
     {sm_backend, ${config.sessionBackend}}.
+
+    % authentication
+    {auth_method, ${erlAtom config.authMethod}}.
   '';
 }
