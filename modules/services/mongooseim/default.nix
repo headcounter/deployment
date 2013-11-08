@@ -34,15 +34,25 @@ in {
     };
 
     configFile = mkOption {
-      default = "${package}/etc/ejabberd.cfg";
-      type = types.path;
-      description = "Path to the main configuration file.";
+      default = null;
+      example = "${package}/etc/ejabberd.cfg";
+      type = types.nullOr types.path;
+      description = ''
+        Path to the main configuration file.
+        This overrides all options defined in <option>settings</option>.
+      '';
     };
 
     databaseDir = mkOption {
       default = "/var/db/mongoose";
       type = types.path;
       description = "Database directory for Mnesia";
+    };
+
+    settings = mkOption {
+      default = {};
+      type = types.submodule ./settings.nix;
+      description = "Configuration settings.";
     };
   };
 
@@ -64,7 +74,9 @@ in {
       environment.EMU = "beam";
       environment.ROOTDIR = package;
       environment.PROGNAME = "ejabberd";
-      environment.EJABBERD_CONFIG_PATH = cfg.configFile;
+      environment.EJABBERD_CONFIG_PATH = if cfg.configFile != null
+                                         then cfg.configFile
+                                         else cfg.settings.generatedConfigFile;
 
       serviceConfig.Type = "notify";
       serviceConfig.NotifyAccess = "all";
