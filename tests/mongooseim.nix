@@ -103,83 +103,89 @@ let
     ]}.
   '';
 
-  mkConfig = serverName: pkgs.writeText "ejabberd.cfg" ''
-    {loglevel, 3}.
+  mkConfig = serverName: {
+    hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
+    s2s.filterDefaultPolicy = "allow";
+    listeners = [ # FIXME: Unique port/module and maybe loaOf?
+      { port = 5280;
+        module = "mod_bosh";
+        options.num_acceptors = 10;
+      }
+      { port = 5222;
+        module = "ejabberd_c2s";
+        options.access.atom = "c2s";
+        options.shaper.atom = "c2s_shaper";
+        options.max_stanza_size = 65536;
+      }
+      { port = 5288;
+        type = "ws";
+        module = "mod_websockets";
+        options.host = serverName;
+        options.prefix = "/ws-xmpp";
+      }
+      { port = 5269;
+        module = "ejabberd_s2s_in";
+        options.shaper.atom = "s2s_shaper";
+        options.max_stanza_size = 131072;
+      }
+    ];
 
-    {hosts, ["${serverName}",
-             "${serverName}.bis",
-             "anonymous.${serverName}"]}.
+    extraConfig = ''
+      {host_config, "anonymous.${serverName}", [
+        {auth_method, [anonymous]},
+        {allow_multiple_connections, true},
+        {anonymous_protocol, both}
+      ]}.
 
-    {auth_method, internal}.
+      {shaper, normal, {maxrate, 1000}}.
+      {shaper, fast, {maxrate, 50000}}.
+      {max_fsm_queue, 1000}.
 
-    {host_config, "anonymous.${serverName}", [
-      {auth_method, [anonymous]},
-      {allow_multiple_connections, true},
-      {anonymous_protocol, both}
-    ]}.
+      {acl, local, {user_regexp, ""}}.
 
-    {listen, [
-      {5280, mod_bosh, [{num_acceptors, 10}]},
-      {5222, ejabberd_c2s, [{access, c2s}, {shaper, c2s_shaper},
-                            {max_stanza_size, 65536}]},
-      {{5288, ws}, mod_websockets, [{host, "${serverName}"},
-                                    {prefix, "/ws-xmpp"}]},
-      {5269, ejabberd_s2s_in, [{shaper, s2s_shaper},
-                               {max_stanza_size, 131072}]}
-    ]}.
+      {access, max_user_sessions, [{10, all}]}.
+      {access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
+      {access, local, [{allow, local}]}.
+      {access, c2s, [{deny, blocked},
+                     {allow, all}]}.
+      {access, c2s_shaper, [{none, admin},
+                            {normal, all}]}.
+      {access, s2s_shaper, [{fast, all}]}.
+      {access, muc_admin, [{allow, admin}]}.
+      {access, muc_create, [{allow, all}]}.
+      {access, muc, [{allow, all}]}.
 
-    {s2s_default_policy, allow}.
-    {outgoing_s2s_port, 5269}.
-    {sm_backend, {mnesia, []}}.
+      {access, register, [{allow, all}]}.
+      {registration_timeout, infinity}.
 
-    {shaper, normal, {maxrate, 1000}}.
-    {shaper, fast, {maxrate, 50000}}.
-    {max_fsm_queue, 1000}.
+      {language, "en"}.
 
-    {acl, local, {user_regexp, ""}}.
-
-    {access, max_user_sessions, [{10, all}]}.
-    {access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
-    {access, local, [{allow, local}]}.
-    {access, c2s, [{deny, blocked},
-                   {allow, all}]}.
-    {access, c2s_shaper, [{none, admin},
-                          {normal, all}]}.
-    {access, s2s_shaper, [{fast, all}]}.
-    {access, muc_admin, [{allow, admin}]}.
-    {access, muc_create, [{allow, all}]}.
-    {access, muc, [{allow, all}]}.
-
-    {access, register, [{allow, all}]}.
-    {registration_timeout, infinity}.
-
-    {language, "en"}.
-
-    {modules, [
-      {mod_adhoc, []},
-      {mod_disco, []},
-      {mod_last, []},
-      {mod_muc, [{host, "muc.${serverName}"}, {access, muc},
-                 {access_create, muc_create}]},
-      {mod_muc_log, [{outdir, "/tmp/muclogs"}, {access_log, muc}]},
-      {mod_offline, [{access_max_user_messages, max_user_offline_messages}]},
-      {mod_privacy, []},
-      {mod_private, []},
-      {mod_register, [{welcome_message, {""}}, {ip_access, []},
-                      {access, register}]},
-      {mod_roster, []},
-      {mod_sic, []},
-      {mod_vcard, [{allow_return_all, true}, {search_all_hosts, true}]},
-      {mod_metrics, [{port, 8081}]}
-    ]}.
-  '';
+      {modules, [
+        {mod_adhoc, []},
+        {mod_disco, []},
+        {mod_last, []},
+        {mod_muc, [{host, "muc.${serverName}"}, {access, muc},
+                   {access_create, muc_create}]},
+        {mod_muc_log, [{outdir, "/tmp/muclogs"}, {access_log, muc}]},
+        {mod_offline, [{access_max_user_messages, max_user_offline_messages}]},
+        {mod_privacy, []},
+        {mod_private, []},
+        {mod_register, [{welcome_message, {""}}, {ip_access, []},
+                        {access, register}]},
+        {mod_roster, []},
+        {mod_sic, []},
+        {mod_vcard, [{allow_return_all, true}, {search_all_hosts, true}]},
+        {mod_metrics, [{port, 8081}]}
+      ]}.
+    '';
+  };
 in {
   nodes = {
     server1 = { config, pkgs, ... }: {
       imports = [ ../modules/services/mongooseim ];
       services.headcounter.mongooseim = {
         enable = true;
-        configFile = mkConfig server1;
+        settings = mkConfig server1;
       };
     };
 
@@ -187,7 +193,7 @@ in {
       imports = [ ../modules/services/mongooseim ];
       services.headcounter.mongooseim = {
         enable = true;
-        configFile = mkConfig server2;
+        settings = mkConfig server2;
       };
     };
 
