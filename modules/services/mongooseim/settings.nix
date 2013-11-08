@@ -74,7 +74,7 @@ in {
     s2s = {
       useStartTLS = mkOption {
         type = types.str;
-        default = "optional";
+        default = "false";
         description = ''
           Whether to enable/enforce STARTTLS + Dialback for S2S connections.
 
