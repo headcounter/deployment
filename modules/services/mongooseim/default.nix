@@ -21,11 +21,7 @@ let
   '';
 in {
   options.services.headcounter.mongooseim = {
-    enable = mkOption {
-      default = false;
-      type = types.bool;
-      description = "Enable the MongooseIM service.";
-    };
+    enable = mkEnableOption "MongooseIM";
 
     nodeName = mkOption {
       default = "ejabberd@${config.networking.hostName}";

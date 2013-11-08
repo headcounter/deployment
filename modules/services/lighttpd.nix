@@ -78,12 +78,7 @@ let
 in {
   options.services.headcounter.lighttpd = let
     mkOptModuleFull = desc: ex: def: {
-      enable = mkOption {
-        default = false;
-        type = types.bool;
-        description = "Enable the ${desc} module.";
-      };
-
+      enable = mkEnableOption desc;
       config = mkOption {
         type = types.lines;
         description = "Default configuration for ${desc} module.";
@@ -98,11 +93,7 @@ in {
     mkOptModuleDef = desc: def: mkOptModuleFull desc null def;
     mkOptModuleEx = desc: ex: mkOptModuleFull desc ex null;
   in {
-    enable = mkOption {
-      default = false;
-      type = types.bool;
-      description = "Enable the lighttpd web server.";
-    };
+    enable = mkEnableOption "Lighttpd web server";
 
     user = mkOption {
       default = "lighttpd";
