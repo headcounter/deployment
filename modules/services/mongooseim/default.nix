@@ -4,7 +4,7 @@ with pkgs.lib;
 
 let
   cfg = config.services.headcounter.mongooseim;
-  package = (import ../../pkgs {
+  package = (import ../../../pkgs {
     inherit pkgs;
   }).mongooseim;
 

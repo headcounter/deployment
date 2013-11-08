@@ -176,7 +176,7 @@ let
 in {
   nodes = {
     server1 = { config, pkgs, ... }: {
-      imports = [ ../modules/services/mongooseim.nix ];
+      imports = [ ../modules/services/mongooseim ];
       services.headcounter.mongooseim = {
         enable = true;
         configFile = mkConfig server1;
@@ -184,7 +184,7 @@ in {
     };
 
     server2 = { config, pkgs, ... }: {
-      imports = [ ../modules/services/mongooseim.nix ];
+      imports = [ ../modules/services/mongooseim ];
       services.headcounter.mongooseim = {
         enable = true;
         configFile = mkConfig server2;
