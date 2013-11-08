@@ -153,6 +153,36 @@ in {
       };
     };
 
+    listeners = mkOption {
+      type = types.listOf (types.submodule ./listeners.nix);
+      default = [
+        { port = 5280;
+          module = "mod_bosh";
+          options.num_acceptors = 10;
+        }
+        { port = 5222;
+          module = "ejabberd_c2s";
+          options.access.atom = "c2s";
+          options.shaper.atom = "c2s_shaper";
+          options.max_stanza_size = 65536;
+        }
+        { port = 5288;
+          type = "ws";
+          module = "mod_websockets";
+          options.host = "localhost";
+          options.prefix = "/ws-xmpp";
+        }
+        { port = 5269;
+          module = "ejabberd_s2s_in";
+          options.shaper.atom = "s2s_shaper";
+          options.max_stanza_size = 131072;
+        }
+      ];
+      description = ''
+        Configuration of listeners and their corresponding modules.
+      '';
+    };
+
     sessionBackend = mkOption {
       type = types.str;
       default = "{mnesia, []}";
@@ -199,6 +229,13 @@ in {
       override_${what}.
     '')}
     {loglevel, ${toString config.loglevel}}.
+
+    % listeners
+    {listen, [
+      ${concatStringsSep ",\n  " (map
+        (getAttr "generatedConfig") config.listeners
+      )}
+    ]}.
 
     % S2S options
     ${s2sOptions}
