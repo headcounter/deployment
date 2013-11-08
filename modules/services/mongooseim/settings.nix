@@ -210,6 +210,7 @@ in {
 
     sessionBackend = mkOption {
       type = types.str;
+      # XXX: erlexpr!
       default = "{mnesia, []}";
       example = ''
         {redis, [
@@ -231,29 +232,30 @@ in {
 
   config.generatedConfigFile = let
     s2sOptions = with config.s2s; ''
-      {s2s_use_starttls, ${useStartTLS}}.
+      {s2s_use_starttls, ${erlAtom useStartTLS}}.
       ${optionalString (certfile != null) ''
-      {s2s_certfile, ${certfile}}.
+      {s2s_certfile, ${erlString certfile}}.
       ''}
-      {s2s_default_policy, ${filterDefaultPolicy}}.
+      {s2s_default_policy, ${erlAtom filterDefaultPolicy}}.
       ${concatStrings (mapAttrsToList (host: allow: ''
-      {{s2s_host, "${host}"}, ${if allow then "allow" else "deny"}}.
+      {{s2s_host, ${erlString host}}, ${if allow then "allow" else "deny"}}.
       '') filterHosts)}
-      {outgoing_s2s_port, ${toString outgoing.port}}.
+      {outgoing_s2s_port, ${erlInt outgoing.port}}.
       {outgoing_s2s_options, [${
-        concatStringsSep ", " outgoing.addressFamilies
+        concatStringsSep ", " (map erlAtom outgoing.addressFamilies)
       }], ${toString outgoing.connectTimeout}}.
       ${concatStrings (mapAttrsToList (host: static: ''
-        {{s2s_addr, "${host}"}, {${static.ipAddress}, ${static.port}}}.
+        {{s2s_addr, ${erlString host}}, {${static.ipAddress}, ${erlInt
+          static.port}}}.
       '') outgoing.staticHosts)}
     '';
 
   in pkgs.writeText "ejabberd.cfg" ''
     % generic options
     ${flip concatMapStrings config.overrides (what: ''
-      override_${what}.
+      ${erlAtom ("override_" + what)}.
     '')}
-    {loglevel, ${toString config.loglevel}}.
+    {loglevel, ${erlInt config.loglevel}}.
 
     % virtual hosting
     {hosts, ${erlList config.hosts}}.
