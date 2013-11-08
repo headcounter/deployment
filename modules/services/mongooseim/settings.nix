@@ -240,6 +240,22 @@ in {
       };
     };
 
+    extraConfig = mkOption {
+      type = types.lines;
+      default = null;
+      example = ''
+        {ldap_servers, ["localhost"]}.
+        {ldap_encrypt, tls}.
+        {ldap_port, 636}.
+        {ldap_rootdn, "dc=example,dc=com"}.
+        {ldap_password, "******"}.
+        {ldap_base, "dc=example,dc=com"}.
+        {ldap_uids, [{"mail", "%u@mail.example.org"}]}.
+        {ldap_filter, "(objectClass=shadowAccount)"}.
+      '';
+      description = "Extra lines to append to configuration file.";
+    };
+
     generatedConfigFile = mkOption {
       type = types.nullOr types.path;
       default = null;
@@ -295,5 +311,10 @@ in {
 
     % authentication
     {auth_method, ${erlAtom config.authMethod}}.
+
+    ${optionalString (config.extraConfig != null) ''
+    % extra settings
+    ${config.extraConfig}
+    ''}
   '';
 }
