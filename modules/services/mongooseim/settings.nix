@@ -1,6 +1,7 @@
 { pkgs ? import <nixpkgs> {}, config, ... }:
 
 with pkgs.lib;
+with import ./erlexpr.nix;
 
 let
   # TODO: Maybe add a specific type for this, too?
@@ -44,6 +45,30 @@ in {
         "4" = "Info";
         "5" = "Debug";
       };
+    };
+
+    hosts = mkOption {
+      type = types.listOf types.str;
+      default = singleton "localhost";
+      example = [ "example.net" "example.com" "example.org" ];
+      description = "List of domains to be served.";
+    };
+
+    routeSubdomains = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = let
+        url1 = "http://xmpp.org/rfcs/rfc3920.html#rules.subdomain";
+        url2 = "http://tools.ietf.org/html/draft-saintandre-rfc3920bis-09"
+             + "#section-11.3";
+      in ''
+        Defines if the server must route stanzas directed to subdomains locally
+        (compliant with <link xlink:href="${url1}">RFC 3920 XMPP Core</link>),
+        or to foreign server using S2S (compliant with <link
+        xlink:href="${url2}">RFC 3920 bis</link>).
+
+        Valid values are <option>local</option> and <option>s2s</option>.
+      '';
     };
 
     s2s = {
@@ -229,6 +254,12 @@ in {
       override_${what}.
     '')}
     {loglevel, ${toString config.loglevel}}.
+
+    % virtual hosting
+    {hosts, ${erlList config.hosts}}.
+    ${optionalString (config.routeSubdomains != null) ''
+    {route_subdomains, ${erlAtom config.routeSubdomains}}.
+    ''}
 
     % listeners
     {listen, [
