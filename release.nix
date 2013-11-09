@@ -67,7 +67,7 @@ in {
       cp "${toPath "${nixpkgs}/nixos/doc/manual/style.css"}" "$out/style.css"
 
       mkdir -p "$out/nix-support"
-      echo "doc manual $dst manual.html" \
+      echo "doc manual $out manual.html" \
         > "$out/nix-support/hydra-build-products"
     '';
   };
