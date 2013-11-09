@@ -1,21 +1,27 @@
-{
+let
+  mkMachine = attrs: attrs // {
+    imports = import modules/module-list.nix
+           ++ [ ./common.nix ]
+           ++ attrs.imports or [];
+  };
+in {
   network.description = "Headcounter Services";
   network.enableRollback = true;
 
   resources.sshKeyPairs."hydra-build" = {};
 
-  ultron = { pkgs, config, ... }: {
-    imports = [ ./common.nix ./machines/ultron.nix ];
+  ultron = mkMachine {
+    imports = [ ./machines/ultron.nix ];
     deployment.hetzner.mainIPv4 = "5.9.105.142";
   };
 
-  taalo = { pkgs, config, ... }: {
-    imports = [ ./common.nix ./hydra-slave.nix ];
+  taalo = mkMachine {
+    imports = [ ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.61.117";
   };
 
-  benteflork = { pkgs, config, ... }: {
-    imports = [ ./common.nix ./hydra-slave.nix ];
+  benteflork = mkMachine {
+    imports = [ ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.202.147";
   };
 }

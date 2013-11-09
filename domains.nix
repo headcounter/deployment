@@ -8,8 +8,6 @@ let
     ssl.intermediateCert = builtins.readFile ./ssl/intermediate.crt;
   };
 in {
-  imports = [ ./modules/vhosts.nix ];
-
   vhosts = {
     headcounter = withSSL {
       fqdn = "headcounter.org";
