@@ -37,6 +37,7 @@ with import ./erlexpr.nix;
       type = types.nullOr types.str;
       default = null;
       internal = true;
+      description = "Generated configuration values";
     };
   };
 

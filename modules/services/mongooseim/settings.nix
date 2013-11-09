@@ -260,6 +260,7 @@ in {
       type = types.nullOr types.path;
       default = null;
       internal = true;
+      description = "Generated configuration file";
     };
   };
 
