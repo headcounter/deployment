@@ -119,26 +119,28 @@ in {
     '';
   };
 
-  config.systemd.services."post-network-setup" = {
-    description = "Network virtual host setup";
+  config = mkIf (config.vhosts != {}) {
+    systemd.services."post-network-setup" = {
+      description = "Network virtual host setup";
 
-    after = [ "network-setup.service" ];
-    before = [ "network.target" ];
-    wantedBy = [ "network.target" ];
+      after = [ "network-setup.service" ];
+      before = [ "network.target" ];
+      wantedBy = [ "network.target" ];
 
-    path = [ pkgs.iproute ];
+      path = [ pkgs.iproute ];
 
-    serviceConfig.Type = "oneshot";
-    serviceConfig.RemainAfterExit = true;
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
 
-    script = netConfig;
-  };
-
-  config.deployment.keys = let
-    hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
-    getPrivkey = name: attrs: {
-      name = getPrivkeyFilename attrs.ssl.privateKey.value;
-      value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
+      script = netConfig;
     };
-  in mapAttrs' getPrivkey (filterAttrs hasPrivKey config.vhosts);
+
+    deployment.keys = let
+      hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
+      getPrivkey = name: attrs: {
+        name = getPrivkeyFilename attrs.ssl.privateKey.value;
+        value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
+      };
+    in mapAttrs' getPrivkey (filterAttrs hasPrivKey config.vhosts);
+  };
 }
