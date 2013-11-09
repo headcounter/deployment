@@ -28,7 +28,8 @@ in {
       check = false;
     };
 
-    optionsXML = toXML (optionAttrSetToDocList modules.options);
+    filterDoc = filter (opt: opt.visible && !opt.internal);
+    optionsXML = toXML (filterDoc (optionAttrSetToDocList modules.options));
     optionsFile = toFile "options.xml" (unsafeDiscardStringContext optionsXML);
   in pkgs.stdenv.mkDerivation {
     name = "headcounter-options";
