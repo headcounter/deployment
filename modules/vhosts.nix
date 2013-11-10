@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, options, config, ... }:
 
 with pkgs.lib;
 
@@ -119,7 +119,7 @@ in {
     '';
   };
 
-  config = mkIf (config.vhosts != {}) {
+  config = mkIf (config.vhosts != {}) ({
     systemd.services."post-network-setup" = {
       description = "Network virtual host setup";
 
@@ -134,7 +134,7 @@ in {
 
       script = netConfig;
     };
-
+  } // optionalAttrs (options ? deployment) {
     deployment.keys = let
       hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
       getPrivkey = name: attrs: {
@@ -142,5 +142,5 @@ in {
         value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
       };
     in mapAttrs' getPrivkey (filterAttrs hasPrivKey config.vhosts);
-  };
+  });
 }
