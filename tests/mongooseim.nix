@@ -106,6 +106,7 @@ let
   mkConfig = serverName: {
     hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
     s2s.filterDefaultPolicy = "allow";
+
     listeners = [ # FIXME: Unique port/module and maybe loaOf?
       { port = 5280;
         module = "mod_bosh";
@@ -129,6 +130,15 @@ let
         options.max_stanza_size = 131072;
       }
     ];
+
+    modules = {
+      offline.enable = true;
+      offline.options.access_max_user_messages = {
+        atom = "max_user_offline_messages";
+      };
+      register.options.ip_access = [];
+      muc.options.host = "muc.${serverName}";
+    };
 
     extraConfig = ''
       {host_config, "anonymous.${serverName}", [

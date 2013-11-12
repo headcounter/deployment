@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> {}, config, ... }:
+{ defaults, toplevelConfig, pkgs }:
+
+{ config, ... }:
 
 with pkgs.lib;
 with import ./erlexpr.nix;
@@ -39,11 +41,17 @@ with import ./erlexpr.nix;
 */
 
 let
-  mkModuleEx = { description, deps ? [], odbc ? false }: {
-    enable = mkEnableOption "Module for ${description}";
+  mkModuleEx = { description, deps ? [], odbc ? false }: name: {
+    enable = mkOption rec {
+      type = types.bool;
+      default = attrByPath [ name "enable" ] false defaults;
+      example = !default;
+      description = "Whether to enable the module for ${description}.";
+    };
+
     options = mkOption {
-      default = {};
       type = types.unspecified;
+      default = attrByPath [ name "options" ] {} defaults;
       description = ''
         Options for module ... TODO
       '';
@@ -75,8 +83,10 @@ let
     vcard = mkModuleODBC "vcard-temp (XEP-0054)";
     websockets = mkModule "Websocket support";
   };
+
+  modulesWithDefaults = mapAttrs (name: f: f name) modules;
 in {
-  options = modules // {
+  options = modulesWithDefaults // {
     generatedConfig = mkOption {
       type = types.lines;
       default = "";

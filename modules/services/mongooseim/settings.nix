@@ -241,45 +241,42 @@ in {
     };
 
     modules = mkOption {
-      type = types.submodule ./modules.nix;
-      default = {
-        adhoc.enable = true;
-        disco.enable = true;
-        last.enable = true;
-        muc.enable = true;
-        /* TODO: merge correctly!
-        muc.options.host = "muc.${config.networking.hostName}";
-        */
-        muc.options.host = "muc.server1"; # XXX: UGLY!
-        muc.options.access.atom = "muc";
-        muc.options.access_create.atom = "muc_create";
-        muc_log.enable = true;
-        muc_log.options.outdir = "/tmp/muclogs";
-        muc_log.options.access_log.atom = "muc";
-        privacy.enable = true;
-        private.enable = true;
-        register.enable = true;
-        register.options.welcome_message = ""; # TODO?
-        /* TODO: merge correctly!
-        register.options.ip_access = [
-          { tuple = [ "allow" "127.0.0.1/8" ]; }
-          { tuple = [ "deny" "0.0.0.0/0" ]; }
-        ];
-        */
-        register.options.access.atom = "register";
-        roster.enable = true;
-        sic.enable = true;
-        vcard.enable = true;
-        vcard.options.allow_return_all = true;
-        vcard.options.search_all_hosts = true;
-        metrics.enable = true;
-        metrics.options.port = 8081;
-        # TODO/XXX: NOT enabled by default!
-        offline.enable = true;
-        offline.options.access_max_user_messages = {
-          atom = "max_user_offline_messages";
+      type = types.submodule (import ./modules.nix {
+        inherit pkgs;
+        toplevelConfig = config;
+        defaults = {
+          adhoc.enable = true;
+          disco.enable = true;
+          last.enable = true;
+          muc.enable = true;
+          /* TODO: merge correctly!
+          muc.options.host = "muc.${toplevelConfig.networking.hostName}";
+          */
+          muc.options.host = "muc.localhost"; # XXX: UGLY!
+          muc.options.access.atom = "muc";
+          muc.options.access_create.atom = "muc_create";
+          muc_log.enable = true;
+          muc_log.options.outdir = "/tmp/muclogs";
+          muc_log.options.access_log.atom = "muc";
+          privacy.enable = true;
+          private.enable = true;
+          register.enable = true;
+          register.options.welcome_message = ""; # TODO?
+          register.options.ip_access = [
+            { tuple = [ "allow" "127.0.0.1/8" ]; }
+            { tuple = [ "deny" "0.0.0.0/0" ]; }
+          ];
+          register.options.access.atom = "register";
+          roster.enable = true;
+          sic.enable = true;
+          vcard.enable = true;
+          vcard.options.allow_return_all = true;
+          vcard.options.search_all_hosts = true;
+          metrics.enable = true;
+          metrics.options.port = 8081;
         };
-      };
+      });
+      default = {};
       description = ''
         Modules enabled for this particular virtual host.
       '';
