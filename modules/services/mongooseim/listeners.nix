@@ -11,7 +11,7 @@ with import ./erlexpr.nix;
     };
 
     address = mkOption {
-      type = types.str;
+      type = types.nullOr types.str;
       default = null;
       example = "2001:6f8:900:72a::2";
       description = "The IPv4 or IPv6 address to listen on.";
