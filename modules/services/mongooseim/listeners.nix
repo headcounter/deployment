@@ -10,6 +10,13 @@ with import ./erlexpr.nix;
       description = "The port to listen on.";
     };
 
+    address = mkOption {
+      type = types.str;
+      default = null;
+      example = "2001:6f8:900:72a::2";
+      description = "The IPv4 or IPv6 address to listen on.";
+    };
+
     type = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -42,8 +49,11 @@ with import ./erlexpr.nix;
   };
 
   config.generatedConfig = let
-    addr = if config.type == null
-           then erlInt config.port
-           else "{${erlInt config.port}, ${erlAtom config.type}}";
+    addrTerm = parseErlIpAddr config.address;
+    addrSpec = singleton (erlInt config.port)
+            ++ optional (config.address != null) addrTerm
+            ++ optional (config.type != null) (erlAtom config.type);
+    addr = if length addrSpec == 1 then head addrSpec
+           else "{${concatStringsSep ", " addrSpec}}";
   in "{${addr}, ${erlAtom config.module}, ${config.options}}";
 }
