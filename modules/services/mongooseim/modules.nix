@@ -63,24 +63,28 @@ let
   mkModuleDep = dep: mkModuleDeps (singleton dep);
   mkModuleODBC = desc: mkModuleEx { inherit desc; odbc = true; };
 
+  xep = number: let
+    url = "http://xmpp.org/extensions/xep-${number}.html";
+  in "<link xlink:href=\"${url}\">XEP-${number}</link>";
+
   modules = {
-    adhoc = mkModule "Ad-Hoc Commands (XEP-0050)";
+    adhoc = mkModule "Ad-Hoc Commands (${xep "0050"})";
     admin_extra = mkModule "Administrative functions and commands";
     bosh = mkModule "XMPP over Bosh service (HTTP Binding)";
-    disco = mkModule "Service Discovery (XEP-0030)";
-    last = mkModuleODBC "Last Activity (XEP-0012)";
+    disco = mkModule "Service Discovery (${xep "0030"})";
+    last = mkModuleODBC "Last Activity (${xep "0012"})";
     metrics = mkModule "MongooseIM metrics";
-    muc = mkModule "Multi-User Chat (XEP-0045)";
+    muc = mkModule "Multi-User Chat (${xep "0045"})";
     muc_log = mkModuleDep "mod_muc" "Multi-User Chat room logging";
-    offline = mkModule "Offline message storage (XEP-0160)";
-    ping = mkModule "XMPP Ping and periodic keepalives (XEP-0199)";
-    privacy = mkModuleODBC "Blocking Communication (XEP-0016)";
-    private = mkModuleODBC "Private XML Storage (XEP-0049";
-    register = mkModule "In-Band Registration (XEP-0077)";
+    offline = mkModule "Offline message storage (${xep "0160"})";
+    ping = mkModule "XMPP Ping and periodic keepalives (${xep "0199"})";
+    privacy = mkModuleODBC "Blocking Communication (${xep "0016"})";
+    private = mkModuleODBC "Private XML Storage (${xep "0049"})";
+    register = mkModule "In-Band Registration (${xep "0077"})";
     roster = mkModuleODBC "Roster management (XMPP IM)";
-    sic = mkModule "Server IP Check (XEP-0279)";
+    sic = mkModule "Server IP Check (${xep "0279"})";
     snmp = mkModule "SNMP support";
-    vcard = mkModuleODBC "vcard-temp (XEP-0054)";
+    vcard = mkModuleODBC "vcard-temp (${xep "0054"})";
     websockets = mkModule "Websocket support";
   };
 
