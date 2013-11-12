@@ -1,4 +1,5 @@
-with (import <nixpkgs> {}).lib;
+with import <nixpkgs> {};
+with pkgs.lib;
 
 rec {
   erlAtom = val: let
@@ -40,4 +41,11 @@ rec {
     name = "an Erlang expression";
     merge = loc: defs: valType (mergeOneOption loc defs);
   };
+
+  parseErlIpAddr = addr: import "${pkgs.runCommand "erlip.nix" {} ''
+    ${pkgs.erlang}/bin/erl -noshell -eval '
+      {ok, Addr} = inet:parse_address(${erlString addr}),
+      io:fwrite("\"~p\"", [Addr])
+    ' -s erlang halt > "$out"
+  ''}";
 }
