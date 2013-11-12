@@ -1,14 +1,29 @@
+{ pkgs, config, ... }:
+
+with pkgs.lib;
+
 let
   privateKeys = import ./ssl/private.nix;
   publicKeys = import ./ssl/public.nix;
 
-  withSSL = attrs: attrs // {
+  withSSL = attrs: attrs // (if !config.headcounter.useSnakeOil then {
     ssl.privateKey = builtins.getAttr attrs.fqdn privateKeys;
     ssl.publicKey = builtins.getAttr attrs.fqdn publicKeys;
     ssl.intermediateCert = builtins.readFile ./ssl/intermediate.crt;
-  };
+  } else with import ./ssl/snakeoil.nix attrs.fqdn; {
+    ssl = { inherit privateKey publicKey intermediateCert; };
+  });
 in {
-  headcounter.vhosts = {
+  options.headcounter.useSnakeOil = mkOption {
+    type = types.bool;
+    default = false;
+    internal = true;
+    description = ''
+      Use snakeoil certificates for testing purposes.
+    '';
+  };
+
+  config.headcounter.vhosts = {
     headcounter = withSSL {
       fqdn = "headcounter.org";
       ipv4 = "78.47.32.129";
