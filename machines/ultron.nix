@@ -51,7 +51,7 @@ in {
     modules.setenv.enable = true;
     modules.redirect.enable = true;
 
-    virtualHosts = with config.vhosts; genSSLVHost headcounter ''
+    virtualHosts = with config.headcounter.vhosts; genSSLVHost headcounter ''
       $HTTP["url"] =~ "^/hydra(?:$|/)" {
         magnet.attract-physical-path-to = ( "${pkgs.writeText "rewrite.lua" ''
         if string.sub(lighty.env["request.uri"], 1, 6) == "/hydra" then

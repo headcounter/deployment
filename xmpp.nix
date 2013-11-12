@@ -23,7 +23,7 @@ in {
       s2s.outgoing.port = 5269;
       s2s.outgoing.addressFamilies = [ "ipv6" "ipv4" ];
 
-      listeners = flatten (flip mapAttrsToList config.vhosts (name: domain: let
+      listeners = flatten (mapAttrsToList (name: domain: let
         mkAddr = module: attrs: [
           (attrs // { inherit module; address = domain.ipv4; })
           (attrs // { inherit module; address = domain.ipv6; })
@@ -61,7 +61,7 @@ in {
           options.max_stanza_size = 131072;
           options.shaper = "s2s_shaper";
         };
-      in c2s ++ s2s ++ bosh)) ++ [
+      in c2s ++ s2s ++ bosh) config.headcounter.vhosts) ++ [
         { port = 5280;
           address = "127.0.0.1";
           module = "mod_bosh";
@@ -340,7 +340,7 @@ in {
         % S2S certificates
         ${concatStrings (mapAttrsToList (name: domain: ''
         {domain_certfile, "${domain.fqdn}", "/tmp/TODO/${name}"}.
-        '') config.vhosts)}
+        '') config.headcounter.vhosts)}
       '';
     };
   };

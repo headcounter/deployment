@@ -3,6 +3,8 @@
 with pkgs.lib;
 
 let
+  cfg = config.headcounter;
+
   domainOptions = {
     fqdn = mkOption {
       example = "example.com";
@@ -90,27 +92,27 @@ let
 
   getPrivkeyFilename = key: "ssl-${builtins.hashString "sha256" key}.key";
 
-  mkNetConfig = name: cfg: let
-    cidr4 = "${cfg.ipv4}/${toString cfg.ipv4prefix}";
-    cidr6 = "${cfg.ipv6}/${toString cfg.ipv6prefix}";
+  mkNetConfig = name: netcfg: let
+    cidr4 = "${netcfg.ipv4}/${toString netcfg.ipv4prefix}";
+    cidr6 = "${netcfg.ipv6}/${toString netcfg.ipv6prefix}";
 
     cmd = type: mode: if type == 4 then
-      "ip -4 addr ${mode} '${cidr4}' dev '${cfg.device}'"
+      "ip -4 addr ${mode} '${cidr4}' dev '${netcfg.device}'"
     else
-      "ip -6 addr ${mode} '${cidr6}' dev '${cfg.device}'";
+      "ip -6 addr ${mode} '${cidr6}' dev '${netcfg.device}'";
 
     cmdReadd = type: "(${cmd type "del"} && ${cmd type "add"})";
 
-  in optionalString (cfg.ipv4 != null) ''
+  in optionalString (netcfg.ipv4 != null) ''
     ${cmd 4 "add"} || ${cmd 4 "change"} || ${cmdReadd 4} || true
-  '' + optionalString (cfg.ipv6 != null) ''
+  '' + optionalString (netcfg.ipv6 != null) ''
     ${cmd 6 "add"} || ${cmd 6 "change"} || ${cmdReadd 6} || true
   '';
 
-  netConfig = concatStrings (mapAttrsToList mkNetConfig config.vhosts);
+  netConfig = concatStrings (mapAttrsToList mkNetConfig cfg.vhosts);
 
 in {
-  options.vhosts = mkOption {
+  options.headcounter.vhosts = mkOption {
     default = {};
     type = types.attrsOf types.optionSet;
     options = [ domainOptions ];
@@ -119,7 +121,7 @@ in {
     '';
   };
 
-  config = mkIf (config.vhosts != {}) ({
+  config = mkIf (cfg.vhosts != {}) ({
     systemd.services."post-network-setup" = {
       description = "Network virtual host setup";
 
@@ -141,6 +143,6 @@ in {
         name = getPrivkeyFilename attrs.ssl.privateKey.value;
         value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
       };
-    in mapAttrs' getPrivkey (filterAttrs hasPrivKey config.vhosts);
+    in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
   });
 }

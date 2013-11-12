@@ -8,7 +8,7 @@ let
     ssl.intermediateCert = builtins.readFile ./ssl/intermediate.crt;
   };
 in {
-  vhosts = {
+  headcounter.vhosts = {
     headcounter = withSSL {
       fqdn = "headcounter.org";
       ipv4 = "78.47.32.129";
