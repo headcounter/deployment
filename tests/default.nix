@@ -9,4 +9,5 @@ with import "${nixpkgs}/nixos/lib/testing.nix" {
 
 {
   mongooseim = makeTest (import ./mongooseim.nix);
+  headcounter = makeTest (import ./headcounter.nix);
 }
