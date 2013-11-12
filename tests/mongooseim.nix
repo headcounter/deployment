@@ -159,24 +159,6 @@ let
       {registration_timeout, infinity}.
 
       {language, "en"}.
-
-      {modules, [
-        {mod_adhoc, []},
-        {mod_disco, []},
-        {mod_last, []},
-        {mod_muc, [{host, "muc.${serverName}"}, {access, muc},
-                   {access_create, muc_create}]},
-        {mod_muc_log, [{outdir, "/tmp/muclogs"}, {access_log, muc}]},
-        {mod_offline, [{access_max_user_messages, max_user_offline_messages}]},
-        {mod_privacy, []},
-        {mod_private, []},
-        {mod_register, [{welcome_message, {""}}, {ip_access, []},
-                        {access, register}]},
-        {mod_roster, []},
-        {mod_sic, []},
-        {mod_vcard, [{allow_return_all, true}, {search_all_hosts, true}]},
-        {mod_metrics, [{port, 8081}]}
-      ]}.
     '';
   };
 in {

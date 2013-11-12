@@ -240,6 +240,51 @@ in {
       };
     };
 
+    modules = mkOption {
+      type = types.submodule ./modules.nix;
+      default = {
+        adhoc.enable = true;
+        disco.enable = true;
+        last.enable = true;
+        muc.enable = true;
+        /* TODO: merge correctly!
+        muc.options.host = "muc.${config.networking.hostName}";
+        */
+        muc.options.host = "muc.server1"; # XXX: UGLY!
+        muc.options.access.atom = "muc";
+        muc.options.access_create.atom = "muc_create";
+        muc_log.enable = true;
+        muc_log.options.outdir = "/tmp/muclogs";
+        muc_log.options.access_log.atom = "muc";
+        privacy.enable = true;
+        private.enable = true;
+        register.enable = true;
+        register.options.welcome_message = ""; # TODO?
+        /* TODO: merge correctly!
+        register.options.ip_access = [
+          { tuple = [ "allow" "127.0.0.1/8" ]; }
+          { tuple = [ "deny" "0.0.0.0/0" ]; }
+        ];
+        */
+        register.options.access.atom = "register";
+        roster.enable = true;
+        sic.enable = true;
+        vcard.enable = true;
+        vcard.options.allow_return_all = true;
+        vcard.options.search_all_hosts = true;
+        metrics.enable = true;
+        metrics.options.port = 8081;
+        # TODO/XXX: NOT enabled by default!
+        offline.enable = true;
+        offline.options.access_max_user_messages = {
+          atom = "max_user_offline_messages";
+        };
+      };
+      description = ''
+        Modules enabled for this particular virtual host.
+      '';
+    };
+
     extraConfig = mkOption {
       type = types.lines;
       default = null;
@@ -312,6 +357,11 @@ in {
 
     % authentication
     {auth_method, ${erlAtom config.authMethod}}.
+
+    % modules
+    {modules, [
+      ${config.modules.generatedConfig}
+    ]}.
 
     ${optionalString (config.extraConfig != null) ''
     % extra settings
