@@ -111,6 +111,13 @@ let
 
   netConfig = concatStrings (mapAttrsToList mkNetConfig cfg.vhosts);
 
+  generatedKeys = let
+    hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
+    getPrivkey = name: attrs: {
+      name = getPrivkeyFilename attrs.ssl.privateKey.value;
+      value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
+    };
+  in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
 in {
   options.headcounter.vhosts = mkOption {
     default = {};
@@ -118,6 +125,15 @@ in {
     options = [ domainOptions ];
     description = ''
       Domains/virtual host configuration.
+    '';
+  };
+
+  options.headcounter.useSnakeOil = mkOption {
+    type = types.bool;
+    default = false;
+    internal = true;
+    description = ''
+      Use snakeoil certificates for testing purposes.
     '';
   };
 
@@ -136,13 +152,22 @@ in {
 
       script = netConfig;
     };
-  } // optionalAttrs (options ? deployment) {
-    deployment.keys = let
-      hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
-      getPrivkey = name: attrs: {
-        name = getPrivkeyFilename attrs.ssl.privateKey.value;
-        value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
-      };
-    in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
-  });
+  } // (if (options ? deployment) then {
+    deployment.keys = generatedKeys;
+  } else mkIf cfg.useSnakeOil {
+    systemd.services.inject-keys = {
+      description = "Inject Snakeoil Keys";
+      wantedBy = [ "keys.target" ];
+      before = [ "keys.target" ];
+      unitConfig.DefaultDependencies = false;
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+      script = ''
+        mkdir -p /run/keys -m 0700
+      '' + concatStrings (mapAttrsToList (name: value: ''
+        cp "${pkgs.writeText name value}" "/run/keys/${name}"
+        chmod 600 "/run/keys/${name}"
+      '') generatedKeys);
+    };
+  }));
 }

@@ -14,15 +14,6 @@ let
     ssl = { inherit privateKey publicKey intermediateCert; };
   });
 in {
-  options.headcounter.useSnakeOil = mkOption {
-    type = types.bool;
-    default = false;
-    internal = true;
-    description = ''
-      Use snakeoil certificates for testing purposes.
-    '';
-  };
-
   config.headcounter.vhosts = {
     headcounter = withSSL {
       fqdn = "headcounter.org";
