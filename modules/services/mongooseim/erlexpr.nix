@@ -13,7 +13,7 @@ rec {
 
   erlString = val: "\"${escape ["\""] val}\"";
   erlInt = toString;
-  erlBool = val: toAtom (if val then "true" else "false");
+  erlBool = val: erlAtom (if val then "true" else "false");
   erlList = val: "[${concatStringsSep ", " (map toErl val)}]";
   erlTuple = val: "{${concatStringsSep ", " (map toErl val)}}";
 
