@@ -6,6 +6,7 @@
       imports = import ../modules/module-list.nix ++ [
         ../xmpp.nix ../domains.nix
       ];
+      headcounter.useSnakeOil = true;
     };
     benteflork = {};
   };
