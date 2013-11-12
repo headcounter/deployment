@@ -41,12 +41,12 @@ with import ./erlexpr.nix;
 */
 
 let
-  mkModuleEx = { description, deps ? [], odbc ? false }: name: {
+  mkModuleEx = { desc, deps ? [], odbc ? false }: name: {
     enable = mkOption rec {
       type = types.bool;
       default = attrByPath [ name "enable" ] false defaults;
       example = !default;
-      description = "Whether to enable the module for ${description}.";
+      description = "Whether to enable the module for ${desc}.";
     };
 
     options = mkOption {
@@ -58,10 +58,10 @@ let
     };
   };
 
-  mkModule = description: mkModuleEx { inherit description; };
-  mkModuleDeps = deps: description: mkModuleEx { inherit deps description; };
+  mkModule = desc: mkModuleEx { inherit desc; };
+  mkModuleDeps = deps: desc: mkModuleEx { inherit deps desc; };
   mkModuleDep = dep: mkModuleDeps (singleton dep);
-  mkModuleODBC = description: mkModuleEx { inherit description; odbc = true; };
+  mkModuleODBC = desc: mkModuleEx { inherit desc; odbc = true; };
 
   modules = {
     adhoc = mkModule "Ad-Hoc Commands (XEP-0050)";
