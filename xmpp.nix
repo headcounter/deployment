@@ -339,7 +339,7 @@ in {
 
         % S2S certificates
         ${concatStrings (mapAttrsToList (name: domain: ''
-        {domain_certfile, "${domain.fqdn}", "/tmp/TODO/${name}"}.
+        {domain_certfile, "${domain.fqdn}", "${domain.ssl.privateKey.path}"}.
         '') config.headcounter.vhosts)}
       '';
     };
