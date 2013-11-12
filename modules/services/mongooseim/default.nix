@@ -47,7 +47,10 @@ in {
 
     settings = mkOption {
       default = {};
-      type = types.submodule ./settings.nix;
+      type = types.submodule (import ./settings.nix {
+        inherit pkgs;
+        toplevelConfig = config;
+      });
       description = "Configuration settings.";
     };
   };

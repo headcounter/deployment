@@ -1,4 +1,4 @@
-{ defaults, toplevelConfig, pkgs }:
+{ pkgs, toplevelConfig, defaults, ... }:
 
 { config, ... }:
 

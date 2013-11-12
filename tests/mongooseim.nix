@@ -137,7 +137,6 @@ let
         atom = "max_user_offline_messages";
       };
       register.options.ip_access = [];
-      muc.options.host = "muc.${serverName}";
     };
 
     extraConfig = ''

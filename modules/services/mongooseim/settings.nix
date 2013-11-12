@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> {}, config, ... }:
+{ pkgs, toplevelConfig, ... }:
+
+{ config, ... }:
 
 with pkgs.lib;
 with import ./erlexpr.nix;
@@ -242,17 +244,13 @@ in {
 
     modules = mkOption {
       type = types.submodule (import ./modules.nix {
-        inherit pkgs;
-        toplevelConfig = config;
+        inherit pkgs toplevelConfig;
         defaults = {
           adhoc.enable = true;
           disco.enable = true;
           last.enable = true;
           muc.enable = true;
-          /* TODO: merge correctly!
           muc.options.host = "muc.${toplevelConfig.networking.hostName}";
-          */
-          muc.options.host = "muc.localhost"; # XXX: UGLY!
           muc.options.access.atom = "muc";
           muc.options.access_create.atom = "muc_create";
           muc_log.enable = true;
