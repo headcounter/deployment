@@ -52,12 +52,11 @@ let
   };
 
   mkCert = cn: stdenv.mkDerivation {
-    name = "snakeoil-${cn}";
+    name = "snakeoil-${cn}.nix";
     inherit buildInputs;
     buildCommand = ''
-      ensureDir "$out"
-      openssl genrsa -out "$out/private.key" 2048
-      openssl req -new -nodes -key "$out/private.key" -out crt.req <<INPUT
+      openssl genrsa -out private.key 2048
+      openssl req -new -nodes -key private.key -out crt.req <<INPUT
       DE
       Snakeoil
       Snakeoil
@@ -75,23 +74,32 @@ let
         -CAkey "${intermediate}/private.key" \
         -set_serial "0x${builtins.hashString "md5" cn}" \
         -days 40000 \
-        -out "$out/public.pem"
+        -out public.pem
 
-      if ! openssl verify -CAfile "${rootCA}/root.pem" "$out/public.pem"; then
-        cat "${intermediate}/intermediate.pem" "$out/public.pem" | \
+      if ! openssl verify -CAfile "${rootCA}/root.pem" public.pem; then
+        cat "${intermediate}/intermediate.pem" public.pem | \
           openssl verify -CAfile "${rootCA}/root.pem"
       else
-        echo "$out/public.pem verified successfully without using" >&2
+        echo "public.pem verified successfully without using" >&2
         echo "intermediate certificate. This should not happen!" >&2
         exit 1
       fi
+
+      cat > "$out" <<NIX
+      {
+      privateKey = '''
+      $(cat private.key)
+      ''';
+
+      publicKey = '''
+      $(cat public.pem)
+      ''';
+
+      intermediateCert = '''
+      $(cat "${intermediate}/intermediate.pem")
+      ''';
+      }
+      NIX
     '';
   };
-in cn: let
-  cert = mkCert cn;
-in {
-  privateKey = "${cert}/private.key";
-  publicKey = "${cert}/public.pem";
-  intermediateCert = "${intermediate}/intermediate.pem";
-  rootCert = "${rootCA}/root.pem";
-}
+in cn: import (mkCert cn)
