@@ -3,8 +3,8 @@
 {
   nodes = {
     ultron = {
-      imports = import ../modules/module-list.nix ++ [
-        ../xmpp.nix ../domains.nix
+      imports = import ../../modules/module-list.nix ++ [
+        ../../xmpp.nix ../../domains.nix
       ];
       headcounter.useSnakeOil = true;
     };
