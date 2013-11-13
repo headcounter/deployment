@@ -61,7 +61,9 @@ in {
           options.max_stanza_size = 131072;
           options.shaper = "s2s_shaper";
         };
-      in c2s ++ s2s ++ bosh) config.headcounter.vhosts) ++ [
+      in c2s ++ s2s ++ bosh) config.headcounter.vhosts) /* ++ [
+        FIXME: ejabberd_service doesn't exist anymore in MongooseIM!
+
         { port = 5280;
           address = "127.0.0.1";
           module = "mod_bosh";
@@ -81,7 +83,7 @@ in {
           options.hosts = singleton "msn.headcounter.org";
           options.password = "TODO";
         }
-      ];
+      ] */;
 
       modules = {
         /* FIXME: Not supported yet in MongooseIM
