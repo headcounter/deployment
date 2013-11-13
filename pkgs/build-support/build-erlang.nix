@@ -7,7 +7,7 @@
 
 with stdenv.lib;
 
-stdenv.mkDerivation (attrs // {
+stdenv.mkDerivation ({
   name = "${name}-${version}";
 
   buildInputs = buildInputs ++ [ erlang rebar ];
@@ -57,4 +57,4 @@ stdenv.mkDerivation (attrs // {
     packageName = name;
     inherit erlangDeps;
   };
-})
+} // removeAttrs attrs [ "name" "postPatch" "buildInputs" ])
