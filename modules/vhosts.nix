@@ -138,36 +138,38 @@ in {
   };
 
   config = mkIf (cfg.vhosts != {}) ({
-    systemd.services."post-network-setup" = {
-      description = "Network virtual host setup";
+    systemd.services = {
+      "post-network-setup" = {
+        description = "Network virtual host setup";
 
-      after = [ "network-setup.service" ];
-      before = [ "network.target" ];
-      wantedBy = [ "network.target" ];
+        after = [ "network-setup.service" ];
+        before = [ "network.target" ];
+        wantedBy = [ "network.target" ];
 
-      path = [ pkgs.iproute ];
+        path = [ pkgs.iproute ];
 
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
 
-      script = netConfig;
+        script = netConfig;
+      };
+    } // optionalAttrs cfg.useSnakeOil {
+      inject-keys = {
+        description = "Inject Snakeoil Keys";
+        wantedBy = [ "keys.target" ];
+        before = [ "keys.target" ];
+        unitConfig.DefaultDependencies = false;
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        script = ''
+          mkdir -p /run/keys -m 0700
+        '' + concatStrings (mapAttrsToList (name: value: ''
+          cp "${pkgs.writeText name value}" "/run/keys/${name}"
+          chmod 600 "/run/keys/${name}"
+        '') generatedKeys);
+      };
     };
-  } // (if (options ? deployment) then {
+  } // optionalAttrs (options ? deployment) {
     deployment.keys = generatedKeys;
-  } else mkIf cfg.useSnakeOil {
-    systemd.services.inject-keys = {
-      description = "Inject Snakeoil Keys";
-      wantedBy = [ "keys.target" ];
-      before = [ "keys.target" ];
-      unitConfig.DefaultDependencies = false;
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      script = ''
-        mkdir -p /run/keys -m 0700
-      '' + concatStrings (mapAttrsToList (name: value: ''
-        cp "${pkgs.writeText name value}" "/run/keys/${name}"
-        chmod 600 "/run/keys/${name}"
-      '') generatedKeys);
-    };
-  }));
+  });
 }
