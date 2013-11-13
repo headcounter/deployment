@@ -35,5 +35,9 @@ let
     reloader = callPackage ./erldeps/reloader.nix {};
     wsecli = callPackage ./erldeps/wsecli.nix {};
     wsock = callPackage ./erldeps/wsock.nix {};
+
+    xmppoke = callPackage ./xmppoke {
+      lua = pkgs.lua5;
+    };
   };
 in self
