@@ -151,9 +151,7 @@ in {
         privacy.enable = true;
         privacy.options.access.atom = "public";
 
-        # TODO: This was re-added in current master but
-        # doesn't exist in version 1.2.2!
-        #admin_extra.enable = true;
+        admin_extra.enable = true;
 
         disco.enable = true;
         disco.options = {
