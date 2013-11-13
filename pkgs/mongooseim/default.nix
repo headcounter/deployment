@@ -1,33 +1,18 @@
-{ stdenv, buildErlang, fetchurl, pam, zlib, openssl, expat
+{ stdenv, buildErlang, fetchgit, pam, zlib, openssl, expat
 , cuesport, redo, exml, lager, cowboy, folsom, mochijson2, alarms
 }:
 
 buildErlang rec {
   name = "esl-ejabberd";
-  version = "1.2.2";
+  version = "1.2.2-git";
 
-  src = fetchurl {
-    url = "https://elearning.erlang-solutions.com/binaries/"
-        + "sources/${name}-${version}.tar.gz";
-    sha256 = "1w3v5fhz9f717cxx9ywy418zfs73sgcwv9cpgnpzmbp4xbxmjp6m";
+  src = fetchgit {
+    url = "https://github.com/esl/ejabberd.git";
+    rev = "b09bcbedc0d2826ccbd9ad1b45558d7b9f95d6a3";
+    sha256 = "193jw4rdrk88gkrmhzgycjfmh0k5vcmnx50w4jp2b063w423lagr";
   };
 
-  patches = let
-    ghPatch = { rev, sha256 }: fetchurl {
-      url = "https://github.com/esl/ejabberd/commit/${rev}.patch";
-      inherit sha256;
-    };
-  in (map ghPatch [
-    { rev = "11bddb62c20b22e3991d5afcbaec3e5fd28c1828";
-      sha256 = "0d3i3x5x3k0cq8676vfk98p0sllhzbxxhpifak2sp8djmms3qlm2";
-    }
-    { rev = "e6508cab7e94a3d6359c30481f86c234f2fb87e0";
-      sha256 = "1ay02qh3xpqhv5g4fny7n95h8gvd4kbbp4m449r0zzd3yzb0lkzf";
-    }
-    { rev = "0385349f41791f558e802adf809d4fbf65ae360f";
-      sha256 = "0knza0mv62gkqnjyb1lnl4l9rwdjdbcqv14xwmr3c2nq6vzfihrm";
-    }
-  ]) ++ [ ./reltool.patch ./journald.patch ./systemd.patch ];
+  patches = [ ./reltool.patch ./journald.patch ./systemd.patch ];
 
   buildInputs = [ pam zlib openssl expat ];
   erlangDeps = [ cuesport redo exml lager cowboy folsom mochijson2 alarms ];
@@ -36,7 +21,7 @@ buildErlang rec {
     rebar generate
   '';
 
-  postInstall = ''
+  installPhase = ''
     cp -a rel/ejabberd "$out"
   '';
 

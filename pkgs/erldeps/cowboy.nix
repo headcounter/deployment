@@ -2,11 +2,11 @@
 
 buildErlang rec {
   name = "cowboy";
-  version = "0.8.3";
+  version = "0.8.6";
 
   src = fetchurl {
     url = "https://github.com/extend/cowboy/archive/${version}.tar.gz";
-    sha256 = "0b5y99blimfbmqxvf6jlgq3f7rl7igb7b8msc65ivskyv297i479";
+    sha256 = "1vl5kwp892m87yz3gnzw0ns7162p03q1j5zv05jf75fvx3vydx0j";
   };
 
   erlangDeps = [ ranch ];
