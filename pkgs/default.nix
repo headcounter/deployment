@@ -8,6 +8,7 @@ let
 
     mongooseim = callPackage ./mongooseim {};
     mongooseimTests = callPackage ./mongooseim/tests.nix {};
+    spectrum2 = callPackage ./spectrum2 {};
 
     # dependencies for mongooseim
     alarms = callPackage ./erldeps/alarms.nix {};
@@ -35,6 +36,11 @@ let
     reloader = callPackage ./erldeps/reloader.nix {};
     wsecli = callPackage ./erldeps/wsecli.nix {};
     wsock = callPackage ./erldeps/wsock.nix {};
+
+    # dependencies for spectrum2
+    libcommuni = callPackage ./spectrum2/libcommuni.nix {};
+    libpqxx = callPackage ./spectrum2/libpqxx.nix {};
+    swiften = callPackage ./spectrum2/swiften.nix {};
 
     xmppoke = callPackage ./xmppoke {
       lua = pkgs.lua5;
