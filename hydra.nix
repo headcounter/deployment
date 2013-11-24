@@ -16,7 +16,7 @@ in {
   imports = [ ./hydra/hydra-module.nix ];
 
   services.hydra = {
-    inherit hydra;
+    package = hydra;
     enable = true;
     hydraURL = "https://headcounter.org/hydra/";
     notificationSender = "hydra@headcounter.org";
