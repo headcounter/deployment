@@ -7,9 +7,9 @@ buildErlang rec {
   version = "1.2.2-git";
 
   src = fetchgit {
-    url = "https://github.com/esl/ejabberd.git";
-    rev = "b09bcbedc0d2826ccbd9ad1b45558d7b9f95d6a3";
-    sha256 = "193jw4rdrk88gkrmhzgycjfmh0k5vcmnx50w4jp2b063w423lagr";
+    url = "https://github.com/esl/MongooseIM.git";
+    rev = "301303b3d232b88d257c61a2611bc0bd56ce0d0f";
+    sha256 = "19nc90mbhl178k9bbqm2pycz4g82jlfx0zxz74zg0c39v71l77f8";
   };
 
   patches = [ ./reltool.patch ./journald.patch ./systemd.patch ];
