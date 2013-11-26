@@ -10,9 +10,31 @@ in {
 
   resources.sshKeyPairs."hydra-build" = {};
 
-  ultron = mkMachine {
+  ultron = { pkgs, ... }: mkMachine {
     imports = [ ./machines/ultron.nix ];
     deployment.hetzner.mainIPv4 = "5.9.105.142";
+
+    systemd.services."legacy-portfw" = {
+      description = "Port forwarding to old server";
+      after = [ "network-interfaces.target" ];
+      before = [ "network.target" ];
+      wantedBy = [ "network.target" ];
+
+      path = [ pkgs.iptables ];
+
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+
+      script = with pkgs.lib; ''
+        ${flip concatMapStrings [ 5222 5223 5269 ] (port: ''
+        iptables -t nat -A PREROUTING -p tcp --dport ${toString port} \
+          -j DNAT --to-destination 88.198.198.219:${toString port}
+        iptables -t nat -A POSTROUTING -p tcp --dport ${toString port} \
+          -j MASQUERADE
+        '')}
+        echo 1 > /proc/sys/net/ipv4/ip_forward
+      '';
+    };
   };
 
   benteflork = mkMachine {
