@@ -15,11 +15,6 @@ in {
     deployment.hetzner.mainIPv4 = "5.9.105.142";
   };
 
-  taalo = mkMachine {
-    imports = [ ./hydra-slave.nix ];
-    deployment.hetzner.mainIPv4 = "144.76.61.117";
-  };
-
   benteflork = mkMachine {
     imports = [ ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.202.147";
