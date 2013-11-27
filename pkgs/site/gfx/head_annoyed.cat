@@ -1,0 +1,50 @@
+: plain                   : ansi                    :
+|    _...._     _...._    |    BBBBBB     BBBBBB    |
+|  .' .-'~       ~`-. `.  |  BB BBBB       BBBB BB  |
+| (  (               )  ) | B  B               B  B |
+| (  `.             .'  ) | B  BB             BB  B |
+| `.   `.,       ,.'   .' | BB   BBB       BBB   BB |
+|   `,  .`-._ _.-'.  ,'   |   BB  ccccc ccccc  BB   |
+|     |' :   ~   : `|     |     cc r   c   r cc     |
+|     |.'#`.   .'#`.|     |     cKKRKK   KKRKKc     |
+|     |`-, '' `` ,-'|     |     cKKK KK KK KKKc     |
+|     |    .-^-.    |     |     c    KKKKK    c     |
+|     `-|   `^'   |-' :   |     ccc   KKK   ccc K   |
+|    :  |_.'. .'._|  :    |    K  ccccw wcccc  K    |
+|     : `.||vvv||,'  :    |     K wwcWWWWWcww  K    |
+|     : `.:.   .:.'   :   |     K wwcW   Wcww   K   |
+|          ^^^^^          |          WWWWW          |
+--
+: plain                   : ansi                    :
+|    _...._     _...._    |    BBBBBB     BBBBBB    |
+|  .' .-'~       ~`-. `.  |  BB BBBB       BBBB BB  |
+| (  (               )  ) | B  B               B  B |
+| (  `.             .'  ) | B  BB             BB  B |
+| `.   `.,       ,.'   .' | BB   BBB       BBB   BB |
+|   `,  .`-._ _.-'.  ,'   |   BB  ccccc ccccc  BB   |
+|     |' :   ~   : `|     |     cc r   c   r cc     |
+|     |.'O`.   .'O`.|     |     cKKRKK   KKRKKc     |
+|     |` : '' `` : '|     |     cK r KK KK r Kc     |
+|     |    .-^-.    | .   |     c    KKKKK    c K   |
+|     `-|   `^'   |-'     |     ccc   KKK   ccc     |
+|     : |_.v   v._| ::    |     K cccW   Wccc XK    |
+|   ::  `.||"""||,'  :    |   KK  wwcWWWWWcww  K    |
+|  :     `:.   .:'    :   |  K     wcW   Wcw    K   |
+|          |^^^|          |          WWWWW          |
+--
+: plain                   : ansi                    :
+|    _...._     _...._    |    BBBBBB     BBBBBB    |
+|  .' .-'~       ~`-. `.  |  BB BBBB       BBBB BB  |
+| (  (               )  ) | B  B               B  B |
+| (  `.             .'  ) | B  BB             BB  B |
+| `.   `.,       ,.'   .' | BB   BBB       BBB   BB |
+|   `,  .`-._ _.-'.  ,'   |   BB  ccccc ccccc  BB   |
+|     |' :   ~   : `|     |     cc r   c   r cc     |
+|     |`-#-.   .-#-'|     |     cKKRKK   KKRKKc     |
+|     |    "   "    |     |     c    K   K    c     |
+|     |    .-^-.    |     |     c    KKKKK    c     |
+|     `-|   `^'   |-'     |     ccc   KKK   ccc     |
+|    :  |_.v   v._|  ::   |    K  cccW   Wccc  KK   |
+|   ::  `.\ """ /,' ::    |   KK  wwC WWW Cww KK    |
+|    :  `.:|^^^|:.'  :    |    K  wwcWWWWWcww  K    |
+|                         |                         |
