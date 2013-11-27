@@ -46,8 +46,8 @@ in stdenv.mkDerivation {
     <meta charset="UTF-8">
     <script src="headcounter.js"></script>
     <noscript>
-    Please either <a href="https://jabber.headcounter.org/">continue here</a> or
-    enable JavaScript.
+    Please either <a href="https://jabber.headcounter.org/">continue to the old
+    site</a>, use <code>telnet headcounter.org</code> or enable JavaScript.
     </noscript>
     HTML
   '';
