@@ -85,4 +85,29 @@ in {
       '';
     };
   };
+
+  users.extraGroups.telnetsite = {};
+  users.extraUsers.telnetsite = {
+    description = "Headcounter Telnet Site User";
+    group = "telnetsite";
+  };
+
+  systemd.sockets."telnet-site" = {
+    description = "Headcounter Telnet Socket";
+    wantedBy = [ "sockets.target" ];
+    before = [ "multi-user.target" ];
+    socketConfig.ListenStream = 23;
+    socketConfig.Accept = true;
+  };
+
+  systemd.services."telnet-site@" = {
+    description = "Headcounter Telnet Site";
+    serviceConfig.User = "telnetsite";
+    serviceConfig.Group = "telnetsite";
+    serviceConfig.PrivateTmp = true;
+    serviceConfig.PrivateNetwork = true;
+    serviceConfig.ExecStart = "${pkgs.telnet}/sbin/in.telnetd -h -L "
+                            + "${mainSite}/bin/headcounter";
+    serviceConfig.StandardInput = "socket";
+  };
 }

@@ -1,4 +1,4 @@
-{ stdenv, fetchgit, fetchurl, srcOnly, unzip, haxe, neko }:
+{ stdenv, fetchgit, fetchurl, srcOnly, makeWrapper, unzip, haxe, neko }:
 
 let
   hase = fetchgit {
@@ -21,7 +21,7 @@ in stdenv.mkDerivation {
 
   src = ./site;
 
-  buildInputs = [ haxe neko ];
+  buildInputs = [ haxe neko makeWrapper ];
 
   outputs = [ "out" "html" ];
 
@@ -56,5 +56,7 @@ in stdenv.mkDerivation {
     ensureDir "$out/bin" "$html"
     install build/Headcounter "$out/bin/headcounter"
     cp -t "$html" headcounter.js index.html
+    wrapProgram "$out/bin/headcounter" \
+      --set LD_LIBRARY_PATH "${hxcpp}/bin/Linux64"
   '';
 }
