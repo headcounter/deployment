@@ -148,7 +148,7 @@ class Head extends hase.display.Sprite
         this.head_annoyed.fps = 5;
         this.head_annoyed.z = -1;
         this.add_child(this.head_normal);
-        this.timer = 60;
+        this.timer = 30;
     }
 
     public override function update(td:Float):Void
