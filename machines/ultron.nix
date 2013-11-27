@@ -3,6 +3,9 @@
 with pkgs.lib;
 
 let
+  mainSite = (import ../pkgs {
+    inherit pkgs;
+  }).site;
   genSSLVHost = vhost: configuration: let
     genConf = sock: {
       type = "static";
@@ -46,6 +49,13 @@ in {
   services.headcounter.lighttpd = {
     enable = true;
 
+    configuration = ''
+      mimetype.assign = (
+        ".html" => "text/html",
+        ".js" => "text/javascript"
+      )
+    '';
+
     modules.proxy.enable = true;
     modules.magnet.enable = true;
     modules.setenv.enable = true;
@@ -68,12 +78,12 @@ in {
         )))
       } # http://redmine.lighttpd.net/issues/1268
       else $HTTP["url"] =~ "" {
-        url.redirect = ( "^/(.*)" => "https://jabber.headcounter.org/$1" )
+        server.document-root = "${mainSite}"
       }
     '' ++ singleton {
       socket = ":80";
       socketConfig = ''
-        url.redirect = ( "^/(.*)" => "https://jabber.headcounter.org/$1" )
+        url.redirect = ( "^/(.*)" => "https://headcounter.org/$1" )
       '';
     };
   };
