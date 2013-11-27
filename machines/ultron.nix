@@ -76,7 +76,7 @@ in {
         )))
       } # http://redmine.lighttpd.net/issues/1268
       else $HTTP["url"] =~ "" {
-        server.document-root = "${mainSite}"
+        server.document-root = "${mainSite.html}"
       }
     '' ++ singleton {
       socket = ":80";

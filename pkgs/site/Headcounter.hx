@@ -198,10 +198,12 @@ class Headcounter implements hase.Application
         center.y = Std.int((this.root.height - center.height) / 2);
         this.root.add_child(center);
 
+#if js
         js.Browser.document.onclick = function(_) {
             js.Browser.document.location.href =
                 "https://jabber.headcounter.org/";
         };
+#end
     }
 
     public function update(td:Float):Void {}
