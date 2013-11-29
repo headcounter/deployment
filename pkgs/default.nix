@@ -10,7 +10,7 @@ let
     mongooseimTests = callPackage ./mongooseim/tests.nix {};
     spectrum2 = callPackage ./spectrum2 {};
 
-    site = callPackage ./site.nix {};
+    site = callPackage ./site {};
 
     # dependencies for mongooseim
     alarms = callPackage ./erldeps/alarms.nix {};

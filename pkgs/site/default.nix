@@ -19,7 +19,7 @@ let
 in stdenv.mkDerivation {
   name = "headcounter-site";
 
-  src = ./site;
+  src = ./frontend;
 
   buildInputs = [ haxe neko makeWrapper ];
 
