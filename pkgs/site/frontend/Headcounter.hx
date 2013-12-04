@@ -49,15 +49,15 @@ class Digit extends hase.display.Sprite
         if (percent > 0.9)
             this.roll("-".code, tsym, "-".code,  8, 11,  8);
         else if (percent > 0.8)
-            this.roll("~".code, tsym, "~".code,  8, 11,  8);
+            this.roll("~".code, tsym, "~".code, 15, 11, 15);
         else if (percent > 0.6)
-            this.roll(tsym, "~".code, fsym,      3,  7,  3);
+            this.roll(tsym, "~".code, fsym,      3, 15,  3);
         else if (percent > 0.5)
-            this.roll(tsym, "-".code, fsym,      3,  7,  3);
+            this.roll(tsym, "-".code, fsym,      3, 15,  3);
         else if (percent > 0.4)
-            this.roll(tsym, "_".code, fsym,      3,  7,  3);
+            this.roll(tsym, "_".code, fsym,      3, 15,  3);
         else if (percent > 0.2)
-            this.roll("_".code, fsym, "_".code,  8, 11,  8);
+            this.roll("_".code, fsym, "_".code, 15, 11, 15);
         else
             this.roll("-".code, fsym, "-".code,  8, 11,  8);
 
