@@ -1,5 +1,5 @@
 [
-  ./vhosts.nix
-  ./services/mongooseim
+  ./config/vhosts.nix
   ./services/lighttpd.nix
+  ./services/mongooseim
 ]
