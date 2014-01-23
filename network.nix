@@ -37,9 +37,12 @@ in {
     };
   };
 
-  taalo = mkMachine {
+  taalo = { pkgs, config, ... }: mkMachine {
     imports = [ ./hydra.nix ./chromium.nix ];
     deployment.hetzner.mainIPv4 = "188.40.96.202";
+    deployment.encryptedLinksTo = [ "ultron" ];
+    services.hydra.listenHost = pkgs.lib.mkForce
+      config.networking.p2pTunnels.ssh.ultron.localIPv4;
   };
 
   benteflork = mkMachine {

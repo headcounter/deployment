@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, nodes, ... }:
 
 with pkgs.lib;
 
@@ -6,6 +6,9 @@ let
   mainSite = (import ../pkgs {
     inherit pkgs;
   }).site;
+
+  hydraIPv4 = nodes.taalo.config.networking.p2pTunnels.ssh.ultron.localIPv4;
+
   genSSLVHost = vhost: configuration: let
     genConf = sock: {
       type = "static";
@@ -71,7 +74,7 @@ in {
         )
         proxy.balance = "hash"
         proxy.server = ("/hydra" => ((
-          "host" => "127.0.0.1",
+          "host" => "${hydraIPv4}",
           "port" => 3000
         )))
       } # http://redmine.lighttpd.net/issues/1268
