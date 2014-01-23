@@ -22,7 +22,7 @@ let
     };
   in [ (genConf vhost.ipv4) (genConf "[${vhost.ipv6}]") ];
 in {
-  imports = [ ../hydra.nix ../domains.nix ../chromium.nix ];
+  imports = [ ../domains.nix ];
 
   deployment.hetzner.partitions = ''
     clearpart --all --initlabel --drives=sda,sdb

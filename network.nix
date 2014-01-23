@@ -37,6 +37,11 @@ in {
     };
   };
 
+  taalo = mkMachine {
+    imports = [ ./hydra.nix ./chromium.nix ];
+    deployment.hetzner.mainIPv4 = "188.40.96.202";
+  };
+
   benteflork = mkMachine {
     imports = [ ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.202.147";
