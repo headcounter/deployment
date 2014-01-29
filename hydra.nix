@@ -44,7 +44,7 @@ in {
   environment.etc."nix/signing-key.sec".source = "/run/keys/signkey.priv";
 
   services.postgresql.enable = true;
-  services.postgresql.package = pkgs.postgresql92;
+  services.postgresql.package = pkgs.postgresql93;
   services.postgresql.authentication = ''
     local hydra hydra peer
   '';
