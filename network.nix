@@ -40,6 +40,26 @@ in {
   taalo = { pkgs, config, ... }: mkMachine {
     imports = [ ./hydra.nix ./chromium.nix ];
     deployment.hetzner.mainIPv4 = "188.40.96.202";
+
+    fileSystems."/".options = pkgs.lib.concatStringsSep "," [
+      "autodefrag"
+      "space_cache"
+      "inode_cache"
+      "compress=lzo"
+      "noatime"
+    ];
+
+    deployment.hetzner.partitions = ''
+      clearpart --all --initlabel --drives=sda,sdb
+
+      part swap1 --size=10000 --label=swap1 --fstype=swap --ondisk=sda
+      part swap2 --size=10000 --label=swap2 --fstype=swap --ondisk=sdb
+
+      part btrfs.1 --grow --ondisk=sda
+      part btrfs.2 --grow --ondisk=sdb
+
+      btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
+    '';
     deployment.encryptedLinksTo = [ "ultron" ];
     services.hydra.listenHost = pkgs.lib.mkForce
       config.networking.p2pTunnels.ssh.ultron.localIPv4;
