@@ -289,11 +289,14 @@ in {
 
   config = mkIf config.services.headcounter.lighttpd.enable {
     users.extraUsers = singleton {
+      uid = 498;
       name = cfg.user;
       description = "Lighttpd user";
+      group = cfg.group;
     };
 
     users.extraGroups = singleton {
+      gid = 499;
       name = cfg.group;
     };
 

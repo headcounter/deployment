@@ -89,8 +89,10 @@ in {
     };
   };
 
-  users.extraGroups.telnetsite = {};
+/*
+  users.extraGroups.telnetsite.gid = 497;
   users.extraUsers.telnetsite = {
+    uid = 496;
     description = "Headcounter Telnet Site User";
     group = "telnetsite";
   };

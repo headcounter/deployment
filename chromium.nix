@@ -3,8 +3,9 @@
 let
   home = "/home/nixpkgs-chromium";
 in {
-  users.extraGroups.nixpkgsupdate = {};
+  users.extraGroups.nixpkgsupdate.gid = 2011;
   users.extraUsers.nixpkgsupdate = {
+    uid = 2011;
     description = "NixPkgs update user";
     group = "nixpkgsupdate";
     inherit home;

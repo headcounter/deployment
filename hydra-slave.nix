@@ -41,12 +41,12 @@ in {
   '';
 
   users.extraUsers.hydrabuild = {
+    uid = 1000;
     description = "Hydra build user";
     group = "users";
     home = "/home/hydrabuild";
     useDefaultShell = true;
     createHome = true;
-    isSystemUser = false;
     openssh.authorizedKeys.keys = [
       resources.sshKeyPairs."hydra-build".publicKey
       nixosSSHKey

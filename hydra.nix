@@ -24,6 +24,8 @@ in {
     listenHost = "localhost";
   };
 
+  users.extraUsers.hydra.uid = 2000;
+
   nix.maxJobs = mkForce 0;
   nix.distributedBuilds = true;
   nix.buildMachines = flip mapAttrsToList buildNodes (hostName: node: {
