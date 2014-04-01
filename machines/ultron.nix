@@ -39,6 +39,8 @@ in {
     btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
   '';
 
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   fileSystems."/".options = concatStringsSep "," [
     "autodefrag"
     "space_cache"
