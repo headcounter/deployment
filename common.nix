@@ -18,6 +18,7 @@
     '';
   };
 
+  nixpkgs.config.allowUnfree = true;
   hardware.cpu.intel.updateMicrocode = true;
 
   time.timeZone = "Europe/Berlin";
