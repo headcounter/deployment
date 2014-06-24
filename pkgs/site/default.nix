@@ -3,8 +3,8 @@
 let
   hase = fetchgit {
     url = "git://github.com/aszlig/hase.git";
-    rev = "e2c4f105f7f74651b81b48400a120246acecfe0a";
-    sha256 = "1f3z0n3bswd18wxmgy4n8ygb0yz54zla5qyhp9z885mg41pxyl6w";
+    rev = "ad2107172a14bd4e024ca49b1bf285b13ab2fd56";
+    sha256 = "1j3bkk4vrzzriv0rkn4iyyx43bb09ys0hwvpp0naqqzjc5a9p2df";
   };
 
   hxcpp = srcOnly rec {
