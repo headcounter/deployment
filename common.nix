@@ -2,6 +2,8 @@
 {
   deployment.targetEnv = "hetzner";
 
+  networking.firewall.enable = false;
+
   environment.systemPackages = with pkgs; [
     htop iotop
   ];
