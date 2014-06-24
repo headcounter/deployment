@@ -69,4 +69,14 @@ in {
     imports = [ ./hydra-slave.nix ];
     deployment.hetzner.mainIPv4 = "144.76.202.147";
   };
+
+  dugee = mkMachine {
+    imports = [ ./dns-server.nix ];
+    deployment.hetzner.mainIPv4 = "78.46.182.124";
+  };
+
+  gussh = mkMachine {
+    imports = [ ./dns-server.nix ];
+    deployment.hetzner.mainIPv4 = "78.47.142.38";
+  };
 }
