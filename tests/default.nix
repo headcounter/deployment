@@ -1,13 +1,13 @@
 { nixpkgs ? <nixpkgs>
 , system ? builtins.currentSystem
-, minimal ? false
 }:
 
-with import "${nixpkgs}/nixos/lib/testing.nix" {
-  inherit system minimal;
-};
-
-{
-  mongooseim = makeTest (import ./mongooseim.nix);
-  headcounter = makeTest (import ./headcounter);
+let
+  callTest = fn: args: import fn ({
+    inherit (nixpkgs) pkgs;
+    inherit system;
+  } // args);
+in {
+  mongooseim = callTest ./mongooseim.nix {};
+  headcounter = callTest ./headcounter {};
 }

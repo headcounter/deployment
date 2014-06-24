@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }:
 
 let
   localPkgs = import ../pkgs {
@@ -264,4 +264,4 @@ in {
       }
     });
   '';
-}
+})

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }:
 
 {
   nodes = {
@@ -15,4 +15,4 @@
     startAll;
     $ultron->waitForUnit("mongooseim.service");
   '';
-}
+})
