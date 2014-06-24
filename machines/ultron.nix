@@ -91,7 +91,6 @@ in {
     };
   };
 
-/*
   users.extraGroups.telnetsite.gid = 497;
   users.extraUsers.telnetsite = {
     uid = 496;
