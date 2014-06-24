@@ -8,11 +8,11 @@ let
   };
 
   hxcpp = srcOnly rec {
-    name = "hxcpp-3.0.2";
+    name = "hxcpp-3.1.39";
     src = fetchurl {
       name = "${name}.zip";
-      url = "http://lib.haxe.org/files/3.0/hxcpp-3,0,2.zip";
-      sha256 = "1wbx6m0cqz2zwg2dkf53czpwvfww0cdjmv9a61qsfrshjpss8dn9";
+      url = "http://lib.haxe.org/files/3.0/hxcpp-3,1,39.zip";
+      sha256 = "0g1phsxrhy01gq9p5h61mibb6abr11h1i3zlbadrbswpglf7c8j2";
     };
     buildInputs = [ unzip ];
   };
