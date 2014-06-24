@@ -108,12 +108,16 @@ in {
 
   systemd.services."telnet-site@" = {
     description = "Headcounter Telnet Site";
-    serviceConfig.User = "telnetsite";
-    serviceConfig.Group = "telnetsite";
-    serviceConfig.PrivateTmp = true;
-    serviceConfig.PrivateNetwork = true;
-    serviceConfig.ExecStart = "${pkgs.telnet}/sbin/in.telnetd -h -L "
-                            + "${mainSite}/bin/headcounter";
-    serviceConfig.StandardInput = "socket";
+    serviceConfig = {
+      User = "telnetsite";
+      Group = "telnetsite";
+      PrivateTmp = true;
+      PrivateNetwork = true;
+      ExecStart = "-${pkgs.telnet}/sbin/in.telnetd -h -L "
+                + "${mainSite}/bin/headcounter";
+      StandardInput = "socket";
+      MemoryLimit = "10M";
+      OOMScoreAdjust = 1000;
+    };
   };
 }
