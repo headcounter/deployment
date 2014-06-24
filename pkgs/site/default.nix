@@ -21,7 +21,7 @@ in stdenv.mkDerivation {
 
   src = ./frontend;
 
-  buildInputs = [ haxe neko makeWrapper ];
+  buildInputs = [ haxe neko ];
 
   outputs = [ "out" "html" ];
 
@@ -38,6 +38,9 @@ in stdenv.mkDerivation {
     echo "${hxcpp}" > hxcpp/.dev
 
     haxe -main Headcounter -cpp build -lib hase -dce full -D HXCPP_M64
+    patchelf --set-rpath "${hxcpp}/bin/Linux64:${stdenv.gcc.gcc}/lib64" \
+      build/Headcounter
+
     haxe -main Headcounter -lib hase -js headcounter.js -dce full
 
     cat > index.html <<HTML
@@ -56,7 +59,5 @@ in stdenv.mkDerivation {
     ensureDir "$out/bin" "$html"
     install build/Headcounter "$out/bin/headcounter"
     cp -t "$html" headcounter.js index.html
-    wrapProgram "$out/bin/headcounter" \
-      --set LD_LIBRARY_PATH "${hxcpp}/bin/Linux64"
   '';
 }
