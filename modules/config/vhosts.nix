@@ -115,7 +115,7 @@ let
     hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
     getPrivkey = name: attrs: {
       name = getPrivkeyFilename attrs.ssl.privateKey.value;
-      value = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
+      value.text = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
     };
   in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
 in {

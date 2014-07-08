@@ -39,8 +39,8 @@ in {
     supportedFeatures = [ "kvm" "nixos-test" ];
   });
 
-  deployment.keys."signkey.priv" = readFile ./ssl/signing-key.sec;
-  deployment.keys."buildkey.priv" = buildKey;
+  deployment.keys."signkey.priv".text = readFile ./ssl/signing-key.sec;
+  deployment.keys."buildkey.priv".text = buildKey;
   deployment.storeKeysOnMachine = false;
 
   environment.etc."nix/signing-key.sec".source = "/run/keys/signkey.priv";
