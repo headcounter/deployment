@@ -26,8 +26,6 @@ let
   '';
 
 in {
-  deployment.alwaysActivate = false;
-
   deployment.hetzner.partitions = ''
     clearpart --all --initlabel --drives=sda,sdb
 
