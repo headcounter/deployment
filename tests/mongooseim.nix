@@ -178,6 +178,7 @@ in {
         enable = true;
         settings = mkConfig server1;
       };
+      networking.firewall.enable = false;
     };
 
     server2 = { config, pkgs, ... }: {
@@ -186,6 +187,7 @@ in {
         enable = true;
         settings = mkConfig server2;
       };
+      networking.firewall.enable = false;
     };
 
     client = {};

@@ -8,8 +8,11 @@ import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }:
       ];
       headcounter.useSnakeOil = true;
       users.extraUsers.mongoose.extraGroups = [ "keys" ];
+      networking.firewall.enable = false;
     };
-    benteflork = {};
+    benteflork = {
+      networking.firewall.enable = false;
+    };
   };
 
   testScript = ''
