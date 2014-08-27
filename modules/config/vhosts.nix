@@ -163,10 +163,12 @@ in {
         serviceConfig.Type = "oneshot";
         serviceConfig.RemainAfterExit = true;
         script = ''
-          mkdir -p /run/keys -m 0700
+          mkdir -p /run/keys -m 0750
+          chown root:keys /run/keys
         '' + concatStrings (mapAttrsToList (name: value: ''
-          cp "${pkgs.writeText name value}" "/run/keys/${name}"
-          chmod 600 "/run/keys/${name}"
+          cp "${pkgs.writeText name value.text}" "/run/keys/${name}"
+          chmod 640 "/run/keys/${name}"
+          chown root:keys "/run/keys/${name}"
         '') generatedKeys);
       };
     };

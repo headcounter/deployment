@@ -7,6 +7,7 @@ import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }:
         ../../xmpp.nix ../../domains.nix
       ];
       headcounter.useSnakeOil = true;
+      users.extraUsers.mongoose.extraGroups = [ "keys" ];
     };
     benteflork = {};
   };

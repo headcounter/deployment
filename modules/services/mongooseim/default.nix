@@ -84,15 +84,6 @@ in {
       serviceConfig.PrivateTmp = true;
       serviceConfig.PermissionsStartOnly = true;
 
-      # XXX: Base this on the key files used in the configuration rathor than
-      # making every key available!
-      preStart = ''
-        if [ -e /run/keys ]; then
-        ${pkgs.acl}/bin/setfacl -m u:mongoose:x /run/keys
-        ${pkgs.acl}/bin/setfacl -m u:mongoose:r /run/keys/*
-        fi
-      '';
-
       serviceConfig.ExecStart = concatStringsSep " " [
         "@${pkgs.erlang}/bin/erl" "mongooseim"
         "-sasl releases_dir \\\"${package}/releases\\\""
