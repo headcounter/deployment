@@ -342,7 +342,7 @@ in {
         % S2S certificates
         ${concatStrings (mapAttrsToList (name: domain: ''
         {domain_certfile, "${domain.fqdn}", "${domain.ssl.privateKey.path}"}.
-        '') config.headcounter.vhosts)}
+        '') (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts))}
       '';
     };
   };

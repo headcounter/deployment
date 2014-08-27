@@ -7,8 +7,9 @@ let
 
   domainOptions = {
     fqdn = mkOption {
+      default = null;
       example = "example.com";
-      type = types.uniq types.string;
+      type = types.nullOr (types.uniq types.string);
       description = ''
         The fully qualified domain name.
       '';
