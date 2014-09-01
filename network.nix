@@ -79,4 +79,10 @@ in {
     imports = [ ./dns-server.nix ];
     deployment.hetzner.mainIPv4 = "78.47.142.38";
   };
-}
+} // (if builtins.pathExists ./private/default.nix then {
+  unzervalt = { nodes, lib, ... }: {
+    deployment.targetEnv = "container";
+    deployment.container.host = nodes.ultron.config;
+    imports = [ ./private ];
+  };
+} else {})

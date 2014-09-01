@@ -97,7 +97,15 @@ in {
       else $HTTP["url"] =~ "" {
         server.document-root = "${mainSite.html}"
       }
-    '';
+    '' ++ optionals (hasAttr "unzervalt" nodes) (genIPv46VHosts misc ([{
+      socketConfig = ''
+        proxy.balance = "hash"
+        proxy.server = ("" => ((
+          "host" => "${nodes.unzervalt.config.networking.privateIPv4}",
+          "port" => 80
+        )))
+      '';
+    }]));
   };
 
   users.extraGroups.telnetsite.gid = 497;
