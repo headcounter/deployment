@@ -3,17 +3,24 @@
 with pkgs.lib;
 
 let
-  mainSite = (import ../pkgs {
-    inherit pkgs;
-  }).site;
+  ownpkgs = import ../pkgs { inherit pkgs; };
+  mainSite = ownpkgs.site;
 
   hydraIPv4 = nodes.taalo.config.networking.p2pTunnels.ssh.ultron.localIPv4;
 
-  genSSLVHost = vhost: configuration: let
-    genConf = sock: {
+  genIPv46VHosts = vhost: scfg: let
+    getSocketPort = s: last (splitString ":" s);
+    processNode = addr: node: node // {
+      socket = "${addr}:${getSocketPort (node.socket or "80")}";
+    };
+  in optionals (vhost.ipv4 != null) (map (processNode vhost.ipv4) scfg) ++
+     optionals (vhost.ipv6 != null) (map (processNode "[${vhost.ipv6}]") scfg);
+
+  genSSLVHosts = vhost: configuration: genIPv46VHosts vhost [
+    {
       type = "static";
       on = vhost.fqdn;
-      socket = "${sock}:443";
+      socket = ":443";
 
       socketConfig = ''
         ssl.engine  = "enable"
@@ -22,8 +29,14 @@ let
       '';
 
       inherit configuration;
-    };
-  in [ (genConf vhost.ipv4) (genConf "[${vhost.ipv6}]") ];
+    }
+    {
+      socket = ":80";
+      socketConfig = ''
+        url.redirect = ( "^/(.*)" => "https://headcounter.org/$1" )
+      '';
+    }
+  ];
 in {
   imports = [ ../domains.nix ];
 
@@ -51,6 +64,7 @@ in {
 
   services.headcounter.lighttpd = {
     enable = true;
+    defaultPort = null;
 
     configuration = ''
       mimetype.assign = (
@@ -64,7 +78,7 @@ in {
     modules.setenv.enable = true;
     modules.redirect.enable = true;
 
-    virtualHosts = with config.headcounter.vhosts; genSSLVHost headcounter ''
+    virtualHosts = with config.headcounter.vhosts; genSSLVHosts headcounter ''
       $HTTP["url"] =~ "^/hydra(?:$|/)" {
         magnet.attract-physical-path-to = ( "${pkgs.writeText "rewrite.lua" ''
         if string.sub(lighty.env["request.uri"], 1, 6) == "/hydra" then
@@ -83,12 +97,7 @@ in {
       else $HTTP["url"] =~ "" {
         server.document-root = "${mainSite.html}"
       }
-    '' ++ singleton {
-      socket = ":80";
-      socketConfig = ''
-        url.redirect = ( "^/(.*)" => "https://headcounter.org/$1" )
-      '';
-    };
+    '';
   };
 
   users.extraGroups.telnetsite.gid = 497;
