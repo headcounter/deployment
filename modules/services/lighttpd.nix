@@ -13,7 +13,11 @@ let
 
   lightyConf = ''
     server.document-root = ${lightyEscape cfg.defaultDocroot}
+    ${if cfg.defaultPort != null then ''
     server.port = ${toString cfg.defaultPort}
+    '' else ''
+    server.bind = "/run/lighttpd-dummy.socket"
+    ''}
     server.modules = (${toLightyList (map (x: "mod_" + x) enabledModules)})
     server.username = ${lightyEscape cfg.user}
     server.groupname = ${lightyEscape cfg.group}
@@ -109,7 +113,7 @@ in {
 
     defaultPort = mkOption {
       default = 80;
-      type = types.int;
+      type = types.nullOr types.int;
       description = "Default port where lighttpd should listen on.";
     };
 
