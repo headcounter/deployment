@@ -8,6 +8,8 @@
     htop iotop
   ];
 
+  services.openntpd.enable = true;
+
   nix = {
     package = pkgs.nixUnstable;
     nrBuildUsers = 100;
