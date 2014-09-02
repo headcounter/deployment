@@ -6,6 +6,7 @@ let
   ownpkgs = import ../pkgs { inherit pkgs; };
   mainSite = ownpkgs.site;
 
+  unzervaltIPv4 = nodes.unzervalt.config.networking.privateIPv4;
   hydraIPv4 = nodes.taalo.config.networking.p2pTunnels.ssh.ultron.localIPv4;
 
   genIPv46VHosts = vhost: scfg: let
@@ -106,6 +107,25 @@ in {
         )))
       '';
     }]));
+  };
+
+  systemd.sockets."unzervalt-ssh" = mkIf (hasAttr "unzervalt" nodes) {
+    description = "SSH proxy socket to Unzervalt";
+    wantedBy = [ "sockets.target" ];
+    #before = [ "multi-user.target" ];
+    socketConfig.ListenStream = [
+      "${config.headcounter.vhosts.misc.ipv4}:22"
+      "[${config.headcounter.vhosts.misc.ipv6}]:22"
+    ];
+  };
+
+  systemd.services."unzervalt-ssh" = mkIf (hasAttr "unzervalt" nodes) {
+    description = "SSH proxy to Unzervalt";
+    serviceConfig = {
+      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd"
+                + " ${unzervaltIPv4}:2222";
+      PrivateTmp = true;
+    };
   };
 
   users.extraGroups.telnetsite.gid = 497;
