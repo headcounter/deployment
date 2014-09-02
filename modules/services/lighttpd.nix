@@ -120,6 +120,7 @@ in {
     virtualHosts = mkOption {
       default = [];
       # TODO: Flesh out type information!
+      type = types.listOf types.attrs;
       description = "Virtual host definitions.";
       example = [
         {
