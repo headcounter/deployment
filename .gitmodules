@@ -1,3 +1,6 @@
 [submodule "hydra"]
 	path = hydra
 	url = https://github.com/NixOS/hydra.git
+[submodule "private"]
+	path = private
+	url = git@github.com:headcounter/private-deployment.git
