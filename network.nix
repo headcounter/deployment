@@ -10,9 +10,14 @@ in {
 
   resources.sshKeyPairs."hydra-build" = {};
 
-  ultron = { pkgs, ... }: mkMachine {
+  ultron = { pkgs, lib, config, ... }: mkMachine {
     imports = [ ./machines/ultron.nix ];
     deployment.hetzner.mainIPv4 = "5.9.105.142";
+
+    services.openssh.extraConfig = lib.mkAfter ''
+      ListenAddress ${config.deployment.hetzner.mainIPv4}
+      ListenAddress [2a01:4f8:162:4187::]
+    '';
 
     systemd.services."legacy-portfw" = {
       description = "Port forwarding to old server";
