@@ -49,7 +49,6 @@ in {
     fileSystems."/".options = pkgs.lib.concatStringsSep "," [
       "autodefrag"
       "space_cache"
-      "inode_cache"
       "compress=lzo"
       "noatime"
     ];
