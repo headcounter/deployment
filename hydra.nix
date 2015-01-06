@@ -3,7 +3,20 @@
 with pkgs.lib;
 
 let
-  hydraRelease = import ./hydra/release.nix {};
+  hydraSrc = pkgs.fetchFromGitHub {
+    repo = "hydra";
+    owner = "NixOS";
+    rev = "a12135fc51f21affd66003e8fba2b8414ffc26e1";
+    sha256 = "1sf8647nbppil00380qz0zr0bp2a7gdm9y820y28ky0z94rn03xp";
+  };
+
+  hydraRelease = import "${hydraSrc}/release.nix" {
+    inherit hydraSrc;
+    officialRelease = true;
+  };
+
+  hydraModule = import "${hydraSrc}/hydra-module.nix";
+
   hydra = builtins.getAttr config.nixpkgs.system hydraRelease.build;
 
   buildUser = "hydrabuild";
@@ -13,7 +26,7 @@ let
 
   buildKey = resources.sshKeyPairs."hydra-build".privateKey;
 in {
-  imports = [ ./hydra/hydra-module.nix ];
+  imports = singleton hydraModule;
 
   services.hydra = {
     package = hydra;
