@@ -1,4 +1,4 @@
-{ buildErlang, fetchFromGitHub, escalus, exml, mustache, katt, proper }:
+{ buildErlang, fetchFromGitHub, erlangPackages }:
 
 buildErlang rec {
   name = "ejabberd_tests";
@@ -15,7 +15,7 @@ buildErlang rec {
     erlc -Ideps/exml/include -o ebin run_common_test.erl
   '';
 
-  erlangDeps = [ escalus exml mustache katt proper ];
+  erlangDeps = with erlangPackages; [ escalus exml mustache katt proper ];
 
   postInstall = ''
     ensureDir "$out/etc"

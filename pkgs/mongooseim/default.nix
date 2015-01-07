@@ -1,6 +1,5 @@
 { stdenv, buildErlang, fetchFromGitHub, pam, zlib, openssl, expat
-, alarms, cowboy, cuesport, exml, folsom, lager, mochijson2, p1CacheTab
-, p1Stringprep, redo, fusco, seestar, proper, pa, ecoveralls
+, erlangPackages
 }:
 
 buildErlang rec {
@@ -27,9 +26,9 @@ buildErlang rec {
   '';
 
   buildInputs = [ pam zlib openssl expat ];
-  erlangDeps = [
-    alarms cowboy cuesport exml folsom lager mochijson2 p1CacheTab p1Stringprep
-    redo fusco seestar proper pa ecoveralls
+  erlangDeps = with erlangPackages; [
+    alarms cowboy cuesport exml folsom lager mochijson2 p1_cache_tab
+    p1_stringprep redo fusco seestar proper pa ecoveralls
   ];
 
   postBuild = ''
