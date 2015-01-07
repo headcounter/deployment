@@ -1,18 +1,95 @@
 { pkgs, buildErlang }:
 
 let
-  inherit (pkgs) fetchFromGitHub;
+  ghe = version: owner: name: with pkgs.lib; let
+    fixOvr = overrides.${name} or {};
 
-  ghe = name: version: owner: sha256: overrides: buildErlang ({
-    inherit name version;
-    src = fetchFromGitHub ({
-      rev = version;
-      repo = name;
-      inherit owner sha256;
-    } // (overrides.src or {}));
-  } // builtins.removeAttrs overrides ["src"]);
+    erlAttrs = ovr: {
+      inherit name version;
+      src = {
+        rev = revMap.${name} or version;
+        repo = ovr.name or name;
+        sha256 = getAttr name shaSums;
+        inherit owner;
+      } // (ovr.src or {});
+    } // optionalAttrs ((depMap self) ? ${name}) {
+      erlangDeps = (depMap self).${name};
+    } // removeAttrs ovr ["src"];
 
-  shas = {
+    overrideFun = overrideFuns.${name} or id;
+
+    stage1 = erlAttrs fixOvr;
+    stage2 = erlAttrs (fixOvr // overrideFun stage1);
+
+  in buildErlang (stage2 // {
+    src = pkgs.fetchFromGitHub stage2.src;
+  });
+
+  overrides = {
+    exml.buildInputs = [ pkgs.expat ];
+    hamcrest.src.repo = "hamcrest-erlang";
+    katt.postPatch = ''
+      patchShebangs priv/compile-parser
+    '';
+    mustache.src.repo = "mustache.erl";
+    p1_cache_tab.src.repo = "cache_tab";
+    p1_stringprep.src.repo = "stringprep";
+    proper.postPatch = ''
+      patchShebangs write_compile_flags
+    '';
+    rebarFR.name = "rebar_feature_runner";
+  };
+
+  overrideFuns = {
+    cucumberl = pkg: {
+      postPatch = ''
+        sed -i -e 's/git/"${pkg.version}"/' examples/*/src/*.app.src
+      '';
+    };
+  } // pkgs.lib.genAttrs [ "jsx" "proper" ] (pkgs.lib.const (pkg: {
+    src = (pkg.src or {}) // { rev = "v${pkg.version}"; };
+  }));
+
+  revMap = {
+    alarms        = "dcd64216c5fffcdde80e779b161f195a03294a8a";
+    base16        = "ec420aa4ce0fb971f155274c606e00188a2ed37d";
+    cucumberl     = "3f2cca66ed87a53a64177232428ffde606bdcb9a";
+    cuesport      = "3b16d99d8bc41774dbc4dabad8054b4423dec5a6";
+    ecoveralls    = "0e52c4709f763d512e6972e91330977cfedb3d13";
+    espec         = "44dd72b8924425f09ad1093226ce0c755524a507";
+    fusco         = "78650a15cf244065ab3ee74dafb8efabfd73575d";
+    hamcrest      = "7215234e14a7c82458829c542edbf2899ceedbd3";
+    lhttpc        = "3c7fdeee241b6813efddcb08ad1697186780d385";
+    mochijson2    = "3663fb01fd98958181adc2d1300c7bfa553e1434";
+    mochijson3    = "1a1c913ac80bb45d3de5fbd74d21e96c45e9e844";
+    mustache      = "c0154ce140d7c5b088eee6aaa05226b388583ef4";
+    p1_cache_tab  = "7b89d6afb66d8ff9d56671864be74654f5b18e2f";
+    p1_stringprep = "9e9e0f8dbe6a70ef36e1d4436b458ca5a77fbcfb";
+    p1_utils      = "9e646e4ff343e8e902410fa1fe28803202b7e340";
+    rebarFR       = "bcbf1ba233a5f8388f6d530c707d98db2021a48a";
+    redo          = "7c7eaef4cd65271e2fc4ea88587e848407cf0762";
+    reloader      = "9dd05d613c2abe563bc1c472950b96d2a832663b";
+    seestar       = "94b17823f182fef20f878b19ea20761c00795879";
+    wsecli        = "752d062af4fc943414505ce846d5317d003d2dbc";
+  };
+
+  depMap = epkgs: with epkgs; {
+    alarms       = [ folsom ];
+    cowboy       = [ ranch cowlib ];
+    ecoveralls   = [ jsx ];
+    escalus      = [ exml fusco base16 lhttpc wsecli ];
+    espec        = [ reloader ];
+    folsom       = [ bear meck ];
+    katt         = [ mochijson3 lhttpc neotoma meck ];
+    lager        = [ goldrush ];
+    mustache     = [ meck ];
+    p1_cache_tab = [ p1_utils ];
+    pa           = [ proper ];
+    seestar      = [ edown ];
+    wsecli       = [ espec cucumberl hamcrest meck rebarFR wsock ];
+  };
+
+  shaSums = {
     alarms        = "1xdk05iq691qxjzb25znyc4s9q3j006jgxkqvnwagd46yz6bnlx0";
     base16        = "0kq6x40543sc2bkphj5pf83m9sc6knf5j83nihpp2x7wp6n704sk";
     bear          = "1x80qwyx56xclqhmcpdg082w1pbsw8jc9fa79hqy6q5i419w2wrg";
@@ -51,156 +128,45 @@ let
     wsecli        = "1zddpvrm7lqx51d34plaql5ka8m9nazc7ycpmgb4b0jsdc2q39vx";
     wsock         = "1k5qwbh82jawwpa0j7x04nc379j9pzdsa42nj7j2ahpla786np0v";
   };
-in rec {
-  alarms = ghe "alarms" "0.1" "chrzaszcz" shas.alarms {
-    src.rev = "dcd64216c5fffcdde80e779b161f195a03294a8a";
-    erlangDeps = [ folsom ];
+
+  self = pkgs.lib.mapAttrs (n: f: f n) {
+    alarms        = ghe "0.1"      "chrzaszcz";
+    base16        = ghe "0.1"      "goj";
+    bear          = ghe "0.1.3"    "boundary";
+    cowboy        = ghe "1.0.1"    "ninenines";
+    cowlib        = ghe "1.0.1"    "ninenines";
+    cucumberl     = ghe "0.0.5"    "madtrick";
+    cuesport      = ghe "0.1"      "goj";
+    ecoveralls    = ghe "0.1"      "nifoc";
+    edown         = ghe "0.4"      "esl";
+    escalus       = ghe "2.6.0"    "esl";
+    espec         = ghe "1"        "lucaspiller";
+    exml          = ghe "2.1.5"    "esl";
+    folsom        = ghe "0.7.4"    "boundary";
+    fusco         = ghe "0.0.0"    "esl";
+    goldrush      = ghe "0.1.6"    "DeadZen";
+    hamcrest      = ghe "0.1.0"    "hyperthunk";
+    jsx           = ghe "2.4.0"    "talentdeficit";
+    katt          = ghe "1.3.0-rc" "for-GET";
+    lager         = ghe "2.1.0"    "basho";
+    lhttpc        = ghe "1.2.6"    "esl";
+    meck          = ghe "0.8.1"    "eproxus";
+    mochijson2    = ghe "0.1"      "bjnortier";
+    mochijson3    = ghe "1.0"      "tophitpoker";
+    mustache      = ghe "0.1.0"    "mojombo";
+    neotoma       = ghe "1.7.2"    "seancribbs";
+    p1_cache_tab  = ghe "0.1.0"    "processone";
+    p1_stringprep = ghe "0.1.0"    "processone";
+    p1_utils      = ghe "1"        "processone";
+    pa            = ghe "0.2.0"    "lavrin";
+    proper        = ghe "1.1"      "manopapad";
+    ranch         = ghe "1.1.0"    "ninenines";
+    rebarFR       = ghe "0.1"      "madtrick";
+    redo          = ghe "1.1.0"    "JacobVorreuter";
+    reloader      = ghe "1"        "lucaspiller";
+    seestar       = ghe "0.0.1"    "iamaleksey";
+    wsecli        = ghe "1"        "madtrick";
+    wsock         = ghe "1.0.2"    "madtrick";
   };
 
-  base16 = ghe "base16" "0.1" "goj" shas.base16 {
-    src.rev = "ec420aa4ce0fb971f155274c606e00188a2ed37d";
-  };
-
-  bear = ghe "bear" "0.1.3" "boundary" shas.bear {};
-
-  cowboy = ghe "cowboy" "1.0.1" "ninenines" shas.cowboy {
-    erlangDeps = [ ranch cowlib ];
-  };
-
-  cowlib = ghe "cowlib" "1.0.1" "ninenines" shas.cowlib {};
-
-  cucumberl = ghe "cucumberl" "0.0.5" "madtrick" shas.cucumberl {
-    src.rev = "3f2cca66ed87a53a64177232428ffde606bdcb9a";
-    postPatch = ''
-      sed -i -e 's/git/"0.0.5"/' examples/*/src/*.app.src
-    '';
-  };
-
-  cuesport = ghe "cuesport" "0.1" "goj" shas.cuesport {
-    src.rev = "3b16d99d8bc41774dbc4dabad8054b4423dec5a6";
-  };
-
-  ecoveralls = ghe "ecoveralls" "0.1" "nifoc" shas.ecoveralls {
-    src.rev = "0e52c4709f763d512e6972e91330977cfedb3d13";
-    erlangDeps = [ jsx ];
-  };
-
-  edown = ghe "edown" "0.4" "esl" shas.edown {};
-
-  escalus = ghe "escalus" "2.6.0" "esl" shas.escalus {
-    erlangDeps = [ exml fusco base16 lhttpc wsecli ];
-  };
-
-  espec = ghe "espec" "1" "lucaspiller" shas.espec {
-    src.rev = "44dd72b8924425f09ad1093226ce0c755524a507";
-    erlangDeps = [ reloader ];
-  };
-
-  exml = ghe "exml" "2.1.5" "esl" shas.exml {
-    buildInputs = [ pkgs.expat ];
-  };
-
-  folsom = ghe "folsom" "0.7.4" "boundary" shas.folsom {
-    erlangDeps = [ bear meck ];
-  };
-
-  fusco = ghe "fusco" "0.0.0" "esl" shas.fusco {
-    src.rev = "78650a15cf244065ab3ee74dafb8efabfd73575d";
-  };
-
-  goldrush = ghe "goldrush" "0.1.6" "DeadZen" shas.goldrush {};
-
-  hamcrest = ghe "hamcrest" "0.1.0" "hyperthunk" shas.hamcrest {
-    src.repo = "hamcrest-erlang";
-    src.rev = "7215234e14a7c82458829c542edbf2899ceedbd3";
-  };
-
-  jsx = ghe "jsx" "2.4.0" "talentdeficit" shas.jsx {
-    src.rev = "v2.4.0"; # XXX
-  };
-
-  katt = ghe "katt" "1.3.0-rc" "for-GET" shas.katt {
-    postPatch = ''
-      patchShebangs priv/compile-parser
-    '';
-    erlangDeps = [ mochijson3 lhttpc neotoma meck ];
-  };
-
-  lager = ghe "lager" "2.1.0" "basho" shas.lager {
-    erlangDeps = [ goldrush ];
-  };
-
-  lhttpc = ghe "lhttpc" "1.2.6" "esl" shas.lhttpc {
-    src.rev = "3c7fdeee241b6813efddcb08ad1697186780d385";
-  };
-
-  meck = ghe "meck" "0.8.1" "eproxus" shas.meck {};
-
-  mochijson2 = ghe "mochijson2" "0.1" "bjnortier" shas.mochijson2 {
-    src.rev = "3663fb01fd98958181adc2d1300c7bfa553e1434";
-  };
-
-  mochijson3 = ghe "mochijson3" "1.0" "tophitpoker" shas.mochijson3 {
-    src.rev = "1a1c913ac80bb45d3de5fbd74d21e96c45e9e844";
-  };
-
-  mustache = ghe "mustache" "0.1.0" "mojombo" shas.mustache {
-    src.repo = "mustache.erl";
-    src.rev = "c0154ce140d7c5b088eee6aaa05226b388583ef4";
-    erlangDeps = [ meck ];
-  };
-
-  neotoma = ghe "neotoma" "1.7.2" "seancribbs" shas.neotoma {};
-
-  p1_cache_tab = ghe "p1_cache_tab" "0.1.0" "processone" shas.p1_cache_tab {
-    src.repo = "cache_tab";
-    src.rev = "7b89d6afb66d8ff9d56671864be74654f5b18e2f";
-    erlangDeps = [ p1_utils ];
-  };
-
-  p1_stringprep = ghe "p1_stringprep" "0.1.0" "processone" shas.p1_stringprep {
-    src.repo = "stringprep";
-    src.rev = "9e9e0f8dbe6a70ef36e1d4436b458ca5a77fbcfb";
-  };
-
-  p1_utils = ghe "p1_utils" "1" "processone" shas.p1_utils {
-    src.rev = "9e646e4ff343e8e902410fa1fe28803202b7e340";
-  };
-
-  pa = ghe "pa" "0.2.0" "lavrin" shas.pa {
-    erlangDeps = [ proper ];
-  };
-
-  proper = ghe "proper" "1.1" "manopapad" shas.proper {
-    src.rev = "v1.1"; # XXX
-    postPatch = ''
-      patchShebangs write_compile_flags
-    '';
-  };
-
-  ranch = ghe "ranch" "1.1.0" "ninenines" shas.ranch {};
-
-  rebarFR = ghe "rebar_feature_runner" "0.1" "madtrick" shas.rebarFR {
-    src.rev = "bcbf1ba233a5f8388f6d530c707d98db2021a48a";
-  };
-
-  redo = ghe "redo" "1.1.0" "JacobVorreuter" shas.redo {
-    src.rev = "7c7eaef4cd65271e2fc4ea88587e848407cf0762";
-  };
-
-  reloader = ghe "reloader" "1" "lucaspiller" shas.reloader {
-    src.rev = "9dd05d613c2abe563bc1c472950b96d2a832663b";
-  };
-
-  seestar = ghe "seestar" "0.0.1" "iamaleksey" shas.seestar {
-    src.rev = "94b17823f182fef20f878b19ea20761c00795879";
-    erlangDeps = [ edown ];
-  };
-
-  wsecli = ghe "wsecli" "1" "madtrick" shas.wsecli {
-    src.rev = "752d062af4fc943414505ce846d5317d003d2dbc";
-    erlangDeps = [ espec cucumberl hamcrest meck rebarFR wsock ];
-  };
-
-  wsock = ghe "wsock" "1.0.2" "madtrick" shas.wsock {};
-}
+in self
