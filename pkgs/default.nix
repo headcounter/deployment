@@ -17,15 +17,29 @@ let
     alarms = callPackage ./erldeps/alarms.nix {};
     bear = callPackage ./erldeps/bear.nix {};
     cowboy = callPackage ./erldeps/cowboy.nix {};
+    cowlib = callPackage ./erldeps/cowlib.nix {};
     cuesport = callPackage ./erldeps/cuesport.nix {};
+    ecoveralls = callPackage ./erldeps/ecoveralls.nix {};
+    edown = callPackage ./erldeps/edown.nix {};
     exml = callPackage ./erldeps/exml.nix {};
     folsom = callPackage ./erldeps/folsom.nix {};
+    fusco = callPackage ./erldeps/fusco.nix {};
     goldrush = callPackage ./erldeps/goldrush.nix {};
+    jsx = callPackage ./erldeps/jsx.nix {};
+    katt = callPackage ./erldeps/katt.nix {};
     lager = callPackage ./erldeps/lager.nix {};
     meck = callPackage ./erldeps/meck.nix {};
     mochijson2 = callPackage ./erldeps/mochijson2.nix {};
+    mochijson3 = callPackage ./erldeps/mochijson3.nix {};
+    neotoma = callPackage ./erldeps/neotoma.nix {};
+    p1CacheTab = callPackage ./erldeps/p1-cache-tab.nix {};
+    p1Utils = callPackage ./erldeps/p1-utils.nix {};
+    p1Stringprep = callPackage ./erldeps/p1-stringprep.nix {};
+    pa = callPackage ./erldeps/pa.nix {};
+    proper = callPackage ./erldeps/proper.nix {};
     ranch = callPackage ./erldeps/ranch.nix {};
     redo = callPackage ./erldeps/redo.nix {};
+    seestar = callPackage ./erldeps/seestar.nix {};
 
     # dependencies for mongooseim tests
     base16 = callPackage ./erldeps/base16.nix {};

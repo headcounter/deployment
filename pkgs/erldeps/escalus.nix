@@ -1,17 +1,15 @@
-{ buildErlang, fetchurl, exml, base16, lhttpc, wsecli }:
+{ buildErlang, fetchFromGitHub, exml, fusco, base16, lhttpc, wsecli }:
 
 buildErlang rec {
   name = "escalus";
-  version = "2.1.2";
+  version = "2.6.0";
 
-  src = fetchurl {
-    url = "https://github.com/esl/escalus/archive/${version}.tar.gz";
-    sha256 = "13jsv11990lh3kn5m011274gcfl95zaibnfp1idvbln3ldwwb784";
+  src = fetchFromGitHub {
+    owner = "esl";
+    repo = "escalus";
+    rev = version;
+    sha256 = "1p5bdjhdaxhl47z8b8awv0wa6hsm4590d5x61zib2nnphhpblnn7";
   };
 
-  postPatch = ''
-    sed -i -e '/exml/s|"2\.0\.0"|"2.0.1"|' rebar.config
-  '';
-
-  erlangDeps = [ exml base16 lhttpc wsecli ];
+  erlangDeps = [ exml fusco base16 lhttpc wsecli ];
 }

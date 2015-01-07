@@ -1,13 +1,15 @@
-{ buildErlang, fetchurl, ranch }:
+{ buildErlang, fetchFromGitHub, ranch, cowlib }:
 
 buildErlang rec {
   name = "cowboy";
-  version = "0.8.6";
+  version = "1.0.1";
 
-  src = fetchurl {
-    url = "https://github.com/extend/cowboy/archive/${version}.tar.gz";
-    sha256 = "1vl5kwp892m87yz3gnzw0ns7162p03q1j5zv05jf75fvx3vydx0j";
+  src = fetchFromGitHub {
+    owner = "ninenines";
+    repo = "cowboy";
+    rev = version;
+    sha256 = "020as7fjjgl48g75q82z31fhw7pdnwyp0an788vfivjf0v6knakm";
   };
 
-  erlangDeps = [ ranch ];
+  erlangDeps = [ ranch cowlib ];
 }

@@ -1,13 +1,13 @@
 { buildErlang, fetchFromGitHub }:
 
 buildErlang rec {
-  name = "ranch";
-  version = "1.1.0";
+  name = "cowlib";
+  version = "1.0.1";
 
   src = fetchFromGitHub {
-    repo = "ranch";
+    repo = "cowlib";
     owner = "ninenines";
     rev = version;
-    sha256 = "02b6nzdllrym90a5bhzlz4s52hyj9vwcn048na4j5jiivknm8g3r";
+    sha256 = "1vrv5dgrqvdvm45g7chwmbfjyx9hd7wdk5fmzdlmv7zxagz0albc";
   };
 }

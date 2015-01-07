@@ -1,12 +1,13 @@
-{ buildErlang, fetchgit }:
+{ buildErlang, fetchFromGitHub }:
 
-buildErlang {
+buildErlang rec {
   name = "goldrush";
-  version = "0.1.2";
+  version = "0.1.6";
 
-  src = fetchgit {
-    url = "https://github.com/DeadZen/goldrush.git";
-    rev = "879c69874a555b2c13498aa4a3da6f6bbbb6a031";
-    sha256 = "0n14csjn3m6bddfayv37x53rydhmb8aabx7qbh1kc4mv12rx15yf";
+  src = fetchFromGitHub {
+    owner = "DeadZen";
+    repo = "goldrush";
+    rev = version;
+    sha256 = "0fhi3jidn40gri49scvqvavqxh0ggfllx4xii8yqrs0l2l4lq9b5";
   };
 }
