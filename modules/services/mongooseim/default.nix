@@ -11,7 +11,7 @@ let
   vmArgsFile = pkgs.writeText "vm.args" ''
     -sname ${cfg.nodeName}
     # XXX: sensitve stuff!
-    -setcookie ejabberd
+    -setcookie mongooseim
     +K true
     +A 5
     +P 10000000
@@ -24,7 +24,7 @@ in {
     enable = mkEnableOption "MongooseIM";
 
     nodeName = mkOption {
-      default = "ejabberd@${config.networking.hostName}";
+      default = "mongooseim@${config.networking.hostName}";
       type = types.str;
       description = "Erlang OTP node name";
     };
@@ -64,7 +64,7 @@ in {
       createHome = true;
     };
 
-    systemd.services.mongooseim = {
+    systemd.services.mongooseim = rec {
       description = "MongooseIM XMPP Server";
       wantedBy = [ "multi-user.target" ];
       requires = [ "keys.target" ];
@@ -72,7 +72,7 @@ in {
 
       environment.EMU = "beam";
       environment.ROOTDIR = package;
-      environment.PROGNAME = "ejabberd";
+      environment.PROGNAME = "mongooseim";
       environment.EJABBERD_CONFIG_PATH = if cfg.configFile != null
                                          then cfg.configFile
                                          else cfg.settings.generatedConfigFile;
@@ -88,8 +88,7 @@ in {
         "@${pkgs.erlang}/bin/erl" "mongooseim"
         "-sasl releases_dir \\\"${package}/releases\\\""
         "-mnesia dir \\\"${cfg.databaseDir}\\\""
-        # XXX: Don't hardcode release version!
-        "-boot ${package}/releases/0.1/ejabberd"
+        "-boot ${package}/releases/${environment.PROGNAME}"
         "-boot_var RELTOOL_EXT_LIB ${package}/lib"
         "-config ${package}/etc/app.config"
         "-args_file ${vmArgsFile}"
