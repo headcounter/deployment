@@ -232,6 +232,9 @@ in {
                      '-e \'s/localhost/${server1}/g\' '.
                      'tests/*.erl vcard.config');
 
+    # Disable mongooseimctl test (Too SysV'ish right now)
+    $client->succeed('sed -i -e \'/ejabberdctl_SUITE/d\' default.spec');
+
     my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
     chomp $clientip;
     $client->succeed("sed -i -e 's/127\\.0\\.0\\.1/$clientip/' ".
