@@ -70,7 +70,6 @@ let
     redo          = "7c7eaef4cd65271e2fc4ea88587e848407cf0762";
     reloader      = "9dd05d613c2abe563bc1c472950b96d2a832663b";
     seestar       = "94b17823f182fef20f878b19ea20761c00795879";
-    wsecli        = "752d062af4fc943414505ce846d5317d003d2dbc";
   };
 
   depMap = epkgs: with epkgs; {
@@ -99,7 +98,7 @@ let
     cuesport      = "0r89p9g5ps7rbd06rzzpyr7d3vm18bl9wpxy3sj2f551km248jbq";
     ecoveralls    = "0p5apdzfncn60rkg7lvn2dvkqh0jcqiq7ba177lvccw7grvmnd0s";
     edown         = "0sq7hc7mmcv8maxg2map9czr2772gsbrjsr1gffk7r5f12lc7ffv";
-    escalus       = "1p5bdjhdaxhl47z8b8awv0wa6hsm4590d5x61zib2nnphhpblnn7";
+    escalus       = "01cqhpx40pwjzx5lzwm64ggyfbg3r88jacm2xdvaax1h7ib2crwc";
     espec         = "1k070c54f6kcdk3ciipq9y651cmdci7g67kqmb4r1gib2y1apzad";
     exml          = "1qmixn7i4gvc080pvhy9c0pwlswyshnghwavg4y36x1sl8rhcv7g";
     folsom        = "0xfi5r4z0wq7sjpcyhc2w19jqj8g8qr9ifdrv77p5gj84rx1fxbq";
@@ -125,8 +124,8 @@ let
     redo          = "14hg2jcs3qyl7aaz8ni9h8s97kjs0ksdfnh25m3hava7ga45jq1c";
     reloader      = "1ansv02klh9i53gmvxjk7vl83nsvyada58xn1pmc9gid0cl5vnl4";
     seestar       = "13l47hj7lm9ciqyk0rk3pzllj12141jcqkr5j7hpnwg44j4xd8wm";
-    wsecli        = "1zddpvrm7lqx51d34plaql5ka8m9nazc7ycpmgb4b0jsdc2q39vx";
-    wsock         = "1k5qwbh82jawwpa0j7x04nc379j9pzdsa42nj7j2ahpla786np0v";
+    wsecli        = "010jv736h5f8w6n6zkz3s5cn4p6i54wvg7fnnk0db8m8lykzf9m2";
+    wsock         = "1z8i4k8fja05s4pxy3y32hmc8mh1wc5s2i8gw5q3j0klci2sqsxq";
   };
 
   self = pkgs.lib.mapAttrs (n: f: f n) {
@@ -139,7 +138,7 @@ let
     cuesport      = ghe "0.1"      "goj";
     ecoveralls    = ghe "0.1"      "nifoc";
     edown         = ghe "0.4"      "esl";
-    escalus       = ghe "2.6.0"    "esl";
+    escalus       = ghe "2.6.1"    "esl";
     espec         = ghe "1"        "lucaspiller";
     exml          = ghe "2.1.5"    "esl";
     folsom        = ghe "0.7.4"    "boundary";
@@ -162,11 +161,11 @@ let
     proper        = ghe "1.1"      "manopapad";
     ranch         = ghe "1.1.0"    "ninenines";
     rebarFR       = ghe "0.1"      "madtrick";
-    redo          = ghe "1.1.0"    "JacobVorreuter";
+    redo          = ghe "1.1.0"    "jkvor";
     reloader      = ghe "1"        "lucaspiller";
     seestar       = ghe "0.0.1"    "iamaleksey";
-    wsecli        = ghe "1"        "madtrick";
-    wsock         = ghe "1.0.2"    "madtrick";
+    wsecli        = ghe "1.1.1"    "madtrick";
+    wsock         = ghe "1.1.5"    "madtrick";
   };
 
 in self
