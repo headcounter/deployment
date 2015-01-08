@@ -70,9 +70,12 @@ let
   modules = {
     adhoc = mkModule "Ad-Hoc Commands (${xep "0050"})";
     admin_extra = mkModule "Administrative functions and commands";
+    amp = mkModule "Advanced Message Processing (${xep "0079"})";
     bosh = mkModule "XMPP over Bosh service (HTTP Binding)";
+    carboncopy = mkModule "Carbon Copies (${xep "0280"})";
     disco = mkModule "Service Discovery (${xep "0030"})";
     last = mkModuleODBC "Last Activity (${xep "0012"})";
+    mam = mkModule "Message Archive Management (${xep "0313"})";
     metrics = mkModule "MongooseIM metrics";
     muc = mkModule "Multi-User Chat (${xep "0045"})";
     muc_log = mkModuleDep "mod_muc" "Multi-User Chat room logging";
@@ -84,6 +87,7 @@ let
     roster = mkModuleODBC "Roster management (XMPP IM)";
     sic = mkModule "Server IP Check (${xep "0279"})";
     snmp = mkModule "SNMP support";
+    stream_management = mkModule "Stream management (${xep "0198"})";
     vcard = mkModuleODBC "vcard-temp (${xep "0054"})";
     websockets = mkModule "Websocket support";
   };
