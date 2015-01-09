@@ -6,7 +6,7 @@ rec {
     numbers = stringToCharacters "0123456789";
     allowed = lowerChars ++ upperChars ++ numbers ++ ["@" "_"];
     inRange = range: chr: any (c: c == chr) range;
-    needsEscape = chrList: inRange (upperChars ++ numbers) (head chrList) ||
+    needsEscape = chrList: !inRange lowerChars (head chrList) ||
                            !all (inRange allowed) chrList;
   in if needsEscape (stringToCharacters val)
      then "'${escape ["'"] val}'"
