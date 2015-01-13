@@ -147,7 +147,7 @@ in {
     };
 
     defaultDocroot = mkOption {
-      default = pkgs.runCommand "empty" {} "ensureDir $out";
+      default = pkgs.runCommand "empty" {} "mkdir -p \"$out\"";
       type = types.path;
       description = "Default document root.";
     };

@@ -7,7 +7,7 @@ let
     name = "snakeoil-ca-root";
     inherit buildInputs;
     buildCommand = ''
-      ensureDir "$out"
+      mkdir -p "$out"
       openssl genrsa -out "$out/private.key" 2048
       openssl req -x509 -new -nodes -key "$out/private.key" -days 40000 \
         -extensions v3_ca -out "$out/root.pem" <<INPUT
@@ -26,7 +26,7 @@ let
     name = "snakeoil-ca-intermediate";
     inherit buildInputs;
     buildCommand = ''
-      ensureDir "$out"
+      mkdir -p "$out"
       openssl genrsa -out "$out/private.key" 2048
       openssl req -new -nodes -key "$out/private.key" -days 40000 \
         -extensions v3_ca -out intermediate.csr <<INPUT

@@ -8,7 +8,7 @@ let
 
   installPlainLua = ''
     find . -type f -name '*.lua' -print | while read path; do
-      ensureDir "$out/share/lua/${luaVersion}/$(dirname "$path")"
+      mkdir -p "$out/share/lua/${luaVersion}/$(dirname "$path")"
       cp -v "$path" "$out/share/lua/${luaVersion}/$path"
     done
   '';
@@ -114,11 +114,11 @@ in stdenv.mkDerivation {
     pathString = concatStringsSep ";" (map mkPath luaPaths ++ luaAbsPaths);
     cPathString = concatStringsSep ";" (map mkCPath luaPaths ++ luaAbsCPaths);
   in installPlainLua + ''
-    ensureDir "$out/share/lua/${luaVersion}/net"
+    mkdir -p "$out/share/lua/${luaVersion}/net"
     ln -s "${prosody}/lib/prosody/net/server_select.lua" \
       "$out/share/lua/${luaVersion}/net/server.lua"
 
-    ensureDir "$out/share/xmppoke"
+    mkdir -p "$out/share/xmppoke"
     cp -v schema.sqlite3.sql "$out/share/xmppoke/schema.sql"
 
     makeWrapper "${lua}/bin/lua $out/share/lua/${luaVersion}/poke.lua" \

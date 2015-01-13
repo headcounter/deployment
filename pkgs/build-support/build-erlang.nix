@@ -29,7 +29,7 @@ stdenv.mkDerivation ({
     runHook preConfigure
     ${concatMapStrings (dep: ''
       header "linking erlang dependency ${dep}"
-      ensureDir deps
+      mkdir -p deps
       ln -s "${dep}" "deps/${dep.packageName}"
       stopNest
     '') recursiveDeps}
@@ -46,7 +46,7 @@ stdenv.mkDerivation ({
     runHook preInstall
     for reldir in src ebin priv include; do
       [ -e "$reldir" ] || continue
-      ensureDir "$out"
+      mkdir -p "$out"
       cp -rt "$out" "$reldir"
       success=1
     done

@@ -21,7 +21,7 @@ buildErlang {
   erlangDeps = [ escalus exml mustache ];
 
   postInstall = ''
-    ensureDir "$out/etc"
+    mkdir -p "$out/etc"
     cp test.config vcard.config "$out/etc/"
     cp -a tests deps "$out"
   '';

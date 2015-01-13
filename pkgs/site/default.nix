@@ -57,7 +57,7 @@ in stdenv.mkDerivation {
   '';
 
   installPhase = ''
-    ensureDir "$out/bin" "$html"
+    mkdir -p "$out/bin" "$html"
     install build/Headcounter "$out/bin/headcounter"
     cp -t "$html" headcounter.js index.html
   '';
