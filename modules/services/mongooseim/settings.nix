@@ -181,7 +181,7 @@ in {
     };
 
     listeners = mkOption {
-      type = types.listOf (types.submodule ./listeners.nix);
+      type = types.listOf (types.submodule (import ./listeners.nix));
       default = [
         { port = 5280;
           module = "mod_bosh";
