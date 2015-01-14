@@ -19,7 +19,10 @@ in stdenv.mkDerivation ({
   postPatch = ''
     rm -f rebar
     if [ -e "src/${name}.app.src" ]; then
-      sed -i -e 's/{ *vsn *,[^}]*}/{vsn, "${version}"}/' "src/${name}.app.src"
+      sed -i \
+        -e 's/{ *vsn *,[^}]*}/{vsn, "${version}"}/' \
+        -e '/^ *%/s/[^[:print:][:space:]]/?/g' \
+        "src/${name}.app.src"
     fi
     ${postPatch}
   '';
