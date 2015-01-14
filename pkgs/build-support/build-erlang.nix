@@ -7,10 +7,14 @@
 
 with stdenv.lib;
 
-stdenv.mkDerivation ({
+let
+  patchedRebar = stdenv.lib.overrideDerivation rebar (rb: {
+    patches = [ ./rebar-nix.patch ];
+  });
+in stdenv.mkDerivation ({
   name = "${name}-${version}";
 
-  buildInputs = buildInputs ++ [ erlang rebar ];
+  buildInputs = buildInputs ++ [ erlang patchedRebar ];
 
   postPatch = ''
     rm -f rebar
@@ -20,21 +24,17 @@ stdenv.mkDerivation ({
     ${postPatch}
   '';
 
-  configurePhase = let
+  configurePhase = ''
+    runHook preConfigure
+    runHook postConfigure
+  '';
+
+  NIX_ERLANG_DEPENDENCIES = let
     getDeps = drv: [drv] ++ (map getDeps drv.erlangDeps);
     recursiveDeps = uniqList {
       inputList = flatten (map getDeps erlangDeps);
     };
-  in ''
-    runHook preConfigure
-    ${concatMapStrings (dep: ''
-      header "linking erlang dependency ${dep}"
-      mkdir -p deps
-      ln -s "${dep}" "deps/${dep.packageName}"
-      stopNest
-    '') recursiveDeps}
-    runHook postConfigure
-  '';
+  in concatMapStringsSep ":" (d: "${d.packageName}=${d}") recursiveDeps;
 
   buildPhase = ''
     runHook preBuild
@@ -44,7 +44,7 @@ stdenv.mkDerivation ({
 
   installPhase = ''
     runHook preInstall
-    for reldir in src ebin priv include; do
+    for reldir in ebin priv include; do
       [ -e "$reldir" ] || continue
       mkdir -p "$out"
       cp -rt "$out" "$reldir"
