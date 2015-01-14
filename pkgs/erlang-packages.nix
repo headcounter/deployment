@@ -109,7 +109,7 @@ let
     katt          = "0m7r99wbbcdbi666zsp40lmy39an5lhc3rgr1hcac161701dk6vw";
     lager         = "1bwd4g8bzh9msxzpp5nm4sssh883xycfrp76nk63r3vdah2ypmsv";
     lhttpc        = "0gzi5b99cd1zi31429j3zhq5k2c7f2175afaay7ai234gvj21g7d";
-    meck          = "07v788g6z2q04r879g71fyzpzwvm76ygnwvsp415nqv644rdv6nf";
+    meck          = "0s4qbvryap46cz63awpbv5zzmlcay5pn2lixgmgvcjarqv70cbs7";
     mochijson2    = "1ss9hyjbr1yk3khca30qh6xlrzcdm6jrmxyyx99vhbb7cg8l6k35";
     mochijson3    = "18dvmxzsqmjav30d7l6x3dslmvc4x5skhvmscv5ppymj0y0pw3hz";
     mustache      = "0nzna9jh5a0a6g738v04kq2vqxqvj5p7ngkngxqzrbmysrp8sz89";
@@ -149,7 +149,7 @@ let
     katt          = ghe "1.3.0-rc" "for-GET";
     lager         = ghe "2.1.0"    "basho";
     lhttpc        = ghe "1.2.6"    "esl";
-    meck          = ghe "0.8.1"    "eproxus";
+    meck          = ghe "0.8.2"    "eproxus";
     mochijson2    = ghe "0.1"      "bjnortier";
     mochijson3    = ghe "1.0"      "tophitpoker";
     mustache      = ghe "0.1.0"    "mojombo";
