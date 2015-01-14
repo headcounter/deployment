@@ -29,7 +29,15 @@ let
     exml.buildInputs = [ pkgs.expat ];
     hamcrest.src.repo = "hamcrest-erlang";
     katt.postPatch = ''
-      patchShebangs priv/compile-parser
+      cat > priv/compile-parser <<EOF
+      #!${pkgs.erlang}/bin/escript
+      main(_) ->
+        code:add_pathz("${self.neotoma}/ebin"),
+        neotoma:file("priv/katt_blueprint.peg", [
+          {output, "src/"},
+          {neotoma_priv_dir, "${self.neotoma}/priv"}
+        ]).
+      EOF
     '';
     mustache.src.repo = "mustache.erl";
     p1_cache_tab.src.repo = "cache_tab";
