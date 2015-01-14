@@ -59,7 +59,7 @@ let
   }));
 
   revMap = {
-    alarms        = "dcd64216c5fffcdde80e779b161f195a03294a8a";
+    alarms        = "24a8bf0f4e09d88075719537aa90bfee52cf4317";
     base16        = "ec420aa4ce0fb971f155274c606e00188a2ed37d";
     cucumberl     = "3f2cca66ed87a53a64177232428ffde606bdcb9a";
     cuesport      = "3b16d99d8bc41774dbc4dabad8054b4423dec5a6";
@@ -97,7 +97,7 @@ let
   };
 
   shaSums = {
-    alarms        = "1xdk05iq691qxjzb25znyc4s9q3j006jgxkqvnwagd46yz6bnlx0";
+    alarms        = "1kmpzg8g7y2xknj6dnrr5rlph87kaa1w0d4gymhsar8wdjjifzrq";
     base16        = "0kq6x40543sc2bkphj5pf83m9sc6knf5j83nihpp2x7wp6n704sk";
     bear          = "1x80qwyx56xclqhmcpdg082w1pbsw8jc9fa79hqy6q5i419w2wrg";
     cowboy        = "020as7fjjgl48g75q82z31fhw7pdnwyp0an788vfivjf0v6knakm";
@@ -109,7 +109,7 @@ let
     escalus       = "01cqhpx40pwjzx5lzwm64ggyfbg3r88jacm2xdvaax1h7ib2crwc";
     espec         = "1k070c54f6kcdk3ciipq9y651cmdci7g67kqmb4r1gib2y1apzad";
     exml          = "1qmixn7i4gvc080pvhy9c0pwlswyshnghwavg4y36x1sl8rhcv7g";
-    folsom        = "0xfi5r4z0wq7sjpcyhc2w19jqj8g8qr9ifdrv77p5gj84rx1fxbq";
+    folsom        = "0ybf0gj991s577i5jz05kshgv0x1k2llcyjq47p1mczd2kx5a3zi";
     fusco         = "05idlhxwlk5l0xni9fc52ncp3isin7k0gdzxzgifw1mk1157cg8g";
     goldrush      = "0fhi3jidn40gri49scvqvavqxh0ggfllx4xii8yqrs0l2l4lq9b5";
     hamcrest      = "1js9xmapavh50glfi062rlbg8nglq37gam6ahr9hq679bhsva3ka";
@@ -149,7 +149,7 @@ let
     escalus       = ghe "2.6.1"    "esl";
     espec         = ghe "1"        "lucaspiller";
     exml          = ghe "2.1.5"    "esl";
-    folsom        = ghe "0.7.4"    "boundary";
+    folsom        = ghe "0.8.2"    "boundary";
     fusco         = ghe "0.0.0"    "esl";
     goldrush      = ghe "0.1.6"    "DeadZen";
     hamcrest      = ghe "0.1.0"    "hyperthunk";
