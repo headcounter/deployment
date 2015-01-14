@@ -247,6 +247,8 @@ in {
         inherit pkgs toplevelConfig;
         defaults = {
           adhoc.enable = true;
+          amp.enable = true;
+          carboncopy.enable = true;
           disco.enable = true;
           last.enable = true;
           muc.enable = true;
@@ -267,11 +269,11 @@ in {
           register.options.access.atom = "register";
           roster.enable = true;
           sic.enable = true;
+          stream_management.enable = true;
           vcard.enable = true;
           vcard.options.allow_return_all = true;
           vcard.options.search_all_hosts = true;
           metrics.enable = true;
-          metrics.options.port = 8081;
         };
       });
       default = {};

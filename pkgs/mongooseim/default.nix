@@ -1,28 +1,45 @@
-{ stdenv, buildErlang, fetchgit, pam, zlib, openssl, expat
-, cuesport, redo, exml, lager, cowboy, folsom, mochijson2, alarms
+{ stdenv, buildErlang, fetchFromGitHub, pam, zlib, openssl, expat
+, erlangPackages
 }:
 
 buildErlang rec {
-  name = "esl-ejabberd";
-  version = "1.2.2-git";
+  name = "mongooseim";
+  version = "1.5.0";
 
-  src = fetchgit {
-    url = "https://github.com/esl/MongooseIM.git";
-    rev = "301303b3d232b88d257c61a2611bc0bd56ce0d0f";
-    sha256 = "19nc90mbhl178k9bbqm2pycz4g82jlfx0zxz74zg0c39v71l77f8";
+  src = fetchFromGitHub {
+    owner = "esl";
+    repo = "MongooseIM";
+    rev = version;
+    sha256 = "0y1690bfiasbrd3l9migywxczncls44hnf7kggxgn7rc1ks5d06j";
   };
 
   patches = [ ./reltool.patch ./journald.patch ./systemd.patch ];
 
+  postPatch = ''
+    sed -i -e '/\<vsn\>/s/{ *cmd *,[^}]*}/"2.1.8+mim-${version}"/' \
+      apps/ejabberd/src/ejabberd.app.src
+
+    sed -i \
+      -e '/lager/s/2\.0\.3/.*/' \
+      -e '/cowboy/s/0\.9\.0/.*/' \
+      rebar.config
+
+    # Remove dependencies we don't need
+    sed -i -re '/\<(mysql|pgsql|redo|seestar|odbc)\>/d' rel/reltool.config
+  '';
+
   buildInputs = [ pam zlib openssl expat ];
-  erlangDeps = [ cuesport redo exml lager cowboy folsom mochijson2 alarms ];
+  erlangDeps = with erlangPackages; [
+    alarms cowboy cuesport exml folsom lager mochijson2 p1_cache_tab
+    p1_stringprep redo fusco seestar proper pa ecoveralls
+  ];
 
   postBuild = ''
     rebar generate
   '';
 
   installPhase = ''
-    cp -a rel/ejabberd "$out"
+    cp -a "rel/${name}" "$out"
   '';
 
   meta = {

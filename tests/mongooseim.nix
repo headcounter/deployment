@@ -8,37 +8,47 @@ let
   server1 = "server1";
   server2 = "server2";
 
-  nodeName = "ejabberd@server1";
-  cookie = "ejabberd"; # XXX! Also remember: It's an atom!
+  nodeName1 = "mongooseim@${server1}";
+  nodeName2 = "mongooseim@${server2}";
+  cookie = "mongooseim"; # XXX! Also remember: It's an atom!
 
-  testRunner = pkgs.lib.concatStringsSep " " ([
+  testRunner = with localPkgs; pkgs.lib.concatStringsSep " " ([
     "${pkgs.erlang}/bin/erl"
     "-sname test@client"
     "-noinput"
-    "-setcookie ejabberd"
-    "-pa ${localPkgs.mongooseimTests}/tests"
-    "${localPkgs.mongooseimTests}/ebin"
-    "${localPkgs.mongooseimTests}/deps/*/ebin" # */
-    "-s run_common_test ct"
+    "-setcookie mongooseim"
+    "-pa ${mongooseimTests}/tests"
+    "${mongooseimTests}/ebin"
+    "${mongooseimTests}/deps/*/ebin" # */
+    "-s run_common_test main test=full spec=default.spec"
   ]);
 
   escalusConfig = pkgs.writeText "test.config" ''
-    {ejabberd_node, '${nodeName}'}.
+    {ejabberd_node, '${nodeName1}'}.
+    {ejabberd2_node, '${nodeName2}'}.
     {ejabberd_cookie, ${cookie}}.
     {ejabberd_domain, <<"${server1}">>}.
+    {ejabberd_addr, <<"${server1}">>}.
     {ejabberd_secondary_domain, <<"${server2}">>}.
-    {ejabberd_metrics_rest_port, 8081}.
+    {ejabberd_reloaded_domain, <<"sogndal">>}.
+    {ejabberd_metrics_rest_port, 5280}.
+    {ejabberd_string_format, bin}.
+
+    {escalus_user_db, xmpp}.
+
+    {escalus_server, <<"${server1}">>}.
+    {escalus_server2, <<"${server2}">>}.
 
     {escalus_users, [
       {alice, [
-        {username, <<"alice">>},
+        {username, <<"alicE">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"makota">>},
         {compression, <<"zlib">>}
       ]},
       {bob, [
-        {username, <<"bob">>},
+        {username, <<"bOb">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"makrolika">>},
@@ -71,8 +81,46 @@ let
         {host, <<"${server1}">>},
         {password, <<"witcher">>},
         {transport, ws},
-        {port, 5288},
+        {port, 5280},
         {wspath, <<"/ws-xmpp">>}
+      ]},
+      {hacker, [
+        {username, <<"hacker">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"bringdowntheserver">>},
+        {compression, <<"zlib">>},
+        {port, 5223}
+      ]},
+      {oldie, [
+        {username, <<"oldie">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"legacy">>},
+        {transport, ws},
+        {port, 5280},
+        {wspath, <<"/ws-xmpp">>},
+        {wslegacy, true}
+      ]},
+      {admin, [
+        {username, <<"admin">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"bruce_almighty">>}
+      ]},
+      {secure_joe, [
+        {username, <<"secure_joe">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"break_me">>},
+        {compression, <<"zlib">>},
+        {ssl, required}
+      ]},
+      {astrid, [
+        {username, <<"astrid">>},
+        {server, <<"sogndal">>},
+        {host, <<"${server2}">>},
+        {password, <<"doctor">>}
       ]}
     ]}.
 
@@ -90,6 +138,13 @@ let
         {host, <<"${server2}">>},
         {port, 5222},
         {password, <<"makota3">>}
+      ]},
+      {clusterguy, [
+        {username, <<"clusterguy">>},
+        {server, <<"${server2}">>},
+        {host, <<"${server2}">>},
+        {password, <<"distributionftw">>},
+        {port, 5222}
       ]}
     ]}.
 
@@ -101,6 +156,10 @@ let
         {auth_method, <<"SASL-ANON">>}
       ]}
     ]}.
+
+    {mam, [
+      {skipped_configurations, [ca]}
+    ]}.
   '';
 
   mkConfig = serverName: {
@@ -108,21 +167,31 @@ let
     s2s.filterDefaultPolicy = "allow";
 
     listeners = [ # FIXME: Unique port/module and maybe loaOf?
-      { port = 5280;
-        module = "mod_bosh";
-        options.num_acceptors = 10;
-      }
       { port = 5222;
         module = "ejabberd_c2s";
         options.access.atom = "c2s";
         options.shaper.atom = "c2s_shaper";
         options.max_stanza_size = 65536;
       }
-      { port = 5288;
-        type = "ws";
-        module = "mod_websockets";
-        options.host = serverName;
-        options.prefix = "/ws-xmpp";
+      { port = 5280;
+        module = "ejabberd_cowboy";
+        options.num_acceptors = 10;
+        options.max_connections = 1024;
+        options.modules = [
+          { tuple = [
+              server1
+              "/api"
+              { atom = "mongoose_api"; }
+              { handlers = [
+                  { atom = "mongoose_api_metrics"; }
+                  { atom = "mongoose_api_users"; }
+                ];
+              }
+            ];
+          }
+          { tuple = ["_" "/http-bind" { atom = "mod_bosh"; }]; }
+          { tuple = ["_" "/ws-xmpp"   { atom = "mod_websockets"; }]; }
+        ];
       }
       { port = 5269;
         module = "ejabberd_s2s_in";
@@ -132,11 +201,13 @@ let
     ];
 
     modules = {
+      bosh.enable = true;
       offline.enable = true;
       offline.options.access_max_user_messages = {
         atom = "max_user_offline_messages";
       };
       register.options.ip_access = [];
+      websockets.enable = true;
     };
 
     extraConfig = ''
@@ -201,12 +272,16 @@ in {
     $client->succeed('cp -Lr "${localPkgs.mongooseimTests}/tests" .');
     $client->succeed('cp -Lr ${localPkgs.mongooseimTests}/deps/* tests/');
     $client->succeed('cp "${localPkgs.mongooseimTests}/etc/vcard.config" .');
+    $client->succeed('cp "${localPkgs.mongooseimTests}/etc/default.spec" .');
     $client->succeed('cp "${escalusConfig}" test.config');
 
     $client->succeed('sed -i '.
-                     '-e \'s/ejabberd@localhost/${nodeName}/g\' '.
+                     '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
                      '-e \'s/localhost/${server1}/g\' '.
                      'tests/*.erl vcard.config');
+
+    # Disable mongooseimctl test (Too SysV'ish right now)
+    $client->succeed('sed -i -e \'/ejabberdctl_SUITE/d\' default.spec');
 
     my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
     chomp $clientip;
@@ -217,8 +292,13 @@ in {
                      'tests/s2s_SUITE.erl');
 
     $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
-                     '-setcookie ${cookie} -sname ejabberd@client '.
-                     '-eval "pong = net_adm:ping(\'${nodeName}\'), '.
+                     '-setcookie ${cookie} -sname mongooseim@client '.
+                     '-eval "pong = net_adm:ping(\'${nodeName1}\'), '.
+                            'erlang:halt()"');
+
+    $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
+                     '-setcookie ${cookie} -sname mongooseim@client '.
+                     '-eval "pong = net_adm:ping(\'${nodeName2}\'), '.
                             'erlang:halt()"');
 
     my $testCmd = 'mkdir -p ct_report && ${testRunner} >&2';

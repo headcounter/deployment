@@ -2,21 +2,22 @@ diff --git a/apps/ejabberd/src/ejabberd_loglevel.erl b/apps/ejabberd/src/ejabber
 index b8bf8cc..af2b810 100644
 --- a/apps/ejabberd/src/ejabberd_loglevel.erl
 +++ b/apps/ejabberd/src/ejabberd_loglevel.erl
-@@ -68,8 +68,7 @@ set(Level) when is_integer(Level) ->
+@@ -68,9 +68,7 @@ set(Level) when is_integer(Level) ->
+     {_, Name} = lists:keyfind(Level, 1, ?LOG_LEVELS),
      set(Name);
  set(Level) ->
-     Path = log_path(),
--    ok = lager:set_loglevel(lager_console_backend, Level),
--    ok = lager:set_loglevel(lager_file_backend, Path, Level).
-+    ok = lager:set_loglevel(lager_console_backend, Level).
+-    Path = log_path(),
+-    lager:set_loglevel(lager_console_backend, Level),
+-    lager:set_loglevel(lager_file_backend, Path, Level).
++    lager:set_loglevel(lager_console_backend, Level).
  
  set_custom(Module, Level) when is_integer(Level) ->
      {_, Name} = lists:keyfind(Level, 1, ?LOG_LEVELS),
 diff --git a/rel/files/app.config b/rel/files/app.config
-index 33fec09..fdbe4a1 100644
+index 33fec09..3b0198a 100644
 --- a/rel/files/app.config
 +++ b/rel/files/app.config
-@@ -1,10 +1,9 @@
+@@ -1,10 +1,11 @@
  [
  {lager, [
      {handlers, [
@@ -26,7 +27,9 @@ index 33fec09..fdbe4a1 100644
 -    ]}
 +        {lager_console_backend, [info, {lager_default_formatter,[{eol, "\n"}]}]}
 +    ]},
-+    {crash_log, undefined}
++    {crash_log, undefined},
++    {async_threshold, undefined},
++    {error_logger_hwm, undefined}
    ]}
  ].
  
