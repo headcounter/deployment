@@ -32,10 +32,10 @@ let
       cat > priv/compile-parser <<EOF
       #!${pkgs.erlang}/bin/escript
       main(_) ->
-        code:add_pathz("${self.neotoma}/ebin"),
+        code:add_pathz("${self.neotoma}/lib/erlang/lib/neotoma/ebin"),
         neotoma:file("priv/katt_blueprint.peg", [
           {output, "src/"},
-          {neotoma_priv_dir, "${self.neotoma}/priv"}
+          {neotoma_priv_dir, "${self.neotoma}/lib/erlang/lib/neotoma/priv"}
         ]).
       EOF
     '';

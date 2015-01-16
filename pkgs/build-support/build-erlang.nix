@@ -37,7 +37,9 @@ in stdenv.mkDerivation ({
     recursiveDeps = uniqList {
       inputList = flatten (map getDeps erlangDeps);
     };
-  in concatMapStringsSep ":" (d: "${d.packageName}=${d}") recursiveDeps;
+    mkErlPath = drv: "${drv}/lib/erlang/lib/${drv.packageName}";
+    mkDepMapping = d: "${d.packageName}=${mkErlPath d}";
+  in concatMapStringsSep ":" mkDepMapping recursiveDeps;
 
   buildPhase = ''
     runHook preBuild
@@ -49,9 +51,8 @@ in stdenv.mkDerivation ({
     runHook preInstall
     for reldir in ebin priv include; do
       [ -e "$reldir" ] || continue
-      mkdir -p "$out"
-      cp -rt "$out" "$reldir"
-      success=1
+      mkdir -p "$out/lib/erlang/lib/${name}"
+      cp -rt "$out/lib/erlang/lib/${name}" "$reldir"
     done
     runHook postInstall
   '';
