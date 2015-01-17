@@ -17,6 +17,8 @@ let
   testedDomains = [ "headcounter" "aszlig" "noicq" "no_icq" ];
 
 in {
+  name = "headcounter";
+
   nodes = {
     ultron = { config, lib, ... }: with lib; {
       imports = import ../../modules/module-list.nix ++ [

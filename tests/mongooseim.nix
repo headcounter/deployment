@@ -245,6 +245,8 @@ let
     '';
   };
 in {
+  name = "mongooseim";
+
   nodes = {
     server1 = { config, pkgs, ... }: {
       imports = import ../modules/module-list.nix;
