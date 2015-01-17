@@ -126,34 +126,4 @@ in {
       PrivateTmp = true;
     };
   };
-
-  users.extraGroups.telnetsite.gid = 497;
-  users.extraUsers.telnetsite = {
-    uid = 496;
-    description = "Headcounter Telnet Site User";
-    group = "telnetsite";
-  };
-
-  systemd.sockets."telnet-site" = {
-    description = "Headcounter Telnet Socket";
-    wantedBy = [ "sockets.target" ];
-    before = [ "multi-user.target" ];
-    socketConfig.ListenStream = 23;
-    socketConfig.Accept = true;
-  };
-
-  systemd.services."telnet-site@" = {
-    description = "Headcounter Telnet Site";
-    serviceConfig = {
-      User = "telnetsite";
-      Group = "telnetsite";
-      PrivateTmp = true;
-      PrivateNetwork = true;
-      ExecStart = "-${pkgs.telnet}/sbin/in.telnetd -h -L "
-                + "${mainSite}/bin/headcounter";
-      StandardInput = "socket";
-      MemoryLimit = "10M";
-      OOMScoreAdjust = 1000;
-    };
-  };
 }
