@@ -1,60 +1,33 @@
-{ stdenv, fetchgit, fetchhg, fetchurl, makeWrapper, lua, openssl, libidn
-, sqlite }:
+{ stdenv, fetchFromGitHub, fetchhg, fetchurl, makeWrapper, lua, openssl, libidn
+, sqlite, expat, prosody, luaPackages, cacert }:
 
 with stdenv.lib;
 
 let
-  luaVersion = "5.1";
-
   installPlainLua = ''
     find . -type f -name '*.lua' -print | while read path; do
-      mkdir -p "$out/share/lua/${luaVersion}/$(dirname "$path")"
-      cp -v "$path" "$out/share/lua/${luaVersion}/$path"
+      mkdir -p "$out/share/lua/${lua.luaversion}/$(dirname "$path")"
+      cp -v "$path" "$out/share/lua/${lua.luaversion}/$path"
     done
   '';
 
-  prosody = stdenv.mkDerivation rec {
-    name = "prosody-${version}";
-    version = "0.9.1";
-
-    src = fetchurl {
-      url = "http://prosody.im/downloads/source/${name}.tar.gz";
-      sha256 = "1m9cyg4janbqnzxinckb0rgalaashb50jmwrywhwdgi7c3ysdpkc";
-    };
-
-    buildInputs = [ lua openssl libidn ];
-  };
-
   luaSec = stdenv.mkDerivation {
-    name = "luasec-prosody";
+    name = "luasec-prosody-0.5";
 
-    src = fetchgit {
-      url = "https://github.com/xnyhps/luasec.git";
-      rev = "71ea0b35ce6b3820a13949047a2ba44a2675e789";
-      sha256 = "085sgz3f4q9a8h136j90rf6jkfff77gxwggq2288vx65lgmfvgyq";
+    src = fetchFromGitHub {
+      repo = "luasec";
+      owner = "xnyhps";
+      rev = "a28dcbab5b5bcc81705bfae2fc5e462be5a05683";
+      sha256 = "1n8gvazz6471n0q9hc8wdgvbjzpwp27x17smi7dcpjf1ppsdyyg6";
     };
 
     makeFlags = [
-      "LUAPATH=$(out)/share/lua/${luaVersion}"
-      "LUACPATH=$(out)/lib/lua/${luaVersion}"
+      "LUAPATH=$(out)/share/lua/${lua.luaversion}"
+      "LUACPATH=$(out)/lib/lua/${lua.luaversion}"
     ];
 
     buildFlags = [ "linux" ];
     buildInputs = [ lua openssl ];
-  };
-
-  luaSocket = stdenv.mkDerivation rec {
-    name = "luasocket-${version}";
-    version = "3.0-rc1";
-
-    src = fetchurl {
-      url = "https://github.com/diegonehab/luasocket/archive/"
-          + "v${version}.tar.gz";
-      sha256 = "0j8jx8bjicvp9khs26xjya8c495wrpb7parxfnabdqa5nnsxjrwb";
-    };
-
-    buildInputs = [ lua ];
-    installFlags = [ "LUAPREFIX_linux=$(out)" ];
   };
 
   luaDbi = stdenv.mkDerivation rec {
@@ -70,8 +43,8 @@ let
     buildFlags = [ "sqlite3" ];
 
     installPhase = ''
-      install -m 0644 -vD DBI.lua "$out/share/lua/${luaVersion}/DBI.lua"
-      install -vD dbdsqlite3.so "$out/lib/lua/${luaVersion}/dbdsqlite3.so"
+      install -m 0644 -vD DBI.lua "$out/share/lua/${lua.luaversion}/DBI.lua"
+      install -vD dbdsqlite3.so "$out/lib/lua/${lua.luaversion}/dbdsqlite3.so"
     '';
   };
 
@@ -80,12 +53,13 @@ let
 
     src = fetchhg {
       url = "http://code.matthewwild.co.uk/verse";
-      tag = "34b878d58948833baf0d3beee1d00631f09fae75";
-      sha256 = "17inbyj5yhlssl3w5hssibndgvd6kgyl7jksi4f47d7n2ky1ncxi";
+      rev = "154c2f04d73b0a3ba1d4e0b12295c804f0fc3927";
+      sha256 = "1x92jly2g72sjsvhmvm7hxmms4y7pj53fy8k1qin86ky11gbg7rh";
     };
 
     installPhase = installPlainLua + ''
-      ln -s init.lua "$out/share/lua/${luaVersion}/verse.lua"
+      ln -s init.lua "$out/share/lua/${lua.luaversion}/verse.lua"
+      ln -s . "$out/share/lua/${lua.luaversion}/verse"
     '';
   };
 in stdenv.mkDerivation {
@@ -93,8 +67,8 @@ in stdenv.mkDerivation {
 
   src = fetchhg {
     url = "https://bitbucket.org/xnyhps/xmppoke";
-    tag = "2e394abbff99117177bf7aaa1284f79562abf452";
-    sha256 = "1jwfkayvn4b2jpm27s8kqpswm5w602nmawmgdbg44s1glp4p30vg";
+    rev = "7acb1a8d622787bad2f6a21ea00ea89fbc87c3b7";
+    sha256 = "12l83zp0z00m5gz4d6nr44jqzm2b9jkbjajzs0vb2mwgzjrd52b1";
   };
 
   buildInputs = [ makeWrapper ];
@@ -104,25 +78,32 @@ in stdenv.mkDerivation {
   '';
 
   installPhase = let
-    luaPaths = [ "$out" luaSec verse luaSocket luaDbi ];
+    luaPaths = [
+      "$out" luaSec verse luaDbi
+      luaPackages.luaexpat luaPackages.luabitop luaPackages.luafilesystem
+      luaPackages.luasocket
+    ];
     luaAbsPaths = [ "${prosody}/lib/prosody/?.lua" ];
     luaAbsCPaths = [ "${prosody}/lib/prosody/?.so" ];
 
-    mkPath = base: "${base}/share/lua/${luaVersion}/?.lua";
-    mkCPath = base: "${base}/lib/lua/${luaVersion}/?.so";
+    mkPath = base: "${base}/share/lua/${lua.luaversion}/?.lua";
+    mkCPath = base: "${base}/lib/lua/${lua.luaversion}/?.so";
 
     pathString = concatStringsSep ";" (map mkPath luaPaths ++ luaAbsPaths);
     cPathString = concatStringsSep ";" (map mkCPath luaPaths ++ luaAbsCPaths);
   in installPlainLua + ''
-    mkdir -p "$out/share/lua/${luaVersion}/net"
+    mkdir -p "$out/share/lua/${lua.luaversion}/net"
     ln -s "${prosody}/lib/prosody/net/server_select.lua" \
-      "$out/share/lua/${luaVersion}/net/server.lua"
+      "$out/share/lua/${lua.luaversion}/net/server.lua"
 
     mkdir -p "$out/share/xmppoke"
     cp -v schema.sqlite3.sql "$out/share/xmppoke/schema.sql"
 
-    makeWrapper "${lua}/bin/lua $out/share/lua/${luaVersion}/poke.lua" \
+    makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
       "$out/bin/xmppoke" \
-      --set LUA_PATH "'${pathString}'" --set LUA_CPATH "'${cPathString}'"
+      --set LD_LIBRARY_PATH "${makeLibraryPath [ expat openssl ]}" \
+      --set SSL_CERT_FILE "${cacert}/etc/ca-bundle.crt" \
+      --set LUA_PATH "'${pathString}'" \
+      --set LUA_CPATH "'${cPathString}'"
   '';
 }

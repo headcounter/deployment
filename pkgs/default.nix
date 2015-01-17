@@ -23,7 +23,8 @@ let
     swiften = callPackage ./spectrum2/swiften.nix {};
 
     xmppoke = callPackage ./xmppoke {
-      lua = pkgs.lua5;
+      lua = pkgs.lua5_1;
+      luaPackages = pkgs.lua51Packages;
     };
   };
 in self
