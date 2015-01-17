@@ -11,6 +11,14 @@ let
   patchedRebar = stdenv.lib.overrideDerivation rebar (rb: {
     patches = [ ./rebar-nix.patch ];
   });
+
+  recursiveErlangDeps = let
+    getDeps = drv: [drv] ++ (map getDeps drv.erlangDeps);
+    inputList = flatten (map getDeps erlangDeps);
+  in uniqList { inherit inputList; };
+
+  mkErlPath = drv: "${drv}/lib/erlang/lib/${drv.packageName}";
+
 in stdenv.mkDerivation ({
   name = "${name}-${version}";
 
@@ -33,13 +41,8 @@ in stdenv.mkDerivation ({
   '';
 
   NIX_ERLANG_DEPENDENCIES = let
-    getDeps = drv: [drv] ++ (map getDeps drv.erlangDeps);
-    recursiveDeps = uniqList {
-      inputList = flatten (map getDeps erlangDeps);
-    };
-    mkErlPath = drv: "${drv}/lib/erlang/lib/${drv.packageName}";
     mkDepMapping = d: "${d.packageName}=${mkErlPath d}";
-  in concatMapStringsSep ":" mkDepMapping recursiveDeps;
+  in concatMapStringsSep ":" mkDepMapping recursiveErlangDeps;
 
   buildPhase = ''
     runHook preBuild
@@ -59,6 +62,6 @@ in stdenv.mkDerivation ({
 
   passthru = {
     packageName = name;
-    inherit erlangDeps;
+    inherit erlangDeps recursiveErlangDeps;
   };
 } // removeAttrs attrs [ "name" "postPatch" "buildInputs" ])
