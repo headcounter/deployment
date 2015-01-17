@@ -98,13 +98,10 @@ in stdenv.mkDerivation {
   buildInputs = [ makeWrapper ];
 
   postPatch = ''
-    sed -i -r \
-      -e 's/^(local *driver_name *= *)nil/\1"SQLite3"/p' \
-      -e '/^local opts/,/}/ {
-        s!^( *cafile *= *)nil!\1"${cacert}"!
-        s!^( *blacklist *= *")[^"]*!\1${debianBlacklistedSSLCerts}!
-      }' \
-      poke.lua
+    sed -i -r -e '/^local opts/,/}/ {
+      s!^( *cafile *= *)nil!\1"${cacert}"!
+      s!^( *blacklist *= *")[^"]*!\1${debianBlacklistedSSLCerts}!
+    }' poke.lua
   '';
 
   installPhase = let
@@ -127,7 +124,7 @@ in stdenv.mkDerivation {
       "$out/share/lua/${lua.luaversion}/net/server.lua"
 
     mkdir -p "$out/share/xmppoke"
-    cp -v schema.sqlite3.sql "$out/share/xmppoke/schema.sql"
+    cp -vt "$out/share/xmppoke/" schema.pg.sql schema.sqlite3.sql
 
     makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
       "$out/bin/xmppoke" \
