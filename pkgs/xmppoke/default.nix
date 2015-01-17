@@ -1,5 +1,6 @@
-{ stdenv, fetchFromGitHub, fetchhg, fetchurl, makeWrapper, lua, openssl, libidn
-, sqlite, expat, prosody, luaPackages, cacert }:
+{ stdenv, fetchFromGitHub, fetchhg, fetchurl, fetchsvn, makeWrapper, lua
+, openssl, libidn, sqlite, expat, prosody, luaPackages, cacert
+}:
 
 with stdenv.lib;
 
@@ -48,6 +49,29 @@ let
     '';
   };
 
+  debianBlacklistedSSLCerts = stdenv.mkDerivation rec {
+    name = "debian-blacklisted-ssl-certs-${version}";
+    version = "354";
+
+    src = fetchsvn {
+      url = "svn://svn.debian.org/pkg-openssl/openssl-blacklist/trunk";
+      rev = version;
+      sha256 = "0cnhnni8s5vii2pbpg9hn84941v6cssb633rc46wjrn7zd6asv9h";
+    };
+
+    installPhase = ''
+      mkdir -p "$out"
+      for keysize in 512 1024 2048 4096; do
+        cat debian/blacklist.prefix > "$out/blacklist.RSA-$keysize"
+        cat "blacklists/be32/blacklist-$keysize.db" \
+            "blacklists/le32/blacklist-$keysize.db" \
+            "blacklists/le64/blacklist-$keysize.db" \
+            | cut -d ' ' -f 5 | cut -b21- | sort \
+            >> "$out/blacklist.RSA-$keysize"
+      done
+    '';
+  };
+
   verse = stdenv.mkDerivation {
     name = "verse";
 
@@ -74,7 +98,13 @@ in stdenv.mkDerivation {
   buildInputs = [ makeWrapper ];
 
   postPatch = ''
-    sed -i -r -e 's/(driver_name = ")[^"]*/\1SQLite3/p' poke.lua
+    sed -i -r \
+      -e 's/^(local *driver_name *= *)nil/\1"SQLite3"/p' \
+      -e '/^local opts/,/}/ {
+        s!^( *cafile *= *)nil!\1"${cacert}"!
+        s!^( *blacklist *= *")[^"]*!\1${debianBlacklistedSSLCerts}!
+      }' \
+      poke.lua
   '';
 
   installPhase = let
@@ -102,7 +132,6 @@ in stdenv.mkDerivation {
     makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
       "$out/bin/xmppoke" \
       --set LD_LIBRARY_PATH "${makeLibraryPath [ expat openssl ]}" \
-      --set SSL_CERT_FILE "${cacert}/etc/ca-bundle.crt" \
       --set LUA_PATH "'${pathString}'" \
       --set LUA_CPATH "'${cPathString}'"
   '';
