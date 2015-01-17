@@ -29,13 +29,17 @@ in {
   deployment.hetzner.partitions = ''
     clearpart --all --initlabel --drives=sda,sdb
 
+    part raid.11 --size=500 --ondisk=sda
+    part raid.12 --size=500 --ondisk=sdb
+
     part swap1 --size=20000 --label=swap1 --fstype=swap --ondisk=sda
     part swap2 --size=20000 --label=swap2 --fstype=swap --ondisk=sdb
 
-    part raid.1 --grow --ondisk=sda
-    part raid.2 --grow --ondisk=sdb
+    part raid.21 --grow --ondisk=sda
+    part raid.22 --grow --ondisk=sdb
 
-    raid / --level=0 --device=md0 --fstype=ext4 --label=root raid.1 raid.2
+    raid /boot --level=1 --device=md0 --fstype=ext2 --label=boot raid.11 raid.12
+    raid /     --level=0 --device=md1 --fstype=ext4 --label=root raid.21 raid.22
   '';
 
   users.extraUsers.hydrabuild = {
