@@ -31,21 +31,25 @@ in {
 
         mkC2S = isLegacy: mkAddr "ejabberd_c2s" ({
           port = if isLegacy then 5223 else 5222;
-          options.access.atom = "c2s";
-          options.max_stanza_size = 65536;
-          options.certfile = ""; # XXX!
-          options.shaper = "c2s_shaper";
-        } // (if isLegacy then {
-          options.tls = true; # XXX!
-        } else {
-          options.starttls_required = true; # XXX!
-        }));
+          options = (optionalAttrs (domain.ssl.privateKey != null) {
+            certfile = domain.ssl.privateKey.path;
+          }) // {
+            access.atom = "c2s";
+            max_stanza_size = 65536;
+            shaper = "c2s_shaper";
+          } // (if isLegacy then {
+            tls.flag = true;
+          } else {
+            starttls.flag = true;
+            starttls_required.flag = true;
+          });
+        });
 
         c2s = mkC2S true ++ mkC2S false;
 
         bosh = mkAddr "mod_bosh" {
           port = 5280;
-          options.tls = true;
+          options.tls.flag = true;
         };
 
         # TODO: enable this only for ${hornyHost}
