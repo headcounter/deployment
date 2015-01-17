@@ -109,7 +109,7 @@ let
     escalus       = "01cqhpx40pwjzx5lzwm64ggyfbg3r88jacm2xdvaax1h7ib2crwc";
     espec         = "1k070c54f6kcdk3ciipq9y651cmdci7g67kqmb4r1gib2y1apzad";
     exml          = "1qmixn7i4gvc080pvhy9c0pwlswyshnghwavg4y36x1sl8rhcv7g";
-    folsom        = "0ybf0gj991s577i5jz05kshgv0x1k2llcyjq47p1mczd2kx5a3zi";
+    folsom        = "0xfi5r4z0wq7sjpcyhc2w19jqj8g8qr9ifdrv77p5gj84rx1fxbq";
     fusco         = "05idlhxwlk5l0xni9fc52ncp3isin7k0gdzxzgifw1mk1157cg8g";
     goldrush      = "0fhi3jidn40gri49scvqvavqxh0ggfllx4xii8yqrs0l2l4lq9b5";
     hamcrest      = "1js9xmapavh50glfi062rlbg8nglq37gam6ahr9hq679bhsva3ka";
@@ -149,7 +149,7 @@ let
     escalus       = ghe "2.6.1"    "esl";
     espec         = ghe "1"        "lucaspiller";
     exml          = ghe "2.1.5"    "esl";
-    folsom        = ghe "0.8.2"    "boundary";
+    folsom        = ghe "0.7.4"    "boundary";
     fusco         = ghe "0.0.0"    "esl";
     goldrush      = ghe "0.1.6"    "DeadZen";
     hamcrest      = ghe "0.1.0"    "hyperthunk";
