@@ -1,6 +1,10 @@
 { stdenv, fetchFromGitHub, fetchhg, fetchurl, fetchsvn, makeWrapper, lua
-, openssl, libidn, sqlite, expat, prosody, luaPackages, cacert
+, openssl, libidn, expat, prosody, luaPackages, cacert
+, databaseEngine ? "PostgreSQL", sqlite ? null, postgresql ? null
 }:
+
+assert databaseEngine == "PostgreSQL" -> postgresql != null;
+assert databaseEngine == "SQLite3"    -> sqlite     != null;
 
 with stdenv.lib;
 
@@ -31,23 +35,34 @@ let
     buildInputs = [ lua openssl ];
   };
 
-  luaDbi = stdenv.mkDerivation rec {
+  luaDbi = stdenv.mkDerivation (rec {
     name = "luadbi-0.5";
 
-    src = fetchurl {
-      url = "https://luadbi.googlecode.com/files/luadbi.0.5.tar.gz";
-      sha256 = "07ikxgxgfpimnwf7zrqwcwma83ss3wm2nzjxpwv2a1c0vmc684a9";
+    src = fetchhg {
+      url = "https://code.google.com/p/luadbi/";
+      rev = "47382fea7a9cf6ad067c204f87af968e0f8a6756";
+      sha256 = "08dci0lysv38kkzsmwmr34ay7zylwdd67dgha8hgymgixjsgvhff";
     };
-
-    setSourceRoot = "sourceRoot=.";
-    buildInputs = [ lua sqlite ];
-    buildFlags = [ "sqlite3" ];
 
     installPhase = ''
       install -m 0644 -vD DBI.lua "$out/share/lua/${lua.luaversion}/DBI.lua"
-      install -vD dbdsqlite3.so "$out/lib/lua/${lua.luaversion}/dbdsqlite3.so"
+      runHook postInstall
     '';
-  };
+  } // (if databaseEngine == "PostgreSQL" then {
+    buildFlags = [ "psql" ];
+    buildInputs = [ lua postgresql ];
+    postInstall = ''
+      install -vD dbdpostgresql.so \
+        "$out/lib/lua/${lua.luaversion}/dbdpostgresql.so"
+    '';
+  } else if databaseEngine == "SQLite3" then {
+    buildFlags = [ "sqlite3" ];
+    buildInputs = [ lua sqlite ];
+    postInstall = ''
+      install -vD dbdsqlite3.so \
+        "$out/lib/lua/${lua.luaversion}/dbdsqlite3.so"
+    '';
+  } else throw "Unsupported database engine ${databaseEngine}."));
 
   debianBlacklistedSSLCerts = stdenv.mkDerivation rec {
     name = "debian-blacklisted-ssl-certs-${version}";
@@ -101,7 +116,7 @@ in stdenv.mkDerivation {
     sed -i -r -e '/^local opts/,/}/ {
       s!^( *cafile *= *)nil!\1"${cacert}"!
       s!^( *blacklist *= *")[^"]*!\1${debianBlacklistedSSLCerts}!
-    }' poke.lua
+    }' -e 's/^(local *driver_name *= *)nil/\1"${databaseEngine}"/' poke.lua
   '';
 
   installPhase = let
