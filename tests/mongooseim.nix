@@ -10,7 +10,7 @@ let
 
   nodeName1 = "mongooseim@${server1}";
   nodeName2 = "mongooseim@${server2}";
-  cookie = "mongooseim"; # XXX! Also remember: It's an atom!
+  cookie = "mongooseim";
 
   testLibs = with localPkgs; let
     mkEbin = d: "${d.appDir}/ebin";
@@ -250,6 +250,7 @@ in {
       imports = import ../modules/module-list.nix;
       services.headcounter.mongooseim = {
         enable = true;
+        inherit cookie;
         settings = mkConfig server1;
       };
       networking.firewall.enable = false;
@@ -259,6 +260,7 @@ in {
       imports = import ../modules/module-list.nix;
       services.headcounter.mongooseim = {
         enable = true;
+        inherit cookie;
         settings = mkConfig server2;
       };
       networking.firewall.enable = false;
