@@ -12,7 +12,7 @@ buildErlang rec {
   };
 
   postBuild = ''
-    erlc -Ideps/exml/include -o ebin run_common_test.erl
+    erlc -o ebin run_common_test.erl
   '';
 
   erlangDeps = with erlangPackages; [ escalus exml mustache katt proper ];
@@ -20,6 +20,6 @@ buildErlang rec {
   postInstall = ''
     mkdir -p "$out/etc"
     cp test.config vcard.config *.spec "$out/etc/"
-    cp -a tests deps "$out"
+    cp -a tests "$out"
   '';
 }

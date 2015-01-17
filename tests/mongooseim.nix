@@ -12,14 +12,17 @@ let
   nodeName2 = "mongooseim@${server2}";
   cookie = "mongooseim"; # XXX! Also remember: It's an atom!
 
+  testLibs = with localPkgs; let
+    mkEbin = d: "${d.appDir}/ebin";
+    recEbin = map mkEbin mongooseimTests.recursiveErlangDeps;
+  in pkgs.lib.singleton (mkEbin mongooseimTests) ++ recEbin;
+
   testRunner = with localPkgs; pkgs.lib.concatStringsSep " " ([
     "${pkgs.erlang}/bin/erl"
     "-sname test@client"
     "-noinput"
     "-setcookie mongooseim"
-    "-pa ${mongooseimTests}/tests"
-    "${mongooseimTests}/ebin"
-    "${mongooseimTests}/deps/*/ebin" # */
+    "-pa ${mongooseimTests}/tests ${pkgs.lib.concatStringsSep " " testLibs}"
     "-s run_common_test main test=full spec=default.spec"
   ]);
 
@@ -270,7 +273,6 @@ in {
     $server2->waitForUnit("mongooseim.service");
 
     $client->succeed('cp -Lr "${localPkgs.mongooseimTests}/tests" .');
-    $client->succeed('cp -Lr ${localPkgs.mongooseimTests}/deps/* tests/');
     $client->succeed('cp "${localPkgs.mongooseimTests}/etc/vcard.config" .');
     $client->succeed('cp "${localPkgs.mongooseimTests}/etc/default.spec" .');
     $client->succeed('cp "${escalusConfig}" test.config');
