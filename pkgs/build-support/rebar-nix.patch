@@ -11,7 +11,7 @@ index 6e3609b..218b832 100644
                rebar_port_compiler,
                rebar_proto_compiler,
 diff --git a/src/rebar_deps.erl b/src/rebar_deps.erl
-index 952276c..7d7bded 100644
+index 952276c..a8044e8 100644
 --- a/src/rebar_deps.erl
 +++ b/src/rebar_deps.erl
 @@ -377,7 +377,10 @@ find_dep(Config, Dep) ->
@@ -19,15 +19,15 @@ index 952276c..7d7bded 100644
      %% Deps with a source must be found (or fetched) locally.
      %% Those without a source may be satisfied from lib dir (get_lib_dir).
 -    find_dep(Config, Dep, Dep#dep.source).
-+    case lists:keyfind(Dep#dep.app, 1, rebar_nix:get_depmap()) of
-+        {_, Path} -> {Config, {avail, Path}};
-+        false     -> find_dep(Config, Dep, Dep#dep.source)
++    case rebar_nix:lookup_dep(Dep#dep.app) of
++        {ok, Path} -> {Config, {avail, Path}};
++        false      -> find_dep(Config, Dep, Dep#dep.source)
 +    end.
  
  find_dep(Config, Dep, undefined) ->
      %% 'source' is undefined.  If Dep is not satisfied locally,
 diff --git a/src/rebar_erlc_compiler.erl b/src/rebar_erlc_compiler.erl
-index e4abd3d..1fee5a7 100644
+index e4abd3d..4e242ce 100644
 --- a/src/rebar_erlc_compiler.erl
 +++ b/src/rebar_erlc_compiler.erl
 @@ -748,9 +748,12 @@ maybe_expand_include_lib_path(File) ->
@@ -38,21 +38,21 @@ index e4abd3d..1fee5a7 100644
 +    Lib = list_to_atom(hd(Split)),
      SubDir = filename:join(tl(Split)),
 -    Dir = code:lib_dir(list_to_atom(Lib), list_to_atom(SubDir)),
-+    Dir = case lists:keyfind(Lib, 1, rebar_nix:get_depmap()) of
-+        {_, StorePath} -> filename:join(StorePath, SubDir);
++    Dir = case rebar_nix:lookup_dep(Lib) of
++        {ok, StorePath} -> filename:join(StorePath, SubDir);
 +        false -> code:lib_dir(Lib, list_to_atom(SubDir))
 +    end,
      filename:join(Dir, File1).
  
  %%
 diff --git a/src/rebar_nix.erl b/src/rebar_nix.erl
-index e69de29..6d46da3 100644
+index e69de29..481dab7 100644
 --- a/src/rebar_nix.erl
 +++ b/src/rebar_nix.erl
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,26 @@
 +-module(rebar_nix).
 +
-+-export([get_depmap/0]).
++-export([get_depmap/0, lookup_dep/1]).
 +
 +-spec get_depmap(string()) -> [{atom(), string()}].
 +get_depmap(DepMap) ->
@@ -69,3 +69,44 @@ index e69de29..6d46da3 100644
 +        false  -> [];
 +        DepMap -> get_depmap(DepMap)
 +    end.
++
++-spec lookup_dep(atom()) -> {ok, string()} | false.
++lookup_dep(Dep) ->
++    case lists:keyfind(Dep, 1, get_depmap()) of
++        {_, Path} -> {ok, Path};
++        false     -> false
++    end.
+diff --git a/src/rebar_rel_utils.erl b/src/rebar_rel_utils.erl
+index 068fa1c..ad59926 100644
+--- a/src/rebar_rel_utils.erl
++++ b/src/rebar_rel_utils.erl
+@@ -136,7 +136,8 @@ get_previous_release_path(Config) ->
+ load_config(Config, ReltoolFile) ->
+     case rebar_config:consult_file(ReltoolFile) of
+         {ok, Terms} ->
+-            expand_version(Config, Terms, filename:dirname(ReltoolFile));
++            Terms1 = expand_libs(Terms),
++            expand_version(Config, Terms1, filename:dirname(ReltoolFile));
+         Other ->
+             ?ABORT("Failed to load expected config from ~s: ~p~n",
+                    [ReltoolFile, Other])
+@@ -234,6 +235,19 @@ make_proplist([H|T], Acc) ->
+ make_proplist([], Acc) ->
+     Acc.
+ 
++expand_libs(ReltoolConfig) ->
++    FullDeps = lists:map(fun({_, Path}) -> filename:dirname(Path) end, rebar_nix:get_depmap()),
++    NewSys = case lists:keyfind(sys, 1, ReltoolConfig) of
++        {sys, Sys} ->
++            NewDeps = case lists:keyfind(lib_dirs, 1, Sys) of
++                {lib_dirs, L} -> {lib_dirs, L ++ FullDeps};
++                false         -> {lib_dirs, FullDeps}
++            end,
++            {sys, lists:keyreplace(lib_dirs, 1, Sys, NewDeps)};
++        false -> {sys, [{lib_dirs, FullDeps}]}
++    end,
++    lists:keyreplace(sys, 1, ReltoolConfig, NewSys).
++
+ expand_version(Config, ReltoolConfig, Dir) ->
+     case lists:keyfind(sys, 1, ReltoolConfig) of
+         {sys, Sys} ->
