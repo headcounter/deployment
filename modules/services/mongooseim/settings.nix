@@ -6,7 +6,6 @@ with pkgs.lib;
 with import ./erlexpr.nix;
 
 let
-  # TODO: Maybe add a specific type for this, too?
   enumDoc = attrs: ''
     <variablelist>
       ${concatStrings (flip mapAttrsToList attrs (option: doc: ''
@@ -37,7 +36,11 @@ in {
     };
 
     loglevel = mkOption {
-      type = types.int;
+      type = mkOptionType {
+        name = "number from 0 to 5";
+        check = x: x >= 0 && x <= 5;
+        merge = mergeOneOption;
+      };
       default = 3;
       description = "Verbosity of logging:" + enumDoc {
         "0" = "No log at all";
@@ -75,7 +78,7 @@ in {
 
     s2s = {
       useStartTLS = mkOption {
-        type = types.str;
+        type = types.enum [ "false" "optional" "required" "required_trusted" ];
         default = "false";
         description = ''
           Whether to enable/enforce STARTTLS + Dialback for S2S connections.
@@ -226,7 +229,7 @@ in {
     };
 
     authMethod = mkOption {
-      type = types.str;
+      type = types.enum [ "internal" "external" "odbc" "pam" "ldap" ];
       default = "internal";
       example = "ldap";
       description = ''
