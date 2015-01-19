@@ -1,7 +1,8 @@
 { fqdn, ... }:
 
 let
-  pokeOpts = "--output=xmppoke --html";
+  inherit (import ../../ssl/snakeoil.nix fqdn) rootCA;
+  pokeOpts = "--output=xmppoke --html --cafile=${rootCA}/root.pem";
 in {
   testScript = ''
     $client->nest("check availability", sub {

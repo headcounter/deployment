@@ -102,4 +102,6 @@ let
       NIX
     '';
   };
-in cn: import (mkCert cn)
+in cn: (import (mkCert cn)) // {
+  inherit rootCA;
+}
