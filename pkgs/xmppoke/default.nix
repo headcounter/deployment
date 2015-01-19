@@ -1,5 +1,5 @@
 { stdenv, fetchFromGitHub, fetchhg, fetchurl, fetchsvn, makeWrapper, lua
-, openssl, libidn, expat, prosody, luaPackages, cacert
+, openssl, libidn, prosody, luaPackages, cacert
 , databaseEngine ? "PostgreSQL", sqlite ? null, postgresql ? null
 }:
 
@@ -172,7 +172,6 @@ in stdenv.mkDerivation {
 
     makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
       "$out/bin/xmppoke" \
-      --set LD_LIBRARY_PATH "${makeLibraryPath [ expat openssl ]}" \
       --set LUA_PATH "'${pathString}'" \
       --set LUA_CPATH "'${cPathString}'"
   '';
