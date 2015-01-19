@@ -1,0 +1,24 @@
+diff --git a/apps/ejabberd/src/ejabberd_s2s_in.erl b/apps/ejabberd/src/ejabberd_s2s_in.erl
+index c746587..7f48c56 100644
+--- a/apps/ejabberd/src/ejabberd_s2s_in.erl
++++ b/apps/ejabberd/src/ejabberd_s2s_in.erl
+@@ -153,6 +153,10 @@ init([{SockMod, Socket}, Opts]) ->
+                  {value, {_, S}} -> S;
+                  _ -> none
+              end,
++    CertListenerOpts = case lists:keyfind(certfile, 1, Opts) of
++        false -> [];
++        Found -> [Found]
++    end,
+     {StartTLS, TLSRequired, TLSCertverify} = case ejabberd_config:get_local_option(s2s_use_starttls) of
+              UseTls when (UseTls==undefined) or (UseTls==false) ->
+                  {false, false, false};
+@@ -179,7 +183,7 @@ init([{SockMod, Socket}, Opts]) ->
+             tls_enabled = false,
+             tls_required = TLSRequired,
+             tls_certverify = TLSCertverify,
+-            tls_options = TLSOpts,
++            tls_options = TLSOpts ++ CertListenerOpts,
+             timer = Timer}}.
+ 
+ %%----------------------------------------------------------------------

@@ -13,7 +13,10 @@ buildErlang rec {
     sha256 = "0y1690bfiasbrd3l9migywxczncls44hnf7kggxgn7rc1ks5d06j";
   };
 
-  patches = [ ./reltool.patch ./journald.patch ./systemd.patch ];
+  patches = [
+    ./reltool.patch ./journald.patch ./systemd.patch
+    ./s2s-listener-certfile.patch
+  ];
 
   postPatch = ''
     sed -i -e '/\<vsn\>/s/{ *cmd *,[^}]*}/"2.1.8+mim-${version}"/' \
