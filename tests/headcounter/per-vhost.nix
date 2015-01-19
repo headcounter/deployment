@@ -3,6 +3,11 @@
 let
   inherit (import ../../ssl/snakeoil.nix fqdn) rootCAFile;
   pokeOpts = "--output=xmppoke --html --cafile=${rootCAFile}";
+
+  resultSql = "SELECT sr.total_score, sr.grade, tr.type"
+            + "  FROM srv_results sr, test_results tr"
+            + "  WHERE sr.test_id = tr.test_id";
+  getResult = "echo '${resultSql}' | psql -t -Pformat=unaligned -F: xmppoke";
 in {
   testScript = ''
     $client->nest("check availability", sub {
@@ -22,6 +27,18 @@ in {
       print HYDRA "report tls-c2s $out/xmppoke client-${fqdn}.html\n";
       print HYDRA "report tls-s2s $out/xmppoke server-${fqdn}.html\n";
       close HYDRA;
+
+      my $failed = 0;
+      my $result = $client->succeed("${getResult}");
+      foreach (split /\n/, $result) {
+        my @sr = split /:/;
+        if ($sr[1] ne 'A') {
+          $client->log("The $sr[2] test passed with a grade of ".
+                       "$sr[1] instead of A!");
+          $failed = 1;
+        }
+      }
+      die if $failed;
     };
   '';
 }
