@@ -6,6 +6,7 @@ let
   rootCA = stdenv.mkDerivation {
     name = "snakeoil-ca-root";
     inherit buildInputs;
+    preferLocalBuild = true;
     buildCommand = ''
       mkdir -p "$out"
       openssl genrsa -out "$out/private.key" 2048
@@ -25,6 +26,7 @@ let
   intermediate = stdenv.mkDerivation {
     name = "snakeoil-ca-intermediate";
     inherit buildInputs;
+    preferLocalBuild = true;
     buildCommand = ''
       mkdir -p "$out"
       openssl genrsa -out "$out/private.key" 2048
@@ -54,6 +56,7 @@ let
   mkCert = cn: stdenv.mkDerivation {
     name = "snakeoil-${cn}.nix";
     inherit buildInputs;
+    preferLocalBuild = true;
     buildCommand = ''
       openssl genrsa -out private.key 2048
       openssl req -new -nodes -key private.key -out crt.req <<INPUT
