@@ -141,7 +141,7 @@ in stdenv.mkDerivation {
 
   postPatch = ''
     sed -i -r -e '/^local opts/,/}/ {
-      s!^( *cafile *= *)nil!\1"${cacert}"!
+      s!^( *cafile *= *)nil!\1"${cacert}/etc/ca-bundle.crt"!
       s!^( *blacklist *= *")[^"]*!\1${debianBlacklistedSSLCerts}!
     }' -e 's/^(local *driver_name *= *)nil/\1"${databaseEngine}"/' poke.lua
   '';
