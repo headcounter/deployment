@@ -43,12 +43,18 @@ let
 
       INPUT
 
-      openssl x509 -extensions v3_ca \
-        -req -in intermediate.csr \
+      openssl x509 -req \
+        -extensions v3_ca \
+        -in intermediate.csr \
         -CA "${rootCA}/root.pem" \
         -CAkey "${rootCA}/private.key" \
         -set_serial 666 \
-        -extensions v3_ca \
+        -extfile "${pkgs.writeText "intermediate.cnf" ''
+          [v3_ca]
+          subjectKeyIdentifier = hash
+          authorityKeyIdentifier = keyid:always,issuer:always
+          basicConstraints = CA:true
+        ''}" \
         -out "$out/intermediate.pem"
     '';
   };
@@ -71,8 +77,9 @@ let
 
       INPUT
 
-      openssl x509 -extensions v3_ca \
-        -req -in crt.req \
+      openssl x509 -req \
+        -extensions v3_ca \
+        -in crt.req \
         -CA "${intermediate}/intermediate.pem" \
         -CAkey "${intermediate}/private.key" \
         -set_serial "0x${builtins.hashString "md5" cn}" \
