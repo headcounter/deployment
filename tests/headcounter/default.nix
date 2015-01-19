@@ -1,25 +1,18 @@
-import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }:
-
 let
-  localPkgs = import ../../pkgs {
-    inherit pkgs;
-  };
+  nodes = { pkgs, ... }: let
+    localPkgs = import ../../pkgs {
+      inherit pkgs;
+    };
 
-  patchedPoke = pkgs.lib.overrideDerivation localPkgs.xmppoke (o: {
-    postPatch = (o.postPatch or "") + ''
-      sed -i -e '/dbi.Connect/{
-        s/"xmppoke", *"xmppoke"/"xmppoke", "root"/
-        s/"localhost"/nil/
-      }' poke.lua
-    '';
-  });
-
-  testedDomains = [ "headcounter" "aszlig" "noicq" "no_icq" ];
-
-in {
-  name = "headcounter";
-
-  nodes = {
+    patchedPoke = pkgs.lib.overrideDerivation localPkgs.xmppoke (o: {
+      postPatch = (o.postPatch or "") + ''
+        sed -i -e '/dbi.Connect/{
+          s/"xmppoke", *"xmppoke"/"xmppoke", "root"/
+          s/"localhost"/nil/
+        }' poke.lua
+      '';
+    });
+  in {
     ultron = { config, lib, ... }: with lib; {
       imports = import ../../modules/module-list.nix ++ [
         ../../xmpp.nix ../../domains.nix
@@ -28,7 +21,7 @@ in {
       headcounter.useSnakeOil = true;
       users.extraUsers.mongoose.extraGroups = [ "keys" ];
 
-      headcounter.vhosts = genAttrs testedDomains (name: {
+      headcounter.vhosts = genAttrs testedVHosts (name: {
         device = "eth1";
       });
 
@@ -73,32 +66,33 @@ in {
           local all xmppoke trust
         '';
       };
+
+      environment.systemPackages = [ patchedPoke ];
     };
   };
 
-  testScript = { nodes, ... }: with pkgs.lib; let
-    inherit (nodes.ultron.config.headcounter) vhosts;
+  testedVHosts = [ "headcounter" "aszlig" "noicq" "no_icq" ];
 
-    vhostTest = vhost: ''
-      $client->nest("check availability", sub {
-        $client->succeed("ping -c1 ${vhost.fqdn} >&2");
-        $client->succeed("nc -z ${vhost.fqdn} 5222");
-      });
-      $client->succeed("${patchedPoke}/bin/xmppoke ${vhost.fqdn} >&2");
+  mkVHostTest = vhost: let
+    runner = import <nixpkgs/nixos/tests/make-test.nix>;
+  in runner ({ pkgs, ... }@attrs: {
+    name = "headcounter-vhost-${vhost}";
+    nodes = nodes attrs;
+    testScript = { nodes, ... }@testAttrs: with pkgs.lib; let
+      inherit (nodes.ultron.config.headcounter) vhosts;
+      perVhost = import ./per-vhost.nix (getAttr vhost vhosts);
+      vhAttrs = if isFunction perVhost then perVhost testAttrs else perVhost;
+    in ''
+      startAll;
+
+      $ultron->waitForUnit("mongooseim.service");
+      $client->waitForUnit("network.target");
+      $client->waitForUnit("postgresql.service");
+
+      ${vhAttrs.testScript}
     '';
+  });
 
-    mkVhostTest = name: vhost: optionalString (elem name testedDomains) ''
-      subtest "vhost-${name}", sub {
-        ${vhostTest vhost}
-      };
-    '';
-
-  in ''
-    startAll;
-    $ultron->waitForUnit("mongooseim.service");
-    $client->waitForUnit("network.target");
-    $client->waitForUnit("postgresql.service");
-
-    ${concatStrings (mapAttrsToList mkVhostTest vhosts)}
-  '';
-})
+in with import <nixpkgs/lib>; args: {
+  vhosts = genAttrs testedVHosts (flip mkVHostTest args);
+}
