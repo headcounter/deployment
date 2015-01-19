@@ -106,5 +106,5 @@ let
     '';
   };
 in cn: (import (mkCert cn)) // {
-  inherit rootCA;
+  rootCAFile = "${rootCA}/root.pem";
 }
