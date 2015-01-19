@@ -62,8 +62,12 @@ in {
 
         s2s = mkAddr "ejabberd_s2s_in" {
           port = 5269;
-          options.max_stanza_size = 131072;
-          options.shaper = "s2s_shaper";
+          options = {
+            max_stanza_size = 131072;
+            shaper = "s2s_shaper";
+          } // optionalAttrs (domain.ssl.privateKey != null) {
+            certfile = domain.ssl.privateKey.path;
+          };
         };
       in c2s ++ s2s ++ bosh) config.headcounter.vhosts) /* ++ [
         FIXME: ejabberd_service doesn't exist anymore in MongooseIM!
@@ -339,9 +343,6 @@ in {
 
         % Default language for server messages
         {language, "en"}.
-
-        % really needed?
-        %{s2s_certfile, "/etc/ejabberd/ssl/headcounter.pem"}.
 
         % S2S certificates
         ${concatStrings (mapAttrsToList (name: domain: ''
