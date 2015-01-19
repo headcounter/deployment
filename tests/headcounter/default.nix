@@ -60,7 +60,9 @@ let
           CREATE ROLE xmppoke WITH LOGIN;
           CREATE DATABASE xmppoke OWNER xmppoke;
           \c xmppoke
+          BEGIN;
           \i ${patchedPoke}/share/xmppoke/schema.pg.sql
+          COMMIT;
         '';
         authentication = ''
           local all xmppoke trust
