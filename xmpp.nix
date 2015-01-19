@@ -19,7 +19,7 @@ in {
       ];
 
       s2s.filterDefaultPolicy = "allow";
-      s2s.useStartTLS = "require";
+      s2s.useStartTLS = "required";
       s2s.outgoing.port = 5269;
       s2s.outgoing.addressFamilies = [ "ipv6" "ipv4" ];
 
