@@ -19,8 +19,8 @@ in {
       system("tar xf vm-state-client/xchg/xmppoke.tar -C '$out'");
 
       open HYDRA, ">>$out/nix-support/hydra-build-products";
-      print HYDRA "report tls-c2s $out/xmppoke client-aszlig.net.html\n";
-      print HYDRA "report tls-s2s $out/xmppoke server-aszlig.net.html\n";
+      print HYDRA "report tls-c2s $out/xmppoke client-${fqdn}.html\n";
+      print HYDRA "report tls-s2s $out/xmppoke server-${fqdn}.html\n";
       close HYDRA;
     };
   '';
