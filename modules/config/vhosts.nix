@@ -114,9 +114,19 @@ let
 
   generatedKeys = let
     hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
-    getPrivkey = name: attrs: {
-      name = getPrivkeyFilename attrs.ssl.privateKey.value;
-      value.text = attrs.ssl.publicKey.value + attrs.ssl.privateKey.value;
+    getPrivkey = name: attrs: with attrs.ssl; {
+      name = getPrivkeyFilename privateKey.value;
+      value.text = let
+        mkImCert = import (pkgs.runCommand "intermediate.nix" {} ''
+          cat > "$out" <<NIX
+          '''
+          $(cat "${intermediateCert}")
+          '''
+          NIX
+        '');
+        imcert = optionalString (intermediateCert != null) mkImCert;
+        mkval = attr: optionalString (attr != null) attr.value;
+      in mkval publicKey + imcert + privateKey.value;
     };
   in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
 in {
