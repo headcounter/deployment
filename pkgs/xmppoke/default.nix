@@ -16,8 +16,35 @@ let
     done
   '';
 
+  prosodyPoke = stdenv.mkDerivation rec {
+    name = "prosody-xmppoke";
+
+    src = fetchhg {
+      url = "http://hg.prosody.im/trunk";
+      rev = "381e0b874e6db4916054b2d86e54a958a5c4059d";
+      sha256 = "09cgilylak2iqz0w41ks9a0ijb1cygk05a8mhyik9r0s0sghbf2h";
+    };
+
+    postPatch = ''
+      ln -sf "${fetchhg {
+        inherit (src) url;
+        rev = "bb27ba619932d3af5dcf22a042d7b033d868a39e";
+        sha256 = "1kpm81ny6ssl2sxi7vwla5n2zanpxpwj5ql95wpxjjq0j58g30c8";
+      }}/util/x509.lua" util/x509.lua
+    '';
+
+    buildInputs = [ lua openssl libidn ];
+
+    postInstall = ''
+      for newerFile in util/hashes.so util/encodings.so; do
+        install -vD "${prosody}/lib/prosody/$newerFile" \
+                    "$out/lib/prosody/$newerFile"
+      done
+    '';
+  };
+
   luaSec = stdenv.mkDerivation {
-    name = "luasec-prosody-0.5";
+    name = "luasec-xmppoke";
 
     src = fetchFromGitHub {
       repo = "luasec";
@@ -92,8 +119,8 @@ let
 
     src = fetchhg {
       url = "http://code.matthewwild.co.uk/verse";
-      rev = "154c2f04d73b0a3ba1d4e0b12295c804f0fc3927";
-      sha256 = "1x92jly2g72sjsvhmvm7hxmms4y7pj53fy8k1qin86ky11gbg7rh";
+      rev = "34b878d58948833baf0d3beee1d00631f09fae75";
+      sha256 = "17inbyj5yhlssl3w5hssibndgvd6kgyl7jksi4f47d7n2ky1ncxi";
     };
 
     installPhase = installPlainLua + ''
@@ -125,8 +152,8 @@ in stdenv.mkDerivation {
       luaPackages.luaexpat luaPackages.luabitop luaPackages.luafilesystem
       luaPackages.luasocket
     ];
-    luaAbsPaths = [ "${prosody}/lib/prosody/?.lua" ];
-    luaAbsCPaths = [ "${prosody}/lib/prosody/?.so" ];
+    luaAbsPaths = [ "${prosodyPoke}/lib/prosody/?.lua" ];
+    luaAbsCPaths = [ "${prosodyPoke}/lib/prosody/?.so" ];
 
     mkPath = base: "${base}/share/lua/${lua.luaversion}/?.lua";
     mkCPath = base: "${base}/lib/lua/${lua.luaversion}/?.so";
@@ -134,9 +161,11 @@ in stdenv.mkDerivation {
     pathString = concatStringsSep ";" (map mkPath luaPaths ++ luaAbsPaths);
     cPathString = concatStringsSep ";" (map mkCPath luaPaths ++ luaAbsCPaths);
   in installPlainLua + ''
-    mkdir -p "$out/share/lua/${lua.luaversion}/net"
-    ln -s "${prosody}/lib/prosody/net/server_select.lua" \
-      "$out/share/lua/${lua.luaversion}/net/server.lua"
+    ln -s server_select.lua "$out/share/lua/${lua.luaversion}/net/server.lua"
+
+    mkdir -p "$out/share/lua/${lua.luaversion}/verse/plugins"
+    cp -vt "$out/share/lua/${lua.luaversion}/verse/" client.lua server.lua
+    cp -vt "$out/share/lua/${lua.luaversion}/verse/plugins/" plugins/tls.lua
 
     mkdir -p "$out/share/xmppoke"
     cp -vt "$out/share/xmppoke/" schema.pg.sql schema.sqlite3.sql
