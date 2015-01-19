@@ -85,6 +85,7 @@ let
       perVhost = import ./per-vhost.nix (getAttr vhost vhosts);
       vhAttrs = if isFunction perVhost then perVhost testAttrs else perVhost;
     in ''
+      my $out = $ENV{'out'};
       startAll;
 
       $ultron->waitForUnit("mongooseim.service");
