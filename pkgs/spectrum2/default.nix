@@ -1,29 +1,36 @@
-{ stdenv, fetchgit, cmake, boost, swiften, popt, sqlite, libpqxx, pidgin
-, protobuf, dbus_glib, libev, libcommuni, curl, log4cxx }:
+{ stdenv, fetchFromGitHub, fetchpatch, cmake, boost, swiften, popt, sqlite
+, libpqxx, pidgin, protobuf, dbus_glib, libev, libcommuni, curl, log4cxx
+}:
 
 stdenv.mkDerivation {
   name = "spectrum2-git";
 
-  src = fetchgit {
-    url = "https://github.com/hanzz/libtransport.git";
-    rev = "51746c5af7dfb611f2d16129eaec50efae2289f1";
-    sha256 = "1ww1hnhfygcq6jxa0kfzdmvfx7pnxakwn0z2nym64g6i0vnndf79";
+  src = fetchFromGitHub {
+    repo = "libtransport";
+    owner = "hanzz";
+    rev = "a319e79528df9f12cbba699384cd503e17714ca2";
+    sha256 = "01ssyzbdf5p84lvdy0957kyiv5rvlm97x7qsbwcj4yf6kajxlxbi";
   };
 
+  patches = stdenv.lib.singleton (fetchpatch {
+    url = "https://github.com/jpnurmi/libtransport/compare/libcommuni3.diff";
+    sha256 = "1d004n9czyidf93lk7ql4xj9d8xi1d35msbb3m11jsdirrkc9dgl";
+  });
+
   postPatch = ''
-    sed -i \
-      -e 's|^FIND_LIBRARY.*|SET(IRC_LIBRARY ${libcommuni}/lib/libCommuni.so)|' \
-      -e 's|^FIND_PATH.*|SET(IRC_INCLUDE_DIR ${libcommuni}/include)|' \
-      cmake_modules/CommuniConfig.cmake
     sed -i -e 's|/etc|'"$out"'/etc|' \
       spectrum/src/CMakeLists.txt spectrum_manager/src/CMakeLists.txt
   '';
 
-  cmakeFlags = [
-    "-DENABLE_MYSQL=OFF"
-    "-DIRC_LIBRARY=${libcommuni}/lib"
-    "-DIRC_INCLUDE_DIR=${libcommuni}/include"
-  ];
+  cmakeFlags = let
+    mkFlags = name: let
+      ucName = stdenv.lib.toUpper name;
+    in [
+      "-DIRC_${ucName}_INCLUDE_DIR=${libcommuni}/include/Irc${name}"
+      "-DIRC_${ucName}_LIBRARY=${libcommuni}/lib/libIrc${name}.so"
+    ];
+    communiFlags = map mkFlags [ "Core" "Model" "Util" ];
+  in [ "-DENABLE_MYSQL=OFF" ] ++ stdenv.lib.flatten communiFlags;
 
   enableParallelBuilding = true;
 
