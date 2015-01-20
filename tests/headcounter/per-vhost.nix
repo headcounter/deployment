@@ -2,12 +2,13 @@
 
 let
   inherit (import ../../ssl/snakeoil.nix fqdn) rootCAFile;
-  pokeOpts = "--output=xmppoke --html --cafile=${rootCAFile}";
+  pokeOpts = "--cafile=${rootCAFile}";
 
   resultSql = "SELECT sr.total_score, sr.grade, tr.type"
             + "  FROM srv_results sr, test_results tr"
             + "  WHERE sr.test_id = tr.test_id";
   getResult = "echo '${resultSql}' | psql -t -Pformat=unaligned -F: xmppoke";
+
 in {
   testScript = ''
     $client->nest("check availability", sub {
