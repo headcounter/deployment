@@ -69,7 +69,7 @@ let
         '';
       };
 
-      environment.systemPackages = [ patchedPoke ];
+      environment.systemPackages = [ patchedPoke localPkgs.xmppokeReport ];
     };
   };
 

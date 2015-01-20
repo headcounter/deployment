@@ -16,16 +16,22 @@ in {
     });
 
     subtest "xmppoke", sub {
-      $client->succeed("mkdir xmppoke");
       $client->succeed("xmppoke ${pokeOpts} --mode=client '${fqdn}' >&2");
       $client->succeed("xmppoke ${pokeOpts} --mode=server '${fqdn}' >&2");
 
-      $client->succeed('tar cf /tmp/xchg/xmppoke.tar xmppoke && sync');
-      system("tar xf vm-state-client/xchg/xmppoke.tar -C '$out'");
+      $client->succeed(
+        "mkdir /tmp/xchg/xmppoke && (cd /tmp/xchg/xmppoke; ".
+        "xmppoke-genreport client '${fqdn}'; ".
+        "xmppoke-genreport server '${fqdn}'".
+        "); sync"
+      );
+
+      system("tar xf vm-state-client/xchg/xmppoke/client.tar -C '$out'");
+      system("tar xf vm-state-client/xchg/xmppoke/server.tar -C '$out'");
 
       open HYDRA, ">>$out/nix-support/hydra-build-products";
-      print HYDRA "report tls-c2s $out/xmppoke client-${fqdn}.html\n";
-      print HYDRA "report tls-s2s $out/xmppoke server-${fqdn}.html\n";
+      print HYDRA "report tls-c2s $out/xmppoke client.html\n";
+      print HYDRA "report tls-s2s $out/xmppoke server.html\n";
       close HYDRA;
 
       my $failed = 0;

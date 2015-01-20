@@ -26,5 +26,6 @@ let
       lua = pkgs.lua5_1;
       luaPackages = pkgs.lua51Packages;
     };
+    xmppokeReport = callPackage ./xmppoke/genreport.nix {};
   };
 in self
