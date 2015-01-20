@@ -1,9 +1,9 @@
 { nixpkgs ? <nixpkgs>
+, system ? builtins.currentSystem
 }:
 
 let
-  pkgs = import nixpkgs { system = "x86_64-linux"; };
-  systems = [ "x86_64-linux" ];
+  pkgs = import nixpkgs { inherit system; };
 in {
   manual = with pkgs.lib; with builtins; let
     dummyOpts = let
@@ -75,11 +75,7 @@ in {
 
   tests = with pkgs.lib; let
     testsOnly = attrs: !attrs ? test;
-    testsFor = system: let
-      mapper = mapAttrsRecursiveCond testsOnly sysAttrs;
-      sysAttrs = _: val: listToAttrs [(nameValuePair system val.test)];
-    in mapper (import ./tests {
-      inherit nixpkgs system;
-    });
-  in fold recursiveUpdate {} (map testsFor systems);
+  in mapAttrsRecursiveCond testsOnly (_: getAttr "test") (import ./tests {
+    inherit nixpkgs system;
+  });
 }
