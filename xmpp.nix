@@ -3,6 +3,34 @@
 with pkgs.lib;
 
 let
+  ciphers = concatStringsSep ":" [
+    "ECDHE-RSA-AES256-GCM-SHA384"
+    "ECDHE-ECDSA-AES256-GCM-SHA384"
+    "ECDHE-RSA-AES256-SHA384"
+    "ECDHE-ECDSA-AES256-SHA384"
+    "DHE-DSS-AES256-GCM-SHA384"
+    "DHE-RSA-AES256-GCM-SHA384"
+    "DHE-RSA-AES256-SHA256"
+    "DHE-DSS-AES256-SHA256"
+    "ECDH-RSA-AES256-GCM-SHA384"
+    "ECDH-ECDSA-AES256-GCM-SHA384"
+    "ECDH-RSA-AES256-SHA384"
+    "ECDH-ECDSA-AES256-SHA384"
+    "ECDHE-RSA-AES128-GCM-SHA256"
+    "ECDHE-ECDSA-AES128-GCM-SHA256"
+    "ECDHE-RSA-AES128-SHA256"
+    "ECDHE-ECDSA-AES128-SHA256"
+    "DHE-DSS-AES128-GCM-SHA256"
+    "DHE-RSA-AES128-GCM-SHA256"
+    "DHE-RSA-AES128-SHA256"
+    "DHE-DSS-AES128-SHA256"
+    "ECDH-RSA-AES128-GCM-SHA256"
+    "ECDH-ECDSA-AES128-GCM-SHA256"
+    "ECDH-RSA-AES128-SHA256"
+    "ECDH-ECDSA-AES128-SHA256"
+    "@STRENGTH"
+  ];
+
   hornyHost = "i-am-getting-horny-by-using-an-insecure-connection"
             + ".headcounter.org";
 in {
@@ -37,6 +65,7 @@ in {
             access.atom = "c2s";
             max_stanza_size = 65536;
             shaper = "c2s_shaper";
+            inherit ciphers;
           } // (if isLegacy then {
             tls.flag = true;
           } else {
@@ -343,6 +372,8 @@ in {
 
         % Default language for server messages
         {language, "en"}.
+
+        {s2s_ciphers, "${ciphers}"}.
 
         % S2S certificates
         ${concatStrings (mapAttrsToList (name: domain: ''
