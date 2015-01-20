@@ -1,27 +1,34 @@
 { stdenv, fetchgit, pkgconfig, scons, boost, openssl, expat, libidn, zlib }:
 
 stdenv.mkDerivation rec {
-  name = "swiften-2.0git";
+  name = "swiften-${version}";
+  version = "3.0alpha";
 
   src = fetchgit {
     url = "git://swift.im/swift";
-    rev = "68a59bf7ef72857d730e650887355911bc72c6e6";
-    sha256 = "06hk391pgkz6kkfjfgzks8y8dm7xb92nlhsrkkzqs1iid10v5ram";
+    rev = "refs/tags/swift-${version}";
+    sha256 = "0rblfwk33vg1bhy7dh4qkn1xy5nz48rlr5x4ychfyqrb05hrs7ak";
   };
 
-  # TODO: Doesn't detect zlib!
   buildInputs = [ pkgconfig scons boost openssl expat libidn zlib ];
+
+  patches = [ ./swiften.patch ];
 
   configurePhase = ''
     cat > config.py <<PYTHON
-    boost_libdir = "${boost}/lib"
-    boost_includedir = "${boost}/include"
+    boost_libdir = "${boost.lib}/lib"
+    boost_includedir = "${boost.dev}/include"
     expat_libdir = "${expat}/lib"
     expat_includedir = "${expat}/include"
     libidn_libdir = "${libidn}/lib"
     libidn_includedir = "${libidn}/include"
+    zlib_libdir = "${zlib}/lib"
+    zlib_includedir = "${zlib}/include"
     openssl = "${openssl}"
     swiften_dll = True
+    boost_bundled_enable = False
+    libidn_bundled_enable = False
+    zlib_bundled_enable = False
     PYTHON
   '';
 
@@ -35,6 +42,7 @@ stdenv.mkDerivation rec {
 
   doCheck = true;
   checkPhase = ''
-    scons -j$NIX_BUILD_CORES -l$NIX_BUILD_CORES test=unit Swiften
+    LD_LIBRARY_PATH=./Swiften HOME="$(pwd)" \
+      scons -j$NIX_BUILD_CORES -l$NIX_BUILD_CORES test=unit QA
   '';
 }

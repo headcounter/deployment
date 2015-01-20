@@ -1,0 +1,148 @@
+diff --git a/BuildTools/SCons/SConscript.boot b/BuildTools/SCons/SConscript.boot
+index 56a3dd1..4136d11 100644
+--- a/BuildTools/SCons/SConscript.boot
++++ b/BuildTools/SCons/SConscript.boot
+@@ -40,10 +40,16 @@ if os.name == "nt" :
+ vars.Add(PackageVariable("openssl", "OpenSSL location", "yes"))
+ vars.Add(PathVariable("boost_includedir", "Boost headers location", None, PathVariable.PathAccept))
+ vars.Add(PathVariable("boost_libdir", "Boost library location", None, PathVariable.PathAccept))
++vars.Add(BoolVariable("boost_bundled_enable", "Allow use of bundled Boost as last resort", "true"))
++vars.Add(PathVariable("zlib_includedir", "Zlib headers location", None, PathVariable.PathAccept))
++vars.Add(PathVariable("zlib_libdir", "Zlib library location", None, PathVariable.PathAccept))
++vars.Add(PathVariable("zlib_libfile", "Zlib library file (full path to file)", None, PathVariable.PathAccept))
++vars.Add(BoolVariable("zlib_bundled_enable", "Allow use of bundled Zlib as last resort", "true"))
+ vars.Add(PathVariable("expat_includedir", "Expat headers location", None, PathVariable.PathAccept))
+ vars.Add(PathVariable("expat_libdir", "Expat library location", None, PathVariable.PathAccept))
+ vars.Add("expat_libname", "Expat library name", "libexpat" if os.name == "nt" else "expat")
+ vars.Add(PackageVariable("icu", "ICU library location", "no"))
++vars.Add(BoolVariable("libidn_bundled_enable", "Allow use of bunded Expat", "true"))
+ vars.Add(PathVariable("libidn_includedir", "LibIDN headers location", None, PathVariable.PathAccept))
+ vars.Add(PathVariable("libidn_libdir", "LibIDN library location", None, PathVariable.PathAccept))
+ vars.Add("libidn_libname", "LibIDN library name", "libidn" if os.name == "nt" else "idn")
+diff --git a/BuildTools/SCons/SConstruct b/BuildTools/SCons/SConstruct
+index a0a6e8d..94523f8 100644
+--- a/BuildTools/SCons/SConstruct
++++ b/BuildTools/SCons/SConstruct
+@@ -102,8 +102,27 @@ if not conf.CheckCXX() or not conf.CheckCC() :
+ 	Exit(1)
+ 
+ env["HAVE_ZLIB"] = True
+-if conf.CheckLib("z") :
+-	env["ZLIB_FLAGS"] = {"LIBS": ["z"]}
++zlib_flags = {}
++zlib_okay = False
++if env.get("zlib_libdir", None) :
++	zlib_flags["LIBPATH"] = [env["zlib_libdir"]]
++	zlib_okay = True
++if env.get("zlib_includedir", None) :
++	zlib_flags["CPPPATH"] = [env["zlib_includedir"]]
++	zlib_okay = True
++if env.get("zlib_libfile", None) :
++	zlib_flags["LIBS"] = [File(env["zlib_libfile"])]
++	zlib_okay = True
++elif zlib_okay :
++	zlib_flags["LIBS"] = ["z"]
++if (not zlib_okay) and conf.CheckLib("z") :
++	zlib_flags["LIBS"] = ["z"]
++	zlib_okay = True
++if zlib_okay :
++	env["ZLIB_FLAGS"] = zlib_flags
++elif not env.get("zlib_bundled_enable", True) :
++	print "Error: Zlib not found and zlib_bundled_enable is false"
++	Exit(1)
+ else :
+ 	env["ZLIB_BUNDLED"] = True
+ 
+@@ -168,6 +187,10 @@ if allLibsPresent :
+ 	if not conf.CheckCXXHeader("boost/uuid/uuid.hpp") :
+ 		# FIXME: Remove this workaround when UUID is available in most distros
+ 		env["BOOST_BUNDLED_UUID_ONLY"] = True
++		env["BOOST_FLAGS"]["CPPDEFINES"] = ["BOOST_SIGNALS_NO_DEPRECATION_WARNING"]
++elif not env.get("boost_bundled_enable", True) :
++	print "Error: Boost not found and boost_bundled_enable is false"
++	Exit(1)
+ else :
+ 	env["BOOST_BUNDLED"] = True
+ conf.Finish()
+@@ -329,8 +352,12 @@ conf.Finish()
+ 
+ # Fallback to bundled LibIDN
+ if not env.get("HAVE_ICU", False) and not env.get("HAVE_LIBIDN", False) :
+-	env["HAVE_LIBIDN"] = 1
+-	env["LIBIDN_BUNDLED"] = 1
++	if env.get("libidn_bundled_enable", True)  :
++		env["HAVE_LIBIDN"] = 1
++		env["LIBIDN_BUNDLED"] = 1
++	else :
++		print "Error: ICU and LIBIDN not found, and libidn_bundled_enable is false"
++		Exit(1)
+ 
+ # LibMiniUPnPc
+ if env["experimental"] :
+diff --git a/Swift/QtUI/UserSearch/QtUserSearchWindow.cpp b/Swift/QtUI/UserSearch/QtUserSearchWindow.cpp
+index d69c626..2552d6d 100644
+--- a/Swift/QtUI/UserSearch/QtUserSearchWindow.cpp
++++ b/Swift/QtUI/UserSearch/QtUserSearchWindow.cpp
+@@ -221,7 +221,7 @@ void QtUserSearchWindow::setSearchFields(boost::shared_ptr<SearchPayload> fields
+ 		fieldsPage_->setFormWidget(new QtFormWidget(fields->getForm(), fieldsPage_));
+ 	} else {
+ 		fieldsPage_->setFormWidget(NULL);
+-		bool enabled[8] = {fields->getNick(), fields->getNick(), fields->getFirst(), fields->getFirst(), fields->getLast(), fields->getLast(), fields->getEMail(), fields->getEMail()};
++		bool enabled[8] = {!!fields->getNick(), !!fields->getNick(), !!fields->getFirst(), !!fields->getFirst(), !!fields->getLast(), !!fields->getLast(), !!fields->getEMail(), !!fields->getEMail()};
+ 		QWidget* legacySearchWidgets[8] = {fieldsPage_->nickInputLabel_, fieldsPage_->nickInput_, fieldsPage_->firstInputLabel_, fieldsPage_->firstInput_, fieldsPage_->lastInputLabel_, fieldsPage_->lastInput_, fieldsPage_->emailInputLabel_, fieldsPage_->emailInput_};
+ 		for (int i = 0; i < 8; i++) {
+ 			legacySearchWidgets[i]->setVisible(enabled[i]);
+diff --git a/Swiften/EventLoop/EventLoop.h b/Swiften/EventLoop/EventLoop.h
+index 4a602ae..3fd6f80 100644
+--- a/Swiften/EventLoop/EventLoop.h
++++ b/Swiften/EventLoop/EventLoop.h
+@@ -7,7 +7,7 @@
+ #pragma once
+ 
+ #include <boost/function.hpp>
+-#include <boost/thread/mutex.hpp>
++#include <boost/thread.hpp>
+ #include <list>
+ #include <deque>
+ 
+diff --git a/Swiften/Examples/NetworkTool/main.cpp b/Swiften/Examples/NetworkTool/main.cpp
+index 00c12d2..1473bf5 100644
+--- a/Swiften/Examples/NetworkTool/main.cpp
++++ b/Swiften/Examples/NetworkTool/main.cpp
+@@ -38,8 +38,8 @@ void handleGetForwardPortRequestResponse(const boost::optional<NATPortMapping>&
+ 	eventLoop.stop();
+ }
+ 
+-void handleRemovePortForwardingRequestResponse(bool result) {
+-	if (result) {
++void handleRemovePortForwardingRequestResponse(const boost::optional<bool> result) {
++	if (result && result.get()) {
+ 		std::cerr << "Result: OK" << std::endl;
+ 	}
+ 	else {
+diff --git a/Swiften/Serializer/StreamResumeSerializer.cpp b/Swiften/Serializer/StreamResumeSerializer.cpp
+index e9e520d..67fd232 100644
+--- a/Swiften/Serializer/StreamResumeSerializer.cpp
++++ b/Swiften/Serializer/StreamResumeSerializer.cpp
+@@ -22,7 +22,7 @@ SafeByteArray StreamResumeSerializer::serialize(boost::shared_ptr<Element> el) c
+ 	XMLElement element("resume", "urn:xmpp:sm:2");
+ 	element.setAttribute("previd", e->getResumeID());
+ 	if (e->getHandledStanzasCount()) {
+-		element.setAttribute("h", boost::lexical_cast<std::string>(e->getHandledStanzasCount()));
++		element.setAttribute("h", boost::lexical_cast<std::string>(e->getHandledStanzasCount().get()));
+ 	}
+ 	return createSafeByteArray(element.serialize());
+ }
+diff --git a/Swiften/Serializer/StreamResumedSerializer.cpp b/Swiften/Serializer/StreamResumedSerializer.cpp
+index 7ae82d1..8fabc11 100644
+--- a/Swiften/Serializer/StreamResumedSerializer.cpp
++++ b/Swiften/Serializer/StreamResumedSerializer.cpp
+@@ -22,7 +22,7 @@ SafeByteArray StreamResumedSerializer::serialize(boost::shared_ptr<Element> el)
+ 	XMLElement element("resumed", "urn:xmpp:sm:2");
+ 	element.setAttribute("previd", e->getResumeID());
+ 	if (e->getHandledStanzasCount()) {
+-		element.setAttribute("h", boost::lexical_cast<std::string>(e->getHandledStanzasCount()));
++		element.setAttribute("h", boost::lexical_cast<std::string>(e->getHandledStanzasCount().get()));
+ 	}
+ 	return createSafeByteArray(element.serialize());
+ }
