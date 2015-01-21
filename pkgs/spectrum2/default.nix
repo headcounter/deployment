@@ -1,5 +1,6 @@
 { stdenv, fetchFromGitHub, fetchpatch, cmake, boost, swiften, popt, sqlite
 , libpqxx, pidgin, protobuf, dbus_glib, libev, libcommuni, curl, log4cxx
+, cppunit
 }:
 
 stdenv.mkDerivation {
@@ -30,12 +31,21 @@ stdenv.mkDerivation {
       "-DIRC_${ucName}_LIBRARY=${libcommuni}/lib/libIrc${name}.so"
     ];
     communiFlags = map mkFlags [ "Core" "Model" "Util" ];
-  in [ "-DENABLE_MYSQL=OFF" ] ++ stdenv.lib.flatten communiFlags;
+  in [
+    "-DENABLE_MYSQL=OFF"
+    "-DENABLE_TESTS=ON"
+  ] ++ stdenv.lib.flatten communiFlags;
 
   enableParallelBuilding = true;
 
   buildInputs = [
     cmake boost swiften popt sqlite libpqxx pidgin
     protobuf dbus_glib libev libcommuni curl log4cxx
+    cppunit
   ];
+
+  doInstallCheck = true;
+  installCheckPhase = ''
+    ./src/libtransport_test
+  '';
 }
