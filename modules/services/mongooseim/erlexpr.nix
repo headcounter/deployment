@@ -19,8 +19,11 @@ rec {
   erlTuple = val: "{${concatStringsSep ", " (map toErl val)}}";
 
   erlPropList = val: let
-    mkTuple = name: value: if value ? flag
+    mkExTuple = name: extension: erlTuple ([{ atom = name; }] ++ extension);
+    mkTuple = name: value:
+      if value ? flag
       then (if value.flag then erlAtom name else null)
+      else if value ? extuple then mkExTuple name value.extuple
       else "{${erlAtom name}, ${toErl value}}";
     tuples = remove null (mapAttrsToList mkTuple val);
   in "[${concatStringsSep ", " tuples}]";
