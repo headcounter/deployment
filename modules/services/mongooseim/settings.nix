@@ -288,7 +288,7 @@ in {
     };
 
     extraConfig = mkOption {
-      type = types.lines;
+      type = types.nullOr types.lines;
       default = null;
       example = ''
         {ldap_servers, ["localhost"]}.
