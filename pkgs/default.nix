@@ -1,9 +1,9 @@
 { pkgs ? import <nixpkgs> {} }:
 
 let
-  callPackage = pkgs.lib.callPackageWith (pkgs // self);
+  callPackage = pkgs.lib.callPackageWith (pkgs // headcounter);
 
-  self = rec {
+  headcounter = rec {
     buildErlang = callPackage ./build-support/build-erlang.nix {};
 
     mongooseim = callPackage ./mongooseim {};
@@ -28,4 +28,6 @@ let
     };
     xmppokeReport = callPackage ./xmppoke/genreport.nix {};
   };
-in self
+in pkgs // {
+  inherit headcounter;
+}

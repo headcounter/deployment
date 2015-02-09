@@ -3,8 +3,7 @@
 with lib;
 
 let
-  ownpkgs = import ../pkgs { inherit pkgs; };
-  mainSite = ownpkgs.site;
+  mainSite = pkgs.headcounter.site;
 
   unzervaltIPv4 = nodes.unzervalt.config.networking.privateIPv4;
   hydraIPv4 = nodes.taalo.config.networking.p2pTunnels.ssh.ultron.localIPv4;

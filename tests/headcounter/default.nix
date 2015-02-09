@@ -1,10 +1,6 @@
 let
   nodes = { pkgs, ... }: let
-    localPkgs = import ../../pkgs {
-      inherit pkgs;
-    };
-
-    patchedPoke = pkgs.lib.overrideDerivation localPkgs.xmppoke (o: {
+    patchedPoke = pkgs.lib.overrideDerivation pkgs.headcounter.xmppoke (o: {
       postPatch = (o.postPatch or "") + ''
         sed -i -e '/dbi.Connect/{
           s/"xmppoke", *"xmppoke"/"xmppoke", "root"/
@@ -29,6 +25,8 @@ let
     client = { nodes, pkgs, config, lib, ... }: with lib; let
       inherit (nodes.ultron.config.headcounter) vhosts;
     in {
+      imports = [ ../../common.nix ];
+
       networking.extraHosts = let
         mkHostEntry = _: vhost: lib.optionalString (vhost.fqdn != null) ''
           ${vhost.ipv4} ${vhost.fqdn}
@@ -65,18 +63,20 @@ let
         '';
       };
 
-      environment.systemPackages = [ patchedPoke localPkgs.xmppokeReport ];
+      environment.systemPackages = [
+        patchedPoke pkgs.headcounter.xmppokeReport
+      ];
     };
   };
 
   testedVHosts = [ "headcounter" "aszlig" "noicq" "no_icq" ];
 
   mkVHostTest = vhost: let
-    runner = import <nixpkgs/nixos/tests/make-test.nix>;
-  in runner ({ pkgs, ... }@attrs: {
+    runner = import ../make-test.nix;
+  in runner ({ pkgs, lib, ... }@attrs: {
     name = "headcounter-vhost-${vhost}";
     nodes = nodes attrs;
-    testScript = { nodes, ... }@testAttrs: with pkgs.lib; let
+    testScript = { nodes, ... }@testAttrs: with lib; let
       inherit (nodes.ultron.config.headcounter) vhosts;
       perVhost = import ./per-vhost.nix (getAttr vhost vhosts);
       vhAttrs = if isFunction perVhost then perVhost testAttrs else perVhost;

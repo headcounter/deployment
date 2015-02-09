@@ -77,6 +77,7 @@ in {
   tests = with pkgs.lib; let
     testsOnly = attrs: !attrs ? test;
   in mapAttrsRecursiveCond testsOnly (_: getAttr "test") (import ./tests {
-    inherit nixpkgs system;
+    pkgs = import ./pkgs { inherit pkgs; };
+    inherit system;
   });
 }

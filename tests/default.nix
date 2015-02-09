@@ -1,11 +1,11 @@
-{ nixpkgs ? <nixpkgs>
+{ pkgs ? import ../pkgs {}
 , system ? builtins.currentSystem
 }:
 
 let
   callTest = fn: args: import fn ({
-    inherit (nixpkgs) pkgs;
-    inherit system;
+    inherit (pkgs) lib;
+    inherit pkgs system;
   } // args);
 in {
   mongooseim = callTest ./mongooseim.nix {};

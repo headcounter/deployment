@@ -1,10 +1,7 @@
-import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }:
+import ./make-test.nix ({ pkgs, lib, ... }:
+
 
 let
-  localPkgs = import ../pkgs {
-    inherit pkgs;
-  };
-
   server1 = "server1";
   server2 = "server2";
 
@@ -12,17 +9,17 @@ let
   nodeName2 = "mongooseim@${server2}";
   cookie = "mongooseim";
 
-  testLibs = with localPkgs; let
+  testLibs = with pkgs.headcounter; let
     mkEbin = d: "${d.appDir}/ebin";
     recEbin = map mkEbin mongooseimTests.recursiveErlangDeps;
-  in pkgs.lib.singleton (mkEbin mongooseimTests) ++ recEbin;
+  in lib.singleton (mkEbin mongooseimTests) ++ recEbin;
 
-  testRunner = with localPkgs; pkgs.lib.concatStringsSep " " ([
+  testRunner = with pkgs.headcounter; lib.concatStringsSep " " ([
     "${pkgs.erlang}/bin/erl"
     "-sname test@client"
     "-noinput"
     "-setcookie mongooseim"
-    "-pa ${mongooseimTests}/tests ${pkgs.lib.concatStringsSep " " testLibs}"
+    "-pa ${mongooseimTests}/tests ${lib.concatStringsSep " " testLibs}"
     "-s run_common_test main test=full spec=default.spec"
   ]);
 
@@ -266,17 +263,19 @@ in {
       };
     };
 
-    client = {};
+    client = {
+      imports = [ ../common.nix ];
+    };
   };
 
-  testScript = ''
+  testScript = with pkgs.headcounter; ''
     startAll;
     $server1->waitForUnit("mongooseim.service");
     $server2->waitForUnit("mongooseim.service");
 
-    $client->succeed('cp -Lr "${localPkgs.mongooseimTests}/tests" .');
-    $client->succeed('cp "${localPkgs.mongooseimTests}/etc/vcard.config" .');
-    $client->succeed('cp "${localPkgs.mongooseimTests}/etc/default.spec" .');
+    $client->succeed('cp -Lr "${mongooseimTests}/tests" .');
+    $client->succeed('cp "${mongooseimTests}/etc/vcard.config" .');
+    $client->succeed('cp "${mongooseimTests}/etc/default.spec" .');
     $client->succeed('cp "${escalusConfig}" test.config');
 
     $client->succeed('sed -i '.

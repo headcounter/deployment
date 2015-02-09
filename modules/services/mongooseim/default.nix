@@ -5,9 +5,7 @@ with import ./erlexpr.nix;
 
 let
   cfg = config.services.headcounter.mongooseim;
-  package = (import ../../../pkgs {
-    inherit pkgs;
-  }).mongooseim;
+  package = pkgs.headcounter.mongooseim;
 
   shErlEsc = escaper: str: let
     doubleSlashed = escape ["\\"] (escaper str);
