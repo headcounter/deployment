@@ -249,23 +249,21 @@ in {
 
   nodes = {
     server1 = { config, pkgs, ... }: {
-      imports = import ../modules/module-list.nix;
+      imports = [ ../common.nix ];
       services.headcounter.mongooseim = {
         enable = true;
         inherit cookie;
         settings = mkConfig server1;
       };
-      networking.firewall.enable = false;
     };
 
     server2 = { config, pkgs, ... }: {
-      imports = import ../modules/module-list.nix;
+      imports = [ ../common.nix ];
       services.headcounter.mongooseim = {
         enable = true;
         inherit cookie;
         settings = mkConfig server2;
       };
-      networking.firewall.enable = false;
     };
 
     client = {};

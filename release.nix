@@ -19,9 +19,10 @@ in {
     };
 
     modules = evalModules {
-      modules = import ./modules/module-list.nix ++ singleton {
-        options = dummyOpts;
-      };
+      modules = [
+        ./common.nix
+        { options = dummyOpts; }
+      ];
       args = {
         inherit pkgs;
       };

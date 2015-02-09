@@ -1,7 +1,6 @@
 let
   mkMachine = attrs: attrs // {
-    imports = import modules/module-list.nix
-           ++ [ ./common.nix ]
+    imports = [ ./common-machine.nix ]
            ++ attrs.imports or [];
   };
 in {
@@ -87,10 +86,9 @@ in {
   unzervalt = { nodes, lib, ... }: {
     deployment.targetEnv = "container";
     deployment.container.host = nodes.ultron.config;
-    imports = import modules/module-list.nix
+    imports = [ ./common.nix ]
            ++ lib.optional (lib.pathExists ./private/default.nix) ./private;
     services.headcounter.webspace.enable = true;
-    networking.firewall.enable = false;
     users.mutableUsers = false;
   };
 }

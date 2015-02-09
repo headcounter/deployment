@@ -14,9 +14,7 @@ let
     });
   in {
     ultron = { config, lib, ... }: with lib; {
-      imports = import ../../modules/module-list.nix ++ [
-        ../../xmpp.nix ../../domains.nix
-      ];
+      imports = [ ../../common.nix ../../xmpp.nix ../../domains.nix ];
 
       headcounter.useSnakeOil = true;
       users.extraUsers.mongoose.extraGroups = [ "keys" ];
@@ -25,7 +23,6 @@ let
         device = "eth1";
       });
 
-      networking.firewall.enable = false;
       virtualisation.vlans = [ 1 ];
     };
 
@@ -39,7 +36,6 @@ let
         '';
       in concatStrings (mapAttrsToList mkHostEntry vhosts);
 
-      networking.firewall.enable = false;
       virtualisation.vlans = [ 1 ];
 
       networking.localCommands = let
