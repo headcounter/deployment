@@ -29,7 +29,7 @@ in {
       serviceConfig.Type = "oneshot";
       serviceConfig.RemainAfterExit = true;
 
-      script = with pkgs.lib; ''
+      script = with lib; ''
         ${flip concatMapStrings [ 5222 5223 5269 ] (port: ''
         iptables -t nat -A PREROUTING -p tcp --dport ${toString port} \
           -j DNAT --to-destination 88.198.198.219:${toString port}
@@ -41,11 +41,11 @@ in {
     };
   };
 
-  taalo = { pkgs, config, ... }: mkMachine {
+  taalo = { pkgs, lib, config, ... }: mkMachine {
     imports = [ ./hydra.nix ./chromium.nix ];
     deployment.hetzner.mainIPv4 = "188.40.96.202";
 
-    fileSystems."/".options = pkgs.lib.concatStringsSep "," [
+    fileSystems."/".options = lib.concatStringsSep "," [
       "autodefrag"
       "space_cache"
       "compress=lzo"
@@ -64,7 +64,7 @@ in {
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
     deployment.encryptedLinksTo = [ "ultron" ];
-    services.hydra.listenHost = pkgs.lib.mkForce
+    services.hydra.listenHost = lib.mkForce
       config.networking.p2pTunnels.ssh.ultron.localIPv4;
   };
 

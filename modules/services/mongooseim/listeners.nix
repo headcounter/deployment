@@ -1,6 +1,8 @@
-{ pkgs ? import <nixpkgs> {}, config, ... }:
+{ pkgs, ... }:
 
-with pkgs.lib;
+{ lib, config, ... }:
+
+with lib;
 with import ./erlexpr.nix;
 
 {

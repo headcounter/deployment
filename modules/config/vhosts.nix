@@ -1,6 +1,6 @@
-{ pkgs, options, config, ... }:
+{ pkgs, lib, options, config, ... }:
 
-with pkgs.lib;
+with lib;
 
 let
   cfg = config.headcounter;

@@ -1,6 +1,6 @@
-{ pkgs, config, nodes, resources, ... }:
+{ pkgs, lib, config, nodes, resources, ... }:
 
-with pkgs.lib;
+with lib;
 
 let
   hydraSrc = pkgs.fetchFromGitHub {

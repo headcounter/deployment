@@ -1,6 +1,6 @@
-{ pkgs, config, nodes, ... }:
+{ pkgs, lib, config, nodes, ... }:
 
-with pkgs.lib;
+with lib;
 
 let
   ownpkgs = import ../pkgs { inherit pkgs; };

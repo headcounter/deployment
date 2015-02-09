@@ -1,6 +1,6 @@
-{ pkgs, config, ... }:
+{ pkgs, lib, config, ... }:
 
-with pkgs.lib;
+with lib;
 
 let
   privateKeys = import ./ssl/private.nix;

@@ -1,8 +1,8 @@
 { pkgs, toplevelConfig, defaults, ... }:
 
-{ config, ... }:
+{ lib, config, ... }:
 
-with pkgs.lib;
+with lib;
 with import ./erlexpr.nix;
 
 /*

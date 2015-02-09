@@ -1,8 +1,8 @@
 { pkgs, toplevelConfig, ... }:
 
-{ config, ... }:
+{ config, lib, ... }:
 
-with pkgs.lib;
+with lib;
 with import ./erlexpr.nix;
 
 let
@@ -184,7 +184,9 @@ in {
     };
 
     listeners = mkOption {
-      type = types.listOf (types.submodule (import ./listeners.nix));
+      type = types.listOf (types.submodule (import ./listeners.nix {
+        inherit pkgs;
+      }));
       default = [
         { port = 5280;
           module = "mod_bosh";
