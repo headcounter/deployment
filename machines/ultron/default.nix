@@ -38,7 +38,7 @@ let
     }
   ];
 in {
-  imports = [ ../domains.nix ];
+  imports = [ ../../domains.nix ];
 
   deployment.hetzner.partitions = ''
     clearpart --all --initlabel --drives=sda,sdb

@@ -10,7 +10,7 @@ in {
   resources.sshKeyPairs."hydra-build" = {};
 
   ultron = { pkgs, lib, config, ... }: mkMachine {
-    imports = [ ./machines/ultron.nix ];
+    imports = [ ./machines/ultron ];
     deployment.hetzner.mainIPv4 = "5.9.105.142";
 
     services.openssh.extraConfig = lib.mkAfter ''
