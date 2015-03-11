@@ -6,8 +6,8 @@ let
   hydraSrc = pkgs.fetchFromGitHub {
     repo = "hydra";
     owner = "NixOS";
-    rev = "ea815d55b8d1a76adbabd858b16aaa45221179d0";
-    sha256 = "0n7z6yqlcra0hyp1b60nrwz0zk4jwrrx77afz818iw5p7snj69px";
+    rev = "ad2b7646ac394a72374a718d6a5f28577a82dad7";
+    sha256 = "1w4gk8yccvvka93i85rg4yv14vg4qwmzidmazkvczhzi8ijwfqda";
   };
 
   hydraRelease = import "${hydraSrc}/release.nix" {
