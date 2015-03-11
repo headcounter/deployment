@@ -63,6 +63,4 @@ in {
   services.postgresql.authentication = ''
     local hydra hydra peer
   '';
-
-  nix.gc.automatic = true; # No --max-freed, because df is unreliable on btrfs.
 }
