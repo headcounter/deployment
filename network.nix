@@ -1,6 +1,6 @@
 let
   mkMachine = attrs: attrs // {
-    imports = [ ./common-machine.nix ]
+    imports = [ ./common-machines.nix ]
            ++ attrs.imports or [];
   };
 in {
