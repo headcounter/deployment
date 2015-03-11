@@ -5,4 +5,8 @@
   nixpkgs.config.packageOverrides = pkgs: {
     inherit (import ./pkgs { inherit pkgs; }) headcounter;
   };
+
+  nix.extraOptions = ''
+    auto-optimise-store = true
+  '';
 }
