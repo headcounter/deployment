@@ -31,8 +31,6 @@ let
     "@STRENGTH"
   ];
 
-  hornyHost = "i-am-getting-horny-by-using-an-insecure-connection"
-            + ".headcounter.org";
 in {
   config.services.headcounter.mongooseim = {
     enable = true;
@@ -43,7 +41,6 @@ in {
         "no-icq.org"
         "noicq.org"
         "anonymous.headcounter.org"
-        hornyHost
       ];
 
       s2s.filterDefaultPolicy = "allow";
@@ -79,14 +76,6 @@ in {
         bosh = mkAddr "mod_bosh" {
           port = 5280;
           options.tls.flag = true;
-        };
-
-        # TODO: enable this only for ${hornyHost}
-        c2sInsecure = mkAddr "ejabberd_c2s" {
-          port = 5222;
-          module = "ejabberd_c2s";
-          options.max_stanza_size = 65536;
-          options.shaper = "c2s_insecure_shaper";
         };
 
         s2s = mkAddr "ejabberd_s2s_in" {
@@ -279,8 +268,6 @@ in {
 
         {acl, anonymous, {server, "anonymous.headcounter.org"}}.
 
-        {acl, morons, {server, "${hornyHost}"}}.
-
         % we don't allow too short names!
         {acl, weirdnames, {user_glob, "?"}}.
         {acl, weirdnames, {user_glob, "??"}}.
@@ -292,16 +279,10 @@ in {
         {access, configure, [{allow, admin}]}.
 
         % Every username can be registered via in-band registration:
-        {access, register, [{deny, morons},
-                            {deny, weirdnames},
+        {access, register, [{deny, weirdnames},
                             {allow, all}]}.
 
-        % only allow morons to connect unencrypted!
-        {access, insecure, [{allow, morons}]}.
-
-        % all users except morons
-        {access, public, [{deny, morons},
-                          {allow, all}]}.
+        {access, public, [{allow, all}]}.
 
         % Only admins can send announcement messages:
         {access, announce, [{allow, admin},
@@ -310,12 +291,10 @@ in {
         % Only non-blocked users can use c2s connections:
         {access, c2s, [{deny, blocked},
                        {deny, anonymous},
-                       {deny, morons},
                        {allow, all}]}.
 
         % all security-aware users can use poll/bind
         {access, pollers, [{deny, blocked},
-                           {deny, morons},
                            {allow, all}]}.
 
         % shaper stuff
@@ -338,9 +317,6 @@ in {
                              {none, wallops},
                              {ultrafast, all}]}.
 
-        % the insecure morons...
-        {access, c2s_insecure_shaper, [{slow, all}]}.
-
         % For all S2S connections use "fast" shaper
         {access, s2s_shaper, [{fast, all}]}.
 
@@ -351,9 +327,7 @@ in {
         {access, muc_wallops, [{allow, admin},
                                {allow, wallops}]}.
 
-        % All users are allowed to use MUC service, except the morons ;-)
-        {access, muc, [{allow, all},
-                       {deny, morons}]}.
+        {access, muc, [{allow, all}]}.
 
         % This rule allows access only for local users:
         {access, local, [{allow, local}]}.
