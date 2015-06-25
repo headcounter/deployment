@@ -24,6 +24,8 @@ let
 
       socketConfig = ''
         ssl.engine  = "enable"
+        ssl.use-sslv2 = "disable"
+        ssl.use-sslv3 = "disable"
         ssl.pemfile = "${vhost.ssl.privateKey.path}"
       '' + optionalString (vhost.ssl.intermediateCert != null) ''
         ssl.ca-file = "${vhost.ssl.intermediateCert}"
