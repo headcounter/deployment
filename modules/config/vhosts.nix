@@ -86,7 +86,9 @@ let
         description = ''
           Intermediate X.509 certificate chain of the CA as a string value.
         '';
-        apply = pkgs.writeText "intermediate.pem";
+        apply = val: if (val != null)
+          then pkgs.writeText "intermediate.pem" val
+          else null;
       };
     };
   };

@@ -5,11 +5,12 @@ with lib;
 let
   privateKeys = import ./ssl/private.nix;
   publicKeys = import ./ssl/public.nix;
+  intermediateCerts = import ./ssl/intermediate.nix;
 
   withSSL = attrs: attrs // (if !config.headcounter.useSnakeOil then {
     ssl.privateKey = builtins.getAttr attrs.fqdn privateKeys;
     ssl.publicKey = builtins.getAttr attrs.fqdn publicKeys;
-    ssl.intermediateCert = builtins.readFile ./ssl/intermediate.crt;
+    ssl.intermediateCert = builtins.getAttr attrs.fqdn intermediateCerts;
   } else with import ./ssl/snakeoil.nix attrs.fqdn; {
     ssl = { inherit privateKey publicKey intermediateCert; };
   });

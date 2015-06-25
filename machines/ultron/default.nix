@@ -25,6 +25,7 @@ let
       socketConfig = ''
         ssl.engine  = "enable"
         ssl.pemfile = "${vhost.ssl.privateKey.path}"
+      '' + optionalString (vhost.ssl.intermediateCert != null) ''
         ssl.ca-file = "${vhost.ssl.intermediateCert}"
       '';
 
