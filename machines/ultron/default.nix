@@ -6,6 +6,7 @@ let
   mainSite = pkgs.headcounter.site;
 
   unzervaltIPv4 = nodes.unzervalt.config.networking.privateIPv4;
+  parsifalIPv4 = config.headcounter.imperativeContainers.parsifal.localAddress;
   hydraIPv4 = nodes.taalo.config.networking.p2pTunnels.ssh.ultron.localIPv4;
 
   genIPv46VHosts = vhost: scfg: let
@@ -128,8 +129,18 @@ in {
           "host" => "${hydraIPv4}",
           "port" => 3000
         )))
-      } # http://redmine.lighttpd.net/issues/1268
-      else $HTTP["url"] =~ "" {
+      # Mapping to parsifal container
+      } else $HTTP["url"] =~ "^/foss-herablads(?:$|/)" {
+        setenv.add-request-header = (
+          "X-Request-Base" => "https://headcounter.org/foss-herablads/"
+        )
+        proxy.balance = "hash"
+        proxy.server = ("/foss-herablads" => ((
+          "host" => "${parsifalIPv4}",
+          "port" => 80
+        )))
+      # http://redmine.lighttpd.net/issues/1268
+      } else $HTTP["url"] =~ "" {
         server.document-root = "${mainSite.html}"
       }
     '' ++ optionals (hasAttr "unzervalt" nodes) (genIPv46VHosts misc ([{
