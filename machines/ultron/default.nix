@@ -147,7 +147,7 @@ in {
       socketConfig = ''
         proxy.balance = "hash"
         proxy.server = ("" => ((
-          "host" => "${nodes.unzervalt.config.networking.privateIPv4}",
+          "host" => "${unzervaltIPv4}",
           "port" => 80
         )))
       '';
