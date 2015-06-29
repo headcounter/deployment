@@ -64,6 +64,39 @@ in {
     "noatime"
   ];
 
+  networking.nat = {
+    enable = true;
+    externalInterface = "eth0";
+  };
+
+  headcounter.imperativeContainers.parsifal = {
+    index = 1;
+    forwardSSH = [
+      "${config.headcounter.vhosts.headcounter.ipv4}:2222"
+      "[${config.headcounter.vhosts.headcounter.ipv6}]:2222"
+    ];
+    authorizedKeys = [
+      (concatStrings [
+        "ssh-rsa "
+        "AAAAB3NzaC1yc2EAAAADAQABAAABAQC+rrVQrAofce2eJLXVmYejyaed0ZrGoX+gl4zTE"
+        "30fsVMdlkC4vltvbGxSZ4sTi3x4FfXIh8d0+O4XdaDePQwv+feCz3Ky+ZGNj0zbKA082M"
+        "G91V9p/1FlOUpMkCRXnIxNhAOpwQxyhPUOJlDWgDDpdBPe4DMOzSf0krpMEX7CbJx/S5T"
+        "9Wy/nlF/e0Lbxb+FRL0kVdnM7JnWQcB9NvHt/NYPoPLQCFiWxKI5jW9YthF55T11+xgKO"
+        "/QBm9nuZU8ij5gMDR65EymtRgYjqtBy+CrqpX9pkwnAWFeYItZfshUj3pDfn6pMjfQ7MR"
+        "Z4ol5E9RXIjnLR5XDfoI/7NzzA1"
+      ])
+      (concatStrings [
+        "ssh-rsa "
+        "AAAAB3NzaC1yc2EAAAADAQABAAABAQDFnhcVRaz6SKxlbVp2DtxZztOkiwiAvgATi2ehx"
+        "9aAyyaEf0HWM5tHQnVVj99zxL5EY6g/pQ9hZZMFu9s/VORTk8ULpyLTMDMktvokUnBJOj"
+        "7HIB0U+Yyh1AoR3k1y0j6xCkH6Bcl0uZOn1XX/zorcjtuuA5LmfI3zj2whD/8cGzW/6Wq"
+        "YOnSDI9RQ0dUPhHiZEH5U7vbKjgz7Ry9I7VkjB8Ztfax+BNwV1Um0FmiITPz3PgriU/AD"
+        "vn1m1hIu5Vc38YQvaoXIAypeOXgGWGTLTOq/gtCOKGmg3VFERUstPXKgsij0Ves6DxT+0"
+        "CiIN9EClp2uuMtfH1pLCAI3ttvf"
+      ])
+    ];
+  };
+
   services.headcounter.lighttpd = {
     enable = true;
     defaultPort = null;
