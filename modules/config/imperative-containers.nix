@@ -6,7 +6,7 @@ let
   containerOpts = { name, config, ... }: {
     options = {
       instance = mkOption {
-        type = addCheck types.str (s: stringLength s <= 11);
+        type = types.addCheck types.str (s: stringLength s <= 11);
         description = ''
           The instance name of the NixOS container.
           By default it's <literal>ic-$name</literal>.
