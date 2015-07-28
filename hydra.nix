@@ -35,9 +35,15 @@ in {
     notificationSender = "hydra@headcounter.org";
     dbi = "dbi:Pg:dbname=hydra;";
     listenHost = "localhost";
+    extraConfig = ''
+      binary_cache_secret_key_file = /run/keys/binary-cache.secret
+    '';
   };
 
   users.extraUsers.hydra.uid = 2000;
+  users.extraUsers.hydra.extraGroups = [ "keys" ];
+  systemd.services.hydra-server.requires = [ "keys.target" ];
+  systemd.services.hydra-server.after = [ "keys.target" ];
 
   nix.maxJobs = mkForce 0;
   nix.distributedBuilds = true;
@@ -51,6 +57,12 @@ in {
     sshUser = buildUser;
     supportedFeatures = [ "kvm" "nixos-test" ];
   });
+
+  deployment.keys."binary-cache.secret" = {
+    text = (import ./ssl/hydra.nix).secret;
+    user = "hydra";
+    permissions = "0400";
+  };
 
   deployment.keys."signkey.priv".text = readFile ./ssl/signing-key.sec;
   deployment.keys."buildkey.priv".text = buildKey;
