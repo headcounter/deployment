@@ -4,13 +4,13 @@
 
 buildErlang rec {
   name = "mongooseim";
-  version = "1.5.0";
+  version = "1.5.1";
 
   src = fetchFromGitHub {
     owner = "esl";
     repo = "MongooseIM";
     rev = version;
-    sha256 = "0y1690bfiasbrd3l9migywxczncls44hnf7kggxgn7rc1ks5d06j";
+    sha256 = "0lpia21kmy9im1c0d8zx0i9swdiifypzj1k4xc3drp8kssz9adrz";
   };
 
   patches = [
@@ -26,15 +26,12 @@ buildErlang rec {
       -e '/lager/s/2\.0\.3/.*/' \
       -e '/cowboy/s/0\.9\.0/.*/' \
       rebar.config
-
-    # Remove dependencies we don't need
-    sed -i -re '/\<(mysql|pgsql|redo|seestar|odbc)\>/d' rel/reltool.config
   '';
 
   buildInputs = [ pam zlib openssl expat ];
   erlangDeps = with erlangPackages; [
-    alarms cowboy cuesport exml folsom lager mochijson2 p1_cache_tab
-    p1_stringprep redo fusco seestar proper pa ecoveralls
+    alarms base16 cowboy cuesport ecoveralls exml folsom fusco idna lager
+    mochijson2 mustache p1_cache_tab p1_stringprep pa proper recon redo seestar
   ];
 
   postBuild = ''

@@ -1,25 +1,25 @@
-diff --git a/rel/reltool.config b/rel/reltool.config
-index 91ae6b8..af63049 100644
---- a/rel/reltool.config
-+++ b/rel/reltool.config
-@@ -1,5 +1,5 @@
- {sys, [
--       {lib_dirs, ["../apps", "../deps"]},
-+       {lib_dirs, ["../apps"]},
-        {incl_cond, exclude},
-        {rel, "mongooseim", "",
-         [
-@@ -70,7 +70,8 @@
-        {app, p1_cache_tab, [{incl_cond, include}]},
-        {app, fusco, [{incl_cond, include}]},
-        {app, alarms, [{incl_cond, include}]},
--       {app, pa, [{incl_cond, include}]}
-+       {app, pa, [{incl_cond, include}]},
-+       {excl_lib, otp_root}
-       ]}.
+diff --git a/rel/reltool.config.script b/rel/reltool.config.script
+index 40877c9..bfc9cbf 100644
+--- a/rel/reltool.config.script
++++ b/rel/reltool.config.script
+@@ -55,7 +55,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
  
- {target_dir, "mongooseim"}.
-@@ -85,7 +86,5 @@
+ 
+ [{sys, [
+-        {lib_dirs, ["../apps", "../deps"]},
++        {lib_dirs, ["../apps"]},
+         {incl_cond, exclude},
+         {rel, "mongooseim", "", [mongoose | AppsToRun]},
+         {rel, "start_clean", "", [kernel,stdlib]},
+@@ -64,6 +64,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+         {excl_archive_filters, [".*"]}, % do no archive built libs
+         {excl_sys_filters, ["^bin/.*",
+                             "^erts.*/bin/(dialyzer|typer)"]},
++        {excl_lib, otp_root},
+ 
+         {app, mongoose, [{incl_cond, include}, {lib_dir, ".."}]}
+        ] ++ IncludeApps},
+@@ -80,8 +81,6 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
             {copy, "files/mongooseimctl", "bin/mongooseimctl"},
             {copy, "files/app.config", "etc/app.config"},
             {template, "files/vm.args", "etc/vm.args"},
@@ -27,4 +27,5 @@ index 91ae6b8..af63049 100644
 -           {mkdir, "var"},
 -           {mkdir, "var/log"}
 +           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"}
-           ]}.
+           ]}
+ ].

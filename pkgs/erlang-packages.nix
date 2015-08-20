@@ -28,6 +28,7 @@ let
   overrides = {
     exml.buildInputs = [ pkgs.expat ];
     hamcrest.src.repo = "hamcrest-erlang";
+    idna.src.repo = "erlang-idna";
     katt.postPatch = ''
       cat > priv/compile-parser <<EOF
       #!${pkgs.erlang}/bin/escript
@@ -113,6 +114,7 @@ let
     fusco         = "05idlhxwlk5l0xni9fc52ncp3isin7k0gdzxzgifw1mk1157cg8g";
     goldrush      = "0fhi3jidn40gri49scvqvavqxh0ggfllx4xii8yqrs0l2l4lq9b5";
     hamcrest      = "1js9xmapavh50glfi062rlbg8nglq37gam6ahr9hq679bhsva3ka";
+    idna          = "14daxbgpksqvnbx7mahfvh4mbzhza0yamlip9qqq14wgkdrihdmm";
     jsx           = "0kh1084ivva8wsl1545b0idd9g2r6q1ldf5cpgk2a36wmj2ni7zz";
     katt          = "0m7r99wbbcdbi666zsp40lmy39an5lhc3rgr1hcac161701dk6vw";
     lager         = "1bwd4g8bzh9msxzpp5nm4sssh883xycfrp76nk63r3vdah2ypmsv";
@@ -129,6 +131,7 @@ let
     proper        = "14g5sjspg0vc3jfr1m8pq6fsj3wlj72pad1qfw1w4vx87z15xzq6";
     ranch         = "02b6nzdllrym90a5bhzlz4s52hyj9vwcn048na4j5jiivknm8g3r";
     rebarFR       = "17rkqx1cx8nvg9f0zy97d7xpy877bm68y37ywbmv5irj6kwbsqkk";
+    recon         = "0gpj6i1a4gyqvwb4q8kkzc58n4n1v225pf47vbzab9arix6xj4ym";
     redo          = "14hg2jcs3qyl7aaz8ni9h8s97kjs0ksdfnh25m3hava7ga45jq1c";
     reloader      = "1ansv02klh9i53gmvxjk7vl83nsvyada58xn1pmc9gid0cl5vnl4";
     seestar       = "13l47hj7lm9ciqyk0rk3pzllj12141jcqkr5j7hpnwg44j4xd8wm";
@@ -153,6 +156,7 @@ let
     fusco         = ghe "0.0.0"    "esl";
     goldrush      = ghe "0.1.6"    "DeadZen";
     hamcrest      = ghe "0.1.0"    "hyperthunk";
+    idna          = ghe "1.0.2"    "benoitc";
     jsx           = ghe "2.4.0"    "talentdeficit";
     katt          = ghe "1.3.0-rc" "for-GET";
     lager         = ghe "2.1.0"    "basho";
@@ -169,6 +173,7 @@ let
     proper        = ghe "1.1"      "manopapad";
     ranch         = ghe "1.1.0"    "ninenines";
     rebarFR       = ghe "0.1"      "madtrick";
+    recon         = ghe "2.2.1"    "ferd";
     redo          = ghe "1.1.0"    "jkvor";
     reloader      = ghe "1"        "lucaspiller";
     seestar       = ghe "0.0.1"    "iamaleksey";
