@@ -13,7 +13,7 @@
 
     mkSOA = dottedEmail: ''
       @ IN SOA ${primaryDNS}. ${dottedEmail}. (
-        1000    ; Serial
+        1001    ; Serial
         28800   ; Refresh
         7200    ; Retry
         604800  ; Expire
@@ -78,9 +78,9 @@
 
         ; DNS servers
         ns1 IN A    78.46.182.124
-        ns1 IN AAAA 2a01:4f8:d13:3009::1
+        ns1 IN AAAA 2a01:4f8:d13:3009::2
         ns2 IN A    78.47.142.38
-        ns2 IN AAAA 2a01:4f8:d13:5308::1
+        ns2 IN AAAA 2a01:4f8:d13:5308::2
 
         ; Legacy transition stuff
         @           IN  A     78.47.32.129
