@@ -73,14 +73,20 @@ in {
     deployment.hetzner.mainIPv4 = "144.76.202.147";
   };
 
-  dugee = mkMachine {
+  dugee = { lib, ... }: mkMachine {
     imports = [ ./dns-server.nix ];
     deployment.hetzner.mainIPv4 = "78.46.182.124";
+    networking.localCommands = lib.mkAfter ''
+      ip -6 addr add 2a01:4f8:d13:3009::2 dev eth0
+    '';
   };
 
-  gussh = mkMachine {
+  gussh = { lib, ... }: mkMachine {
     imports = [ ./dns-server.nix ];
     deployment.hetzner.mainIPv4 = "78.47.142.38";
+    networking.localCommands = lib.mkAfter ''
+      ip -6 addr add 2a01:4f8:d13:5308::2 dev eth0
+    '';
   };
 
   unzervalt = { nodes, lib, ... }: {
