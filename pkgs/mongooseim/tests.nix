@@ -2,13 +2,13 @@
 
 buildErlang rec {
   name = "ejabberd_tests";
-  version = "2.4.0";
+  version = "2.4.1";
 
   src = fetchFromGitHub {
     owner = "esl";
     repo = "ejabberd_tests";
     rev = version;
-    sha256 = "0k9004hnm9ir2la2lg681l897l20yv8k5fmzhjq3krk78cbnj1dj";
+    sha256 = "08ycfgy9j8jgk79kcb9ryvq704ngd9aj2lf4wcyfsniffc0zgf1l";
   };
 
   postBuild = ''
