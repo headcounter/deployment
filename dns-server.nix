@@ -13,7 +13,7 @@
 
     mkSOA = dottedEmail: ''
       @ IN SOA ${primaryDNS}. ${dottedEmail}. (
-        1001    ; Serial
+        0       ; Serial
         28800   ; Refresh
         7200    ; Retry
         604800  ; Expire
