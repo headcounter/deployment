@@ -247,6 +247,7 @@ in {
   nodes = {
     server1 = { config, pkgs, ... }: {
       imports = [ ../common.nix ];
+      services.headcounter.epmd.addresses = [ "0.0.0.0" ];
       services.headcounter.mongooseim = {
         enable = true;
         inherit cookie;
@@ -256,6 +257,7 @@ in {
 
     server2 = { config, pkgs, ... }: {
       imports = [ ../common.nix ];
+      services.headcounter.epmd.addresses = [ "0.0.0.0" ];
       services.headcounter.mongooseim = {
         enable = true;
         inherit cookie;

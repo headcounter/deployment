@@ -106,6 +106,8 @@ in {
       createHome = true;
     };
 
+    services.headcounter.epmd.enable = true;
+
     systemd.services.mongooseim = rec {
       description = "MongooseIM XMPP Server";
       wantedBy = [ "multi-user.target" ];
