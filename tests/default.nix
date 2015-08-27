@@ -8,6 +8,7 @@ let
     inherit pkgs system;
   } // args);
 in {
+  code-reload = callTest ./code-reload {};
   mongooseim = callTest ./mongooseim.nix {};
   headcounter = callTest ./headcounter {};
 }
