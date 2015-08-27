@@ -97,6 +97,8 @@ let
   in (buildVirtualNetwork newNodes).server.config.system.build.toplevel;
 
 in {
+  name = "code-reload";
+
   inherit nodes;
 
   testScript = ''
