@@ -3,6 +3,7 @@
 { name, version
 , buildInputs ? [], erlangDeps ? []
 , postPatch ? ""
+, passthru ? {}
 , ... }@attrs:
 
 with stdenv.lib;
@@ -58,12 +59,12 @@ let
       runHook postInstall
     '';
 
-    passthru = rec {
+    passthru = passthru // rec {
       packageName = name;
       libraryDir = "${self}/lib/erlang/lib";
       appDir = "${libraryDir}/${packageName}";
       inherit erlangDeps recursiveErlangDeps;
     };
-  } // removeAttrs attrs [ "name" "postPatch" "buildInputs" ]);
+  } // removeAttrs attrs [ "name" "postPatch" "buildInputs" "passthru" ]);
 
 in self
