@@ -347,7 +347,8 @@ in {
       if ($rval != 0 || $stats[0] < $total) {
         $client->log("$stats[1] tests failed (test runner ".
                      "exited with exit code $rval)");
-        die;
+        open TOUCH_FAILED, ">>$out/nix-support/failed";
+        close TOUCH_FAILED;
       }
     });
   '';
