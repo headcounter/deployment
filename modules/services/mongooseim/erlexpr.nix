@@ -53,4 +53,9 @@ rec {
       io:fwrite("\"~p\"", [Addr])
     ' -s erlang halt > "$out"
   ''}";
+
+  shErlEsc = escaper: str: let
+    doubleSlashed = escape ["\\"] (escaper str);
+    shQuoted = replaceChars ["'"] [("'\\'" + "'")] doubleSlashed;
+  in "'${shQuoted}'";
 }

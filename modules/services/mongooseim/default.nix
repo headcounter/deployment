@@ -5,17 +5,6 @@ with import ./erlexpr.nix;
 
 let
   cfg = config.services.headcounter.mongooseim;
-  package = pkgs.headcounter.mongooseim;
-
-  shErlEsc = escaper: str: let
-    doubleSlashed = escape ["\\"] (escaper str);
-    shQuoted = replaceChars ["'"] [("'\\'" + "'")] doubleSlashed;
-  in "'${shQuoted}'";
-
-  commonArgsFile = pkgs.writeText "common.args" ''
-    -sname ${shErlEsc erlAtom cfg.nodeName}
-    -setcookie ${shErlEsc erlAtom cfg.cookie}
-  '';
 
   progName = "mongooseim";
 
@@ -23,12 +12,13 @@ let
     +K true
     +A 5
     +P 10000000
-    -args_file ${shErlEsc id commonArgsFile}
-    -sasl releases_dir ${shErlEsc erlString "${package}/releases"}
+    -sname ${shErlEsc erlAtom cfg.nodeName}
+    -setcookie ${shErlEsc erlAtom cfg.cookie}
+    -sasl releases_dir ${shErlEsc erlString "${cfg.package}/releases"}
     -mnesia dir ${shErlEsc erlString cfg.databaseDir}
-    -boot ${shErlEsc id "${package}/releases/${progName}"}
-    -boot_var RELTOOL_EXT_LIB ${shErlEsc id "${package}/lib"}
-    -config ${shErlEsc id "${package}/etc/app.config"}
+    -boot ${shErlEsc id "${cfg.package}/releases/${progName}"}
+    -boot_var RELTOOL_EXT_LIB ${shErlEsc id "${cfg.package}/lib"}
+    -config ${shErlEsc id "${cfg.package}/etc/app.config"}
     -env ERL_MAX_PORTS 250000
     -env ERL_FULLSWEEP_AFTER 2
     -sasl sasl_error_logger false
@@ -36,6 +26,7 @@ let
     -noinput
     -smp
   '';
+
 in {
   options.services.headcounter.mongooseim = {
     enable = mkEnableOption "MongooseIM";
@@ -62,9 +53,16 @@ in {
       '';
     };
 
+    package = mkOption {
+      type = types.package;
+      description = ''
+        The MongooseIM package to use for this instance.
+      '';
+    };
+
     configFile = mkOption {
       default = null;
-      example = "${package}/etc/ejabberd.cfg";
+      example = "${cfg.package}/etc/ejabberd.cfg";
       type = types.nullOr types.path;
       description = ''
         Path to the main configuration file.
@@ -88,48 +86,66 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
-    services.headcounter.mongooseim.cookie = mkDefault (let
-      randCookie = pkgs.runCommand "erlang-cookie.nix" {} ''
-        cat > "$out" <<RAND
-        "$(tr -dc A-Za-z0-9 < /dev/urandom | head -c$((80 + $RANDOM % 100)))"
-        RAND
-      '';
-      preferLocalBuild = true;
-    in import randCookie);
+  config = mkMerge [
+    {
+      services.headcounter.mongooseim = {
+        package = mkDefault pkgs.headcounter.mongooseim;
+      };
+    }
+    (mkIf cfg.enable {
+      services.headcounter.mongooseim = {
+        cookie = mkDefault (let
+          randCookie = pkgs.runCommand "erlang-cookie.nix" {} ''
+            cat > "$out" <<RAND
+            "$(tr -dc A-Za-z0-9 < /dev/urandom | \
+               head -c$((80 + $RANDOM % 100)))"
+            RAND
+          '';
+          preferLocalBuild = true;
+        in import randCookie);
+      };
 
-    users.extraGroups.mongoose = {};
-    users.extraUsers.mongoose = {
-      description = "MongooseIM user";
-      group = "mongoose";
-      home = cfg.databaseDir;
-      createHome = true;
-    };
+      programs.headcounter.mongooseimctl = {
+        enable = true;
+        ctlHost = head (builtins.match "[^@]+@([^@]+)" cfg.nodeName);
+        destNodeName = cfg.nodeName;
+        inherit (cfg) cookie;
+      };
 
-    services.headcounter.epmd.enable = true;
+      users.extraGroups.mongoose = {};
+      users.extraUsers.mongoose = {
+        description = "MongooseIM user";
+        group = "mongoose";
+        home = cfg.databaseDir;
+        createHome = true;
+      };
 
-    systemd.services.mongooseim = rec {
-      description = "MongooseIM XMPP Server";
-      wantedBy = [ "multi-user.target" ];
-      requires = [ "keys.target" ];
-      after = [ "network.target" "fs.target" "keys.target" ];
+      services.headcounter.epmd.enable = true;
 
-      environment.EMU = "beam";
-      environment.ROOTDIR = package;
-      environment.PROGNAME = progName;
-      environment.EJABBERD_CONFIG_PATH = if cfg.configFile != null
-                                         then cfg.configFile
-                                         else cfg.settings.generatedConfigFile;
+      systemd.services.mongooseim = rec {
+        description = "MongooseIM XMPP Server";
+        wantedBy = [ "multi-user.target" ];
+        requires = [ "keys.target" ];
+        after = [ "network.target" "fs.target" "keys.target" ];
 
-      serviceConfig.Type = "notify";
-      serviceConfig.NotifyAccess = "all";
-      serviceConfig.User = "mongoose";
-      serviceConfig.Group = "mongoose";
-      serviceConfig.PrivateTmp = true;
-      serviceConfig.PermissionsStartOnly = true;
+        environment.EMU = "beam";
+        environment.ROOTDIR = cfg.package;
+        environment.PROGNAME = progName;
+        environment.EJABBERD_CONFIG_PATH =
+          if cfg.configFile != null
+          then cfg.configFile
+          else cfg.settings.generatedConfigFile;
 
-      serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl mongooseim"
-                              + " -args_file ${serverArgsFile}";
-    };
-  };
+        serviceConfig.Type = "notify";
+        serviceConfig.NotifyAccess = "all";
+        serviceConfig.User = "mongoose";
+        serviceConfig.Group = "mongoose";
+        serviceConfig.PrivateTmp = true;
+        serviceConfig.PermissionsStartOnly = true;
+
+        serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl mongooseim"
+                                + " -args_file ${serverArgsFile}";
+      };
+    })
+  ];
 }
