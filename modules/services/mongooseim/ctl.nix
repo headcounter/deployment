@@ -11,7 +11,7 @@ let
     -setcookie ${shErlEsc erlAtom cfg.cookie}
     -noinput
     -hidden
-    -pa ${shErlEsc id "${package}/lib/ejabberd-2.1.8+mim-1.5.1/ebin"}
+    -pa ${shErlEsc id "${package.mainAppDir}/ebin"}
     -s ejabberd_ctl
   '';
 
