@@ -18,7 +18,7 @@ let
     "${pkgs.erlang}/bin/erl"
     "-sname test@client"
     "-noinput"
-    "-setcookie mongooseim"
+    "-setcookie ${cookie}"
     "-pa ${mongooseimTests}/tests ${lib.concatStringsSep " " testLibs}"
     "-s run_common_test main test=full spec=default.spec"
   ]);
