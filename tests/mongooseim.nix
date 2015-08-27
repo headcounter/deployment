@@ -267,6 +267,11 @@ in {
 
     client = {
       imports = [ ../common.nix ];
+      programs.headcounter.mongooseimctl = {
+        enable = true;
+        inherit cookie;
+        destNodeName = "mongooseim@server1";
+      };
     };
   };
 
@@ -284,9 +289,6 @@ in {
                      '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
                      '-e \'s/localhost/${server1}/g\' '.
                      'tests/*.erl vcard.config');
-
-    # Disable mongooseimctl test (Too SysV'ish right now)
-    $client->succeed('sed -i -e \'/ejabberdctl_SUITE/d\' default.spec');
 
     my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
     chomp $clientip;

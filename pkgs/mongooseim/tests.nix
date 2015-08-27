@@ -11,6 +11,8 @@ buildErlang rec {
     sha256 = "08ycfgy9j8jgk79kcb9ryvq704ngd9aj2lf4wcyfsniffc0zgf1l";
   };
 
+  patches = [ ./tests.patch ];
+
   postBuild = ''
     erlc -o ebin run_common_test.erl
   '';

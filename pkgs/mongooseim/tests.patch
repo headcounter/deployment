@@ -1,0 +1,26 @@
+diff --git a/tests/ejabberdctl_SUITE.erl b/tests/ejabberdctl_SUITE.erl
+index 95c4bf4..79e855e 100644
+--- a/tests/ejabberdctl_SUITE.erl
++++ b/tests/ejabberdctl_SUITE.erl
+@@ -89,20 +89,15 @@ suite() ->
+     escalus:suite().
+ 
+ init_per_suite(Config) ->
+-    {ok, EjdWD} = escalus_ejabberd:rpc(file, get_cwd, []),
+     Cwd0 = escalus_config:get_config(data_dir, Config),
+     CwdTokens = string:tokens(Cwd0, "/"),
+     Cwd =  [$/ | string:join(lists:sublist(CwdTokens, 1, length(CwdTokens)-2), "/")],
+     TemplatePath = Cwd ++ "/roster.template",
+     start_mod_admin_extra(),
+-    CtlPath = case filelib:is_file(EjdWD ++ "/bin/ejabberdctl") of
+-                  true -> EjdWD ++ "/bin/ejabberdctl";
+-                  false -> EjdWD ++ "/bin/mongooseimctl"
+-              end,
+ 
+     AuthMods = auth_modules(),
+     
+-    NewConfig = escalus:init_per_suite([{ctl_path, CtlPath},
++    NewConfig = escalus:init_per_suite([{ctl_path, os:find_executable("mongooseimctl")},
+                                         {ctl_auth_mods, AuthMods},
+                                         {roster_template, TemplatePath} | Config]),
+     escalus:create_users(NewConfig, {by_name, [alice, mike, bob, kate]}).
