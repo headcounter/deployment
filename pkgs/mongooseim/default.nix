@@ -36,6 +36,16 @@ buildErlang rec {
 
   postBuild = ''
     rebar generate
+
+    # Remove nodetool and the erl wrapper, because we don't need it
+    # but be extra paranoid about the deletion. We want deletion to
+    # fail if there are extra files left or if a file does not exist.
+    basedir="$(echo "rel/${name}"/erts-[0-9]*)"
+    for to_delete in nodetool erl foo; do
+      rm "$basedir/bin/$to_delete"
+    done
+    rmdir "$basedir/bin"
+    rmdir "$basedir"
   '';
 
   installPhase = ''
