@@ -65,6 +65,7 @@ let
     cucumberl     = "3f2cca66ed87a53a64177232428ffde606bdcb9a";
     cuesport      = "3b16d99d8bc41774dbc4dabad8054b4423dec5a6";
     ecoveralls    = "0e52c4709f763d512e6972e91330977cfedb3d13";
+    escalus       = "023c2d523b4348e843fcc8dd9a0a3d2e785fd31b";
     espec         = "44dd72b8924425f09ad1093226ce0c755524a507";
     fusco         = "78650a15cf244065ab3ee74dafb8efabfd73575d";
     hamcrest      = "7215234e14a7c82458829c542edbf2899ceedbd3";
@@ -107,7 +108,7 @@ let
     cuesport      = "0r89p9g5ps7rbd06rzzpyr7d3vm18bl9wpxy3sj2f551km248jbq";
     ecoveralls    = "0p5apdzfncn60rkg7lvn2dvkqh0jcqiq7ba177lvccw7grvmnd0s";
     edown         = "0sq7hc7mmcv8maxg2map9czr2772gsbrjsr1gffk7r5f12lc7ffv";
-    escalus       = "01cqhpx40pwjzx5lzwm64ggyfbg3r88jacm2xdvaax1h7ib2crwc";
+    escalus       = "0xqk8ijafivss8q7bf6lsdk70a8m1pr4iy76kpqpcijqvsp5pvy5";
     espec         = "1k070c54f6kcdk3ciipq9y651cmdci7g67kqmb4r1gib2y1apzad";
     exml          = "1qmixn7i4gvc080pvhy9c0pwlswyshnghwavg4y36x1sl8rhcv7g";
     folsom        = "0xfi5r4z0wq7sjpcyhc2w19jqj8g8qr9ifdrv77p5gj84rx1fxbq";
