@@ -45,14 +45,12 @@ let
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"makota">>},
-        {compression, <<"zlib">>}
       ]},
       {bob, [
         {username, <<"bOb">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"makrolika">>},
-        {ssl, optional}
       ]},
       {carol, [
         {username, <<"carol">>},
@@ -114,7 +112,7 @@ let
         {host, <<"${server1}">>},
         {password, <<"break_me">>},
         {compression, <<"zlib">>},
-        {ssl, required}
+        {starttls, required}
       ]},
       {astrid, [
         {username, <<"astrid">>},
