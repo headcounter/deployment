@@ -178,7 +178,11 @@ let
     ]}.
   '';
 
-  mkConfig = serverName: {
+  mkConfig = serverName: let
+    certs = import ../ssl/snakeoil.nix serverName;
+    privKeyFile = pkgs.writeText "priv.pem" certs.privateKey;
+    pubKeyFile = pkgs.writeText "pub.pem" certs.publicKey;
+  in {
     hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
     s2s.filterDefaultPolicy = "allow";
 
@@ -193,6 +197,29 @@ let
         module = "ejabberd_cowboy";
         options.num_acceptors = 10;
         options.max_connections = 1024;
+        options.modules = [
+          { tuple = [
+              server1
+              "/api"
+              { atom = "mongoose_api"; }
+              { handlers = [
+                  { atom = "mongoose_api_metrics"; }
+                  { atom = "mongoose_api_users"; }
+                ];
+              }
+            ];
+          }
+          { tuple = ["_" "/http-bind" { atom = "mod_bosh"; }]; }
+          { tuple = ["_" "/ws-xmpp"   { atom = "mod_websockets"; }]; }
+        ];
+      }
+      { port = 5285;
+        module = "ejabberd_cowboy";
+        options.num_acceptors = 10;
+        options.max_connections = 1024;
+        options.cert = toString pubKeyFile;
+        options.key = toString privKeyFile;
+        options.key_pass = "";
         options.modules = [
           { tuple = [
               server1
