@@ -35,6 +35,7 @@ let
     {ejabberd_string_format, bin}.
 
     {escalus_user_db, xmpp}.
+    {escalus_xmpp_server, escalus_mongooseim}.
 
     {escalus_server, <<"${server1}">>}.
     {escalus_server2, <<"${server2}">>}.
@@ -61,6 +62,16 @@ let
         {path, <<"/http-bind">>},
         {port, 5280}
       ]},
+      {carol_s, [
+        {username, <<"carol_s">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"jinglebells_s">>},
+        {transport, bosh},
+        {ssl, true},
+        {path, <<"/http-bind">>},
+        {port, 5285}
+      ]},
       {kate, [
         {username, <<"kate">>},
         {server, <<"${server1}">>},
@@ -80,6 +91,16 @@ let
         {password, <<"witcher">>},
         {transport, ws},
         {port, 5280},
+        {wspath, <<"/ws-xmpp">>}
+      ]},
+      {geralt_s, [
+        {username, <<"geralt_s">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"witcher_s">>},
+        {transport, ws},
+        {ssl, true},
+        {port, 5285},
         {wspath, <<"/ws-xmpp">>}
       ]},
       {hacker, [
@@ -119,10 +140,7 @@ let
         {server, <<"sogndal">>},
         {host, <<"${server2}">>},
         {password, <<"doctor">>}
-      ]}
-    ]}.
-
-    {escalus_server2_users, [
+      ]},
       {alice2, [
         {username, <<"alice">>},
         {server, <<"${server2}">>},
@@ -132,7 +150,7 @@ let
       ]},
       {bob2, [
         {username, <<"bob">>},
-        {server, <<"${server2}">>},
+        {server, <<109,105,99,104,97,197,130>>},
         {host, <<"${server2}">>},
         {port, 5222},
         {password, <<"makota3">>}
