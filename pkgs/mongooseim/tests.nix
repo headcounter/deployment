@@ -7,8 +7,8 @@ buildErlang rec {
   src = fetchFromGitHub {
     owner = "esl";
     repo = "ejabberd_tests";
-    rev = version;
-    sha256 = "08ycfgy9j8jgk79kcb9ryvq704ngd9aj2lf4wcyfsniffc0zgf1l";
+    rev = "4429b1ea9646836e3b3e26d5ef085a47773a456a";
+    sha256 = "0cwfwp6if5hdgirp66m0h281319nvvxiw70kv4fyn945aj0al2r3";
   };
 
   patches = [ ./tests.patch ];
@@ -17,7 +17,7 @@ buildErlang rec {
     erlc -o ebin run_common_test.erl
   '';
 
-  erlangDeps = with erlangPackages; [ escalus exml mustache katt proper ];
+  erlangDeps = with erlangPackages; [ escalus exml katt mustache proper usec ];
 
   postInstall = ''
     mkdir -p "$out/etc"
