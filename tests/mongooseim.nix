@@ -44,13 +44,13 @@ let
         {username, <<"alicE">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
-        {password, <<"makota">>},
+        {password, <<"makota">>}
       ]},
       {bob, [
         {username, <<"bOb">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
-        {password, <<"makrolika">>},
+        {password, <<"makrolika">>}
       ]},
       {carol, [
         {username, <<"carol">>},
