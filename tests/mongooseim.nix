@@ -313,7 +313,7 @@ in {
       programs.headcounter.mongooseimctl = {
         enable = true;
         inherit cookie;
-        destNodeName = "mongooseim@server1";
+        destNodeName = nodeName1;
       };
     };
   };
