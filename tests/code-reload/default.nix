@@ -127,7 +127,7 @@ in {
     $server->sleep(10); # Let the server gather uptime
     my $old_uptime = sendTestClientCommand("get_uptime");
 
-    #$server->succeed("${newServerBuild}/bin/switch-to-configuration test");
+    $server->succeed("${newServerBuild}/bin/switch-to-configuration test");
 
     assertTestClient("check_connections", "still_connected");
 
