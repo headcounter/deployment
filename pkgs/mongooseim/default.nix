@@ -22,9 +22,6 @@ let
     ];
 
     postPatch = ''
-      sed -i -e '/\<vsn\>/s/{ *cmd *,[^}]*}/"2.1.8+mim-${version}"/' \
-        apps/ejabberd/src/ejabberd.app.src
-
       sed -i \
         -e '/lager/s/2\.0\.3/.*/' \
         -e '/cowboy/s/0\.9\.0/.*/' \
