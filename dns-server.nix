@@ -23,7 +23,7 @@
 
     mkZone = domain: text: ''
       \$ORIGIN ${domain}.
-      \$TTL 3600 ; 1 hour
+      \$TTL 60
       ${mkSOA "postmaster.${domain}"}
       @ IN NS ${primaryDNS}.
       @ IN NS ${secondaryDNS}.
