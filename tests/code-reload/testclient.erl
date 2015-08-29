@@ -32,8 +32,10 @@ handle_call(ping, _, State) ->
 
 handle_call(register, _, #state{config = Config} = State) ->
     Users = escalus_config:get_config(escalus_users, Config),
-    NewConfig = escalus_users:create_users(Config, Users),
-    {reply, register_done, State#state{config = NewConfig}};
+    Created = [escalus_users:create_user(Config, User) || User <- Users],
+    lists:foreach(fun escalus_users:verify_creation/1, Created),
+    NewConf = lists:keystore(escalus_users, 1, Config, {escalus_users, Users}),
+    {reply, register_done, State#state{config = NewConf}};
 
 handle_call(login, _, #state{config = Config} = State) ->
     Users = escalus_config:get_config(escalus_users, Config),
