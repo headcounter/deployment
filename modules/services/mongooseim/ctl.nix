@@ -19,7 +19,7 @@ let
     #!${pkgs.stdenv.shell}
     exec ${pkgs.erlang}/bin/erl \
       -args_file "${ctlArgsFile}" \
-      -sname "$("${pkgs.utillinux}/bin/uuidgen")@${cfg.ctlHost}" \
+      -sname "ctl$$@${cfg.ctlHost}" \
       -extra "${cfg.destNodeName}" "$@"
   '';
 
