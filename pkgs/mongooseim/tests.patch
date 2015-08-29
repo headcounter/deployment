@@ -1,8 +1,8 @@
 diff --git a/tests/ejabberdctl_SUITE.erl b/tests/ejabberdctl_SUITE.erl
-index 95c4bf4..79e855e 100644
+index 79fbca8..0f9f093 100644
 --- a/tests/ejabberdctl_SUITE.erl
 +++ b/tests/ejabberdctl_SUITE.erl
-@@ -89,20 +89,15 @@ suite() ->
+@@ -80,20 +80,15 @@ suite() ->
      escalus:suite().
  
  init_per_suite(Config) ->
@@ -24,3 +24,12 @@ index 95c4bf4..79e855e 100644
                                          {ctl_auth_mods, AuthMods},
                                          {roster_template, TemplatePath} | Config]),
      escalus:create_users(NewConfig, {by_name, [alice, mike, bob, kate]}).
+@@ -621,7 +616,7 @@ get_user_data(User, _Config) ->
+     {Username, Domain, Password}.
+ 
+ run(Cmd) -> 
+-    run(Cmd, 5000).
++    run(Cmd, 60000).
+ 
+ run(Cmd, Timeout) ->
+     Port = erlang:open_port({spawn, Cmd},[exit_status]),
