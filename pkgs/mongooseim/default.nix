@@ -31,7 +31,8 @@ let
     buildInputs = [ pam zlib openssl expat ];
     erlangDeps = with erlangPackages; [
       alarms base16 cowboy cuesport ecoveralls exml folsom fusco idna lager
-      mochijson2 mustache p1_cache_tab p1_stringprep pa proper recon redo seestar
+      mochijson2 mustache p1_cache_tab p1_stringprep pa proper recon redo
+      seestar
     ];
 
     postBuild = ''
