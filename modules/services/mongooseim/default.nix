@@ -124,8 +124,18 @@ in {
 
       systemd.services.mongooseim = rec {
         description = "MongooseIM XMPP Server";
+
+        # IMPORTANT: Make sure that you only specify weak dependencies here,
+        # because we don't EVER want to stop MongooseIM on any hard dependencies
+        # except reboot. Ordering dependencies is fine for first startup, but we
+        # really don't care about whether one of the dependencies were stopped
+        # or not, we just want to sure that it will NEVER stop except explicitly
+        # done so via "systemctl restart mongooseim".
+        #
+        # If for whatever reason you add a hard dependency nevertheless, make
+        # sure to test it properly in the code-reload VM test.
         wantedBy = [ "multi-user.target" ];
-        requires = [ "keys.target" ];
+        wants = [ "keys.target" ];
         after = [ "network.target" "fs.target" "keys.target" ];
 
         environment.EMU = "beam";
