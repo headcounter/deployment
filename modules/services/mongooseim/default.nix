@@ -8,6 +8,10 @@ let
 
   progName = "mongooseim";
 
+  cfgFile = if cfg.configFile != null
+            then cfg.configFile
+            else cfg.settings.generatedConfigFile;
+
   serverArgsFile = pkgs.writeText "server.args" ''
     +K true
     +A 5
@@ -19,6 +23,7 @@ let
     -boot ${shErlEsc id "${cfg.package}/releases/${progName}"}
     -boot_var RELTOOL_EXT_LIB ${shErlEsc id "${cfg.package}/lib"}
     -config ${shErlEsc id "${cfg.package}/etc/app.config"}
+    -ejabberd config ${shErlEsc erlString cfgFile}
     -env ERL_MAX_PORTS 250000
     -env ERL_FULLSWEEP_AFTER 2
     -sasl sasl_error_logger false
@@ -139,12 +144,7 @@ in {
         after = [ "network.target" "fs.target" "keys.target" ];
 
         environment.EMU = "beam";
-        environment.ROOTDIR = cfg.package;
         environment.PROGNAME = progName;
-        environment.EJABBERD_CONFIG_PATH =
-          if cfg.configFile != null
-          then cfg.configFile
-          else cfg.settings.generatedConfigFile;
 
         serviceConfig.Type = "notify";
         serviceConfig.NotifyAccess = "all";
@@ -153,7 +153,7 @@ in {
         serviceConfig.PrivateTmp = true;
         serviceConfig.PermissionsStartOnly = true;
 
-        serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl mongooseim"
+        serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl ${progName}"
                                 + " -args_file ${serverArgsFile}";
       };
     })
