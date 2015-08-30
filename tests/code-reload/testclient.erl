@@ -88,6 +88,21 @@ handle_call(communicate, _, #state{users = Users} = State) ->
 
     {reply, great_communication, State};
 
+handle_call(adhoc_ping, _, #state{users = Users} = State) ->
+    User = proplists:get_value(user1, Users),
+    Msg = <<"ping">>,
+    PingStanza = escalus_stanza:adhoc_request(Msg),
+    Stanza = escalus_stanza:to(PingStanza, <<"server">>),
+    ok = escalus_client:send(User, Stanza),
+    Response = escalus_client:wait_for_stanza(User, 60000),
+    true = escalus_pred:is_adhoc_response(Msg, <<"completed">>, Response),
+    Path = [{element, <<"command">>}, {element, <<"note">>}, cdata],
+    Result = case exml_query:path(Response, Path) of
+        <<"Pong">> -> pong;
+        <<"Pang">> -> pang
+    end,
+    {reply, Result, State};
+
 handle_call(check_connections, _, #state{users = Users} = State) ->
     IsConnected = fun(U) ->
         escalus_connection:is_connected(element(2, U))
@@ -97,7 +112,7 @@ handle_call(check_connections, _, #state{users = Users} = State) ->
 
 handle_call(get_uptime, _, #state{users = Users} = State) ->
     User1 = proplists:get_value(user1, Users),
-    escalus_client:send(User1, escalus_stanza:last_activity(<<"server">>)),
+    ok = escalus_client:send(User1, escalus_stanza:last_activity(<<"server">>)),
     Reply = escalus_client:wait_for_stanza(User1, 60000),
     Result = exml_query:path(Reply, [
         {element, <<"query">>},

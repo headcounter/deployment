@@ -78,30 +78,50 @@ let
     };
   };
 
-  newServer = {
+  newServerConfig = {
     services.headcounter.mongooseim.settings.extraConfig = ''
       {access, c2s, [{deny, all}]}.
     '';
   };
 
-  newServerBuild = let
+  newServerCode = {
+    services.headcounter.mongooseim.package = let
+      patched = pkgs.headcounter.mongooseim.overrideDerivation (drv: {
+        postPatch = (drv.postPatch or "") + ''
+          sed -i -e 's!<<"Pong">>!<<"Pang">>!' \
+            apps/ejabberd/src/mod_adhoc.erl
+        '';
+      });
+    in patched;
+  };
+
+  buildNewServer = configurations: let
     inherit (import <nixpkgs/nixos/lib/build-vms.nix> {
       inherit system;
     }) buildVirtualNetwork;
 
     newNodes = nodes // {
       server = {
-        imports = [ nodes.server newServer ];
+        imports = [ nodes.server ] ++ configurations;
       };
     };
   in (buildVirtualNetwork newNodes).server.config.system.build.toplevel;
+
+  newServerConfigBuild = buildNewServer [ newServerConfig ];
+  revertedServerConfigBuild = buildNewServer [];
+  newServerCodeBuild = buildNewServer [ newServerCode ];
 
 in {
   name = "code-reload";
 
   inherit nodes;
 
-  testScript = ''
+  testScript = let
+    switchToServer = build: ''
+      $server->succeed("${build}/bin/switch-to-configuration test");
+    '';
+
+  in ''
     sub sendTestClientCommand {
       return $client->succeed(
         '${pkgs.erlang}/bin/erl_call -sname test@client -c testclient '.
@@ -115,29 +135,65 @@ in {
       die "Expected $expect but got $result instead" if $result ne $expect;
     }
 
+    sub assertUptime {
+      my ($old, $new) = @_;
+      die "old server uptime is $old seconds, ".
+          "but new uptime is just $new seconds, ".
+          "so the server has restarted in-between!"
+          if $old > $new;
+    }
+
     startAll;
     $server->waitForUnit("mongooseim.service");
     $client->waitForUnit("testclient.service");
 
-    assertTestClient("ping", "pong");
-    assertTestClient("register", "register_done");
-    assertTestClient("login", "logged_in");
-    assertTestClient("communicate", "great_communication");
+    my ($old_uptime,
+        $new_conf_uptime,
+        $reverted_config_uptime,
+        $new_code_uptime);
 
-    $server->sleep(10); # Let the server gather uptime
-    my $old_uptime = sendTestClientCommand("get_uptime");
+    subtest "initial version", sub {
+      assertTestClient("ping", "pong");
+      assertTestClient("register", "register_done");
+      assertTestClient("login", "logged_in");
+      assertTestClient("adhoc_ping", "pong");
+      assertTestClient("communicate", "great_communication");
 
-    $server->succeed("${newServerBuild}/bin/switch-to-configuration test");
+      $server->sleep(10); # Let the server gather uptime
+      $old_uptime = sendTestClientCommand("get_uptime");
+    };
 
-    assertTestClient("check_connections", "still_connected");
+    subtest "change configuration", sub {
+      ${switchToServer newServerConfigBuild}
 
-    my $new_uptime = sendTestClientCommand("get_uptime");
+      assertTestClient("check_connections", "still_connected");
 
-    assertTestClient("login", "login_failure");
+      $new_conf_uptime = sendTestClientCommand("get_uptime");
 
-    die "old server uptime is $old_uptime seconds, ".
-        "but new uptime is just $new_uptime seconds, ".
-        "so the server has restarted in-between!"
-        if $old_uptime > $new_uptime;
+      assertTestClient("login", "login_failure");
+
+      assertUptime($old_uptime, $new_conf_uptime);
+    };
+
+    subtest "revert configuration", sub {
+      ${switchToServer revertedServerConfigBuild}
+
+      assertTestClient("login", "logged_in");
+      assertTestClient("adhoc_ping", "pong");
+
+      $reverted_config_uptime = sendTestClientCommand("get_uptime");
+      assertUptime($new_conf_uptime, $reverted_config_uptime);
+    };
+
+    subtest "change code", sub {
+      ${switchToServer newServerCodeBuild}
+
+      assertTestClient("check_connections", "still_connected");
+      assertTestClient("adhoc_ping", "pang");
+
+      $new_code_uptime = sendTestClientCommand("get_uptime");
+
+      assertUptime($reverted_config_uptime, $new_code_uptime);
+    };
   '';
 })
