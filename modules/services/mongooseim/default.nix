@@ -7,6 +7,7 @@ let
   cfg = config.services.headcounter.mongooseim;
 
   progName = "mongooseim";
+  gcRoot = "/nix/var/nix/gcroots/running-mongooseim";
 
   cfgFile = if cfg.configFile != null
             then cfg.configFile
@@ -30,6 +31,32 @@ let
     -embedded
     -noinput
     -smp
+  '';
+
+  erlCall = code: ''
+    "${pkgs.erlang}/bin/erl_call" \
+      -sname ${shErlEsc erlAtom cfg.nodeName} \
+      -c ${shErlEsc erlAtom cfg.cookie} \
+      -a ${shErlEsc id code}
+  '';
+
+  codeReloader = pkgs.writeScript "mongooseim-code-reload" ''
+    #!${pkgs.stdenv.shell}
+    old_release="$(readlink -f "${gcRoot}")"
+    new_release="$(readlink -f "${cfg.package}")"
+
+    if [ "$old_release" != "$new_release" ]; then
+      # TODO! This obviously is NOT going to work:
+      # cd "$new_release"
+      # ${pkgs.rebar}/bin/rebar generate-upgrade \
+      #   "previous_release=$old_release" \
+      #   "target-dir=/tmp/upgrade"
+      exit 1
+    fi
+
+    echo "Reloading configuration file:" >&2
+    ${erlCall "application set_env [ejabberd, config, ${erlString cfgFile}]"}
+    "${config.programs.headcounter.mongooseimctl.ctlTool}" reload_local >&2
   '';
 
 in {
@@ -143,6 +170,12 @@ in {
         wants = [ "keys.target" ];
         after = [ "network.target" "fs.target" "keys.target" ];
 
+        reloadIfChanged = true;
+
+        preStart = ''
+          ln -sfn "$(readlink -f "${cfg.package}")" "${gcRoot}"
+        '';
+
         environment.EMU = "beam";
         environment.PROGNAME = progName;
 
@@ -155,6 +188,8 @@ in {
 
         serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl ${progName}"
                                 + " -args_file ${serverArgsFile}";
+
+        serviceConfig.ExecReload = "@${codeReloader} mongooseim-code-reload";
       };
     })
   ];
