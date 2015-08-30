@@ -1,25 +1,30 @@
 diff --git a/rel/reltool.config.script b/rel/reltool.config.script
-index 40877c9..de66666 100644
+index 40877c9..b488abf 100644
 --- a/rel/reltool.config.script
 +++ b/rel/reltool.config.script
-@@ -55,7 +55,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+@@ -55,17 +55,19 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
  
  
  [{sys, [
 -        {lib_dirs, ["../apps", "../deps"]},
 +        {lib_dirs, ["../apps"]},
          {incl_cond, exclude},
-         {rel, "mongooseim", "", [mongoose | AppsToRun]},
+-        {rel, "mongooseim", "", [mongoose | AppsToRun]},
++        {rel, "mongooseim", "", [mongooseim | AppsToRun]},
          {rel, "start_clean", "", [kernel,stdlib]},
-@@ -64,6 +64,8 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+         {boot_rel, "mongooseim"},
+         {profile, embedded},
          {excl_archive_filters, [".*"]}, % do no archive built libs
          {excl_sys_filters, ["^bin/.*",
                              "^erts.*/bin/(dialyzer|typer)"]},
 +        {excl_lib, otp_root},
 +        {relocatable, false},
  
-         {app, mongoose, [{incl_cond, include}, {lib_dir, ".."}]}
+-        {app, mongoose, [{incl_cond, include}, {lib_dir, ".."}]}
++        {app, mongooseim, [{incl_cond, include}, {lib_dir, ".."}]}
         ] ++ IncludeApps},
+ 
+ 
 @@ -80,8 +82,6 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
             {copy, "files/mongooseimctl", "bin/mongooseimctl"},
             {copy, "files/app.config", "etc/app.config"},
