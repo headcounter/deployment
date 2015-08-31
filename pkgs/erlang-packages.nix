@@ -1,4 +1,4 @@
-{ pkgs, buildErlang }:
+{ pkgs, buildErlang, writeEscript }:
 
 let
   ghe = version: owner: name: with pkgs.lib; let
@@ -30,8 +30,7 @@ let
     hamcrest.src.repo = "hamcrest-erlang";
     idna.src.repo = "erlang-idna";
     katt.postPatch = ''
-      cat > priv/compile-parser <<EOF
-      #!${pkgs.erlang}/bin/escript
+      cat "${pkgs.writeEscript "compile-parser" ''
       main(_) ->
         code:add_pathz("${self.neotoma}/lib/erlang/lib/neotoma/ebin"),
         neotoma:file("priv/katt_blueprint.peg", [
@@ -39,6 +38,7 @@ let
           {neotoma_priv_dir, "${self.neotoma}/lib/erlang/lib/neotoma/priv"}
         ]).
       EOF
+      ''}" > priv/compile-parser
     '';
     mustache.src.repo = "mustache.erl";
     p1_cache_tab.src.repo = "cache_tab";

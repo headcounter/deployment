@@ -1,4 +1,4 @@
-{ stdenv, erlang, rebar, writeScript }:
+{ stdenv, erlang, rebar, writeEscript }:
 
 { name, version
 , buildInputs ? [], erlangDeps ? []
@@ -24,8 +24,7 @@ let
     buildInputs = buildInputs ++ [ erlang patchedRebar ];
 
     postPatch = ''
-      "${writeScript "rewrite-rebar-config" ''
-        #!${erlang}/bin/escript
+      "${writeEscript "rewrite-rebar-config" [] ''
         main(Files) ->
           Rewrite = fun(File) ->
             try
