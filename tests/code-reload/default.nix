@@ -2,7 +2,7 @@ import ../make-test.nix ({ pkgs, lib, system, ... }:
 
 let
   testClient = pkgs.headcounter.buildErlang rec {
-    name = "test-client";
+    name = "testclient";
     version = "1.0";
 
     erlangDeps = with pkgs.headcounter.erlangPackages; [
