@@ -24,27 +24,13 @@ let
     buildInputs = buildInputs ++ [ erlang patchedRebar ];
 
     postPatch = ''
+      rm -f rebar
+
       "${writeEscript "rewrite-rebar-config" [] ./rewrite-rebar-config.erl}" \
         rebar.config rebar.config.script || :
 
-      subappfiles="$(
-        for subapp in apps/*; do
-          if [ -e "$subapp" ]; then
-            echo "$subapp/src/$(basename "$subapp").app.src"
-          fi
-        done
-      )"
-
-      rm -f rebar
-      hashver="$(basename "$out" | cut -d- -f1)"
-      for appfile in "src/${name}.app.src" "ebin/${name}.app" $subappfiles; do
-        if [ -e "$appfile" ]; then
-          sed -i \
-            -e 's/{ *vsn *,[^}]*}/{vsn, "'"$hashver"'"}/' \
-            -e '/^ *%/s/[^[:print:][:space:]]/?/g' \
-            "$appfile"
-        fi
-      done
+      "${writeEscript "rewrite-appfiles" [] ./rewrite-appfiles.erl}" \
+        "$(basename "$out" | cut -d- -f1)" "${name}"
 
       ${postPatch}
     '';
