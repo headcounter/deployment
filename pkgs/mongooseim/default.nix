@@ -3,8 +3,6 @@
 }:
 
 let
-  mainAppDir = "lib/ejabberd-2.1.8+mim-${self.version}";
-
   self = buildErlang rec {
     name = "mongooseim";
     version = "1.5.1";
@@ -20,13 +18,6 @@ let
       ./reltool.patch ./journald.patch ./systemd.patch
       ./s2s-listener-certfile.patch
     ];
-
-    postPatch = ''
-      sed -i \
-        -e '/lager/s/2\.0\.3/.*/' \
-        -e '/cowboy/s/0\.9\.0/.*/' \
-        rebar.config
-    '';
 
     buildInputs = [ pam zlib openssl expat ];
     erlangDeps = with erlangPackages; [
@@ -51,13 +42,18 @@ let
 
     installPhase = ''
       cp -a "rel/${name}" "$out"
-      if [ ! -d "$out/${mainAppDir}" ]; then
-        echo "$out/${mainAppDir} does not exist!" >&2
+
+      mainAppDir="$out/lib/ejabberd-$(basename "$out" | cut -d- -f1)"
+      if [ ! -d "$mainAppDir" ]; then
+        echo "$mainAppDir does not exist!" >&2
         exit 1
       fi
+
+      mkdir "$out/nix-support"
+      echo -n "$mainAppDir" > "$out/nix-support/main-app-dir"
     '';
 
-    passthru.mainAppDir = "${self}/${mainAppDir}";
+    passthru.mainAppDir = builtins.readFile "${self}/nix-support/main-app-dir";
 
     meta = {
       homepage = "https://www.erlang-solutions.com/products/"
