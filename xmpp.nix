@@ -279,8 +279,7 @@ in {
         {access, configure, [{allow, admin}]}.
 
         % Every username can be registered via in-band registration:
-        {access, register, [{deny, weirdnames},
-                            {allow, all}]}.
+        {access, register, [{deny, weirdnames}, {deny, all}]}.
 
         {access, public, [{allow, all}]}.
 
