@@ -107,8 +107,11 @@ handle_call(check_connections, _, #state{users = Users} = State) ->
     IsConnected = fun(U) ->
         escalus_connection:is_connected(element(2, U))
     end,
-    true = lists:all(IsConnected, Users),
-    {reply, still_connected, State};
+    Result = case lists:all(IsConnected, Users) of
+        true  -> still_connected;
+        false -> not_connected_anymore
+    end,
+    {reply, Result, State};
 
 handle_call(get_uptime, _, #state{users = Users} = State) ->
     User1 = proplists:get_value(user1, Users),

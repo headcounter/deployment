@@ -13,6 +13,8 @@ let
             then cfg.configFile
             else cfg.settings.generatedConfigFile;
 
+  inherit (config.programs.headcounter.mongooseimctl) ctlTool;
+
   serverArgsFile = pkgs.writeText "server.args" ''
     +K true
     +A 5
@@ -56,7 +58,7 @@ let
 
     echo "Reloading configuration file:" >&2
     ${erlCall "application set_env [ejabberd, config, ${erlString cfgFile}]"}
-    "${config.programs.headcounter.mongooseimctl.ctlTool}" reload_local >&2
+    "${ctlTool}" reload_local >&2
   '';
 
 in {
@@ -190,6 +192,8 @@ in {
                                 + " -args_file ${serverArgsFile}";
 
         serviceConfig.ExecReload = "@${codeReloader} mongooseim-code-reload";
+
+        serviceConfig.ExecStop = "@${ctlTool} mongooseim-stop stop";
       };
     })
   ];

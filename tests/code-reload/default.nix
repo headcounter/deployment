@@ -195,5 +195,10 @@ in {
 
       assertUptime($reverted_config_uptime, $new_code_uptime);
     };
+
+    subtest "stop server", sub {
+      $server->succeed("systemctl stop mongooseim");
+      assertTestClient("check_connections", "not_connected_anymore");
+    };
   '';
 })
