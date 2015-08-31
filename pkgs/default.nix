@@ -15,7 +15,7 @@ let
     site = callPackage ./site {};
 
     erlangPackages = callPackage ./erlang-packages.nix {
-      inherit pkgs buildErlang;
+      inherit pkgs buildErlang writeEscript;
     };
 
     # dependencies for spectrum2

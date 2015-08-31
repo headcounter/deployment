@@ -30,7 +30,7 @@ let
     hamcrest.src.repo = "hamcrest-erlang";
     idna.src.repo = "erlang-idna";
     katt.postPatch = ''
-      cat "${pkgs.writeEscript "compile-parser" ''
+      cat "${writeEscript "compile-parser" [] ''
       main(_) ->
         code:add_pathz("${self.neotoma}/lib/erlang/lib/neotoma/ebin"),
         neotoma:file("priv/katt_blueprint.peg", [
