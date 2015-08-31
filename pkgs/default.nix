@@ -5,6 +5,7 @@ let
 
   headcounter = rec {
     buildErlang = callPackage ./build-support/build-erlang {};
+    writeEscript = callPackage ./build-support/write-escript.nix {};
 
     mongooseim = callPackage ./mongooseim {};
     mongooseimTests = callPackage ./mongooseim/tests.nix {};
