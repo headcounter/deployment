@@ -35,3 +35,16 @@ index 40877c9..b488abf 100644
 +           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"}
            ]}
  ].
+diff --git a/src/mongooseim.app.src b/src/mongooseim.app.src
+index 840edc7..0795689 100644
+--- a/src/mongooseim.app.src
++++ b/src/mongooseim.app.src
+@@ -1,7 +1,7 @@
+ %% Dummy application resource file so that ejabberd may be used as a rebar
+ %% dependency in other erlang applications.
+ {application,mongooseim,
+-             [{description,mongooseim},
++             [{description,"MongooseIM"},
+               {vsn,"1.5.1"},
+               {modules,[]},
+               {registered,[]},
