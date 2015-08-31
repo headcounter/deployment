@@ -43,7 +43,8 @@ let
     installPhase = ''
       cp -a "rel/${name}" "$out"
 
-      mainAppDir="$out/lib/ejabberd-$(basename "$out" | cut -d- -f1)"
+      hashver="$(basename "$out" | cut -d- -f1)_2.1.8+mim-${version}"
+      mainAppDir="$out/lib/ejabberd-$hashver"
       if [ ! -d "$mainAppDir" ]; then
         echo "$mainAppDir does not exist!" >&2
         exit 1

@@ -30,7 +30,7 @@ let
         rebar.config rebar.config.script || :
 
       "${writeEscript "rewrite-appfiles" [] ./rewrite-appfiles.erl}" \
-        "$(basename "$out" | cut -d- -f1)" "${name}"
+        "$(basename "$out" | cut -d- -f1)" "${name}" "${version}"
 
       ${postPatch}
     '';

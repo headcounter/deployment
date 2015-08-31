@@ -22,7 +22,7 @@ get_app_file(Basedir) ->
     end,
     get_app_file(Basedir, AppName).
 
--spec get_appfiles(string()) -> [file:filename_all()].
+-spec get_appfiles(string()) -> {[file:filename_all()], [file:filename_all()]}.
 get_appfiles(Name) ->
     SubAppFiles = case file:list_dir("apps") of
         {error, _} -> [];
@@ -40,16 +40,23 @@ get_appfiles(Name) ->
         _             -> []
     end,
 
-    MainAppFiles ++ SubAppFiles.
+    {MainAppFiles, SubAppFiles}.
 
--spec rewrite_version(Vsn :: string(), Replacement :: string()) -> string().
-rewrite_version(_, Replacement) -> Replacement.
+-spec rewrite_version(Vsn :: string(), Hash :: string()) -> string().
+rewrite_version(Vsn, Hash) when is_list(Vsn) -> Hash ++ [$_|Vsn];
+rewrite_version(_, Hash) -> Hash.
 
--spec rewrite_appver(file:filename_all(), string()) -> ok | {error, atom()}.
-rewrite_appver(File, Hash) ->
+-spec rewrite_appver( file:filename_all()
+                    , string()
+                    , string() | keep_orig
+                    ) -> ok | {error, atom()}.
+rewrite_appver(File, Hash, Ver) ->
     {ok, [{application, AppName, Keys}]} = file:consult(File),
     {vsn, OrigVsn} = lists:keyfind(vsn, 1, Keys),
-    NewVsn = rewrite_version(OrigVsn, Hash),
+    NewVsn = case Ver of
+        keep_orig   -> rewrite_version(OrigVsn, Hash);
+        Replacement -> rewrite_version(Replacement, Hash)
+    end,
     NewKeys = lists:keyreplace(vsn, 1, Keys, {vsn, NewVsn}),
     NewData = {application, AppName, NewKeys},
     Result = file:write_file(File, [io_lib:format("~tp.~n", [NewData])]),
@@ -79,17 +86,27 @@ strip_comments(File) ->
             File
     end.
 
+-spec strip_files([file:filename_all()]) -> [file:filename_all()].
+strip_files(Files) -> lists:map(fun strip_comments/1, Files).
+
 -spec err_out(string()) -> no_return().
 err_out(Msg) ->
     io:fwrite(standard_error, "~s~n", [Msg]),
     halt(1).
 
-main([Hash, Name]) ->
-    AppFiles = lists:map(fun strip_comments/1,  get_appfiles(Name)),
-    Rewritten = case [rewrite_appver(F, Hash) || F <- AppFiles] of
+main([Hash, Name, MainVersion]) ->
+    {MainAppFiles, SubAppFiles} = case get_appfiles(Name) of
+        {ToStrip1, ToStrip2} -> {strip_files(ToStrip1), strip_files(ToStrip2)}
+    end,
+
+    MainRewritten = [rewrite_appver(F, Hash, MainVersion) || F <- MainAppFiles],
+    SubRewritten = [rewrite_appver(F, Hash, keep_orig) || F <- SubAppFiles],
+
+    Rewritten = case MainRewritten ++ SubRewritten of
         [] -> err_out("Cannot find .app files to rewrite!");
         AF -> AF
     end,
+
     case lists:all(fun(ok) -> true; (_) -> false end, Rewritten) of
         false -> err_out("Error rewriting application files!");
         true  -> halt(0)
