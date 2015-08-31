@@ -60,7 +60,7 @@ let
   }));
 
   revMap = {
-    alarms        = "24a8bf0f4e09d88075719537aa90bfee52cf4317";
+    alarms        = "ce3b56ba623e27cccc6bc7634029c293f81da671";
     base16        = "ec420aa4ce0fb971f155274c606e00188a2ed37d";
     cucumberl     = "3f2cca66ed87a53a64177232428ffde606bdcb9a";
     cuesport      = "3b16d99d8bc41774dbc4dabad8054b4423dec5a6";
@@ -100,7 +100,7 @@ let
   };
 
   shaSums = {
-    alarms        = "1kmpzg8g7y2xknj6dnrr5rlph87kaa1w0d4gymhsar8wdjjifzrq";
+    alarms        = "0s0p76pfql3pj3gdrkgp8k1id1zkyslchi6pirnq1qckw1z4fcpv";
     base16        = "0kq6x40543sc2bkphj5pf83m9sc6knf5j83nihpp2x7wp6n704sk";
     bear          = "1x80qwyx56xclqhmcpdg082w1pbsw8jc9fa79hqy6q5i419w2wrg";
     cowboy        = "020as7fjjgl48g75q82z31fhw7pdnwyp0an788vfivjf0v6knakm";
@@ -143,7 +143,7 @@ let
   };
 
   self = pkgs.lib.mapAttrs (n: f: f n) {
-    alarms        = ghe "0.1"      "chrzaszcz";
+    alarms        = ghe "0.1.1"    "chrzaszcz";
     base16        = ghe "0.1"      "goj";
     bear          = ghe "0.1.3"    "boundary";
     cowboy        = ghe "1.0.1"    "ninenines";
