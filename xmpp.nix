@@ -102,13 +102,6 @@ in {
           options.hosts = singleton "icq.headcounter.org";
           options.password = "TODO";
         }
-        { port = 5555;
-          address = "127.0.0.1";
-          module = "ejabberd_service";
-          options.access.atom = "public";
-          options.hosts = singleton "msn.headcounter.org";
-          options.password = "TODO";
-        }
       ] */;
 
       modules = {
@@ -208,7 +201,7 @@ in {
             })
           ];
           extra_domains = map (base: "${base}.headcounter.org") [
-            "icq" "irc" "msn" "pubsub" "vjud"
+            "icq" "irc" "pubsub" "vjud"
             # TODO: routing!
           ];
         };
