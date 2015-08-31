@@ -37,7 +37,6 @@ let
           {output, "src/"},
           {neotoma_priv_dir, "${self.neotoma}/lib/erlang/lib/neotoma/priv"}
         ]).
-      EOF
       ''}" > priv/compile-parser
     '';
     mustache.src.repo = "mustache.erl";
