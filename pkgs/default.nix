@@ -4,7 +4,7 @@ let
   callPackage = pkgs.lib.callPackageWith (pkgs // headcounter);
 
   headcounter = rec {
-    buildErlang = callPackage ./build-support/build-erlang.nix {};
+    buildErlang = callPackage ./build-support/build-erlang {};
 
     mongooseim = callPackage ./mongooseim {};
     mongooseimTests = callPackage ./mongooseim/tests.nix {};
