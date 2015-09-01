@@ -70,6 +70,9 @@ in {
     externalInterface = "eth0";
   };
 
+  # XXX: Factor out!
+  networking.extraHosts = "127.0.0.1 ${config.networking.hostName}";
+
   headcounter.imperativeContainers.parsifal = {
     index = 1;
     forwardSSH = [
