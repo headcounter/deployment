@@ -1,3 +1,6 @@
+-module('rewrite-appfiles').
+-export([main/1]).
+
 -spec get_app_trylist(atom()) -> [file:filename_all()].
 get_app_trylist(AppName) ->
     NameStr = atom_to_list(AppName),

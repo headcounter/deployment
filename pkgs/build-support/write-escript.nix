@@ -33,10 +33,7 @@ let
 in stdenv.mkDerivation {
   inherit name;
   buildCommand = ''
-    echo ${shErlEsc id "-module(${erlAtom name})."} > "$name.erl"
-    echo "-export([main/1])." >> "$name.erl"
-    echo >> "$name.erl"
-    cat "${scriptFile}" >> "$name.erl"
+    cat "${scriptFile}" > "$name.erl"
     "${erlang}/bin/escript" "${erlCommands}" "$name.erl"
     chmod +x "$out"
   '';

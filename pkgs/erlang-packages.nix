@@ -31,12 +31,15 @@ let
     idna.src.repo = "erlang-idna";
     katt.postPatch = ''
       cat "${writeEscript "compile-parser" [] ''
-      main(_) ->
-        code:add_pathz("${self.neotoma}/lib/erlang/lib/neotoma/ebin"),
-        neotoma:file("priv/katt_blueprint.peg", [
-          {output, "src/"},
-          {neotoma_priv_dir, "${self.neotoma}/lib/erlang/lib/neotoma/priv"}
-        ]).
+        -module('compile-parser').
+        -export([main/1]).
+
+        main(_) ->
+          code:add_pathz("${self.neotoma}/lib/erlang/lib/neotoma/ebin"),
+          neotoma:file("priv/katt_blueprint.peg", [
+            {output, "src/"},
+            {neotoma_priv_dir, "${self.neotoma}/lib/erlang/lib/neotoma/priv"}
+          ]).
       ''}" > priv/compile-parser
     '';
     mustache.src.repo = "mustache.erl";

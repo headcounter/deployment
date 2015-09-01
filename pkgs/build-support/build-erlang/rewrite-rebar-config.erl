@@ -1,3 +1,6 @@
+-module('rewrite-rebar-config').
+-export([main/1]).
+
 do_rewrite(File) ->
     try
         {ok, Original} = file:consult(File),
