@@ -129,13 +129,14 @@ in {
     (mkIf cfg.enable {
       services.headcounter.mongooseim = {
         cookie = mkDefault (let
-          randCookie = pkgs.runCommand "erlang-cookie.nix" {} ''
+          randCookie = pkgs.runCommand "erlang-cookie.nix" {
+            preferLocalBuild = true;
+          } ''
             cat > "$out" <<RAND
             "$(tr -dc A-Za-z0-9 < /dev/urandom | \
                head -c$((80 + $RANDOM % 100)))"
             RAND
           '';
-          preferLocalBuild = true;
         in import randCookie);
       };
 
