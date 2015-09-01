@@ -129,6 +129,9 @@ let
         imcert = optionalString (intermediateCert != null) mkImCert;
         mkval = attr: optionalString (attr != null) attr.value;
       in mkval publicKey + imcert + privateKey.value;
+      # XXX: Add an isXMPP option or something like that.
+      value.group = "mongoose";
+      value.permissions = "0640";
     };
   in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
 in {
