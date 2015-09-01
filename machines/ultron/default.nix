@@ -160,7 +160,6 @@ in {
   systemd.sockets."unzervalt-ssh" = mkIf (hasAttr "unzervalt" nodes) {
     description = "SSH proxy socket to Unzervalt";
     wantedBy = [ "sockets.target" ];
-    #before = [ "multi-user.target" ];
     socketConfig.ListenStream = [
       "${config.headcounter.vhosts.misc.ipv4}:22"
       "[${config.headcounter.vhosts.misc.ipv6}]:22"
