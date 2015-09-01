@@ -3,7 +3,7 @@
 with lib;
 
 let
-  cfg = config.services.headcounter.epmd;
+  cfg = config.headcounter.services.epmd;
 
   epmdPatched = lib.overrideDerivation pkgs.erlang (o: {
     name = "epmd-${o.version}";
@@ -51,7 +51,7 @@ let
   }) cfg.addresses);
 
 in {
-  options.services.headcounter.epmd = {
+  options.headcounter.services.epmd = {
     enable = mkEnableOption "Erlang port mapper daemon";
 
     port = mkOption {

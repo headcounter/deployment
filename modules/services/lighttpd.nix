@@ -3,7 +3,7 @@
 with lib;
 
 let
-  cfg = config.services.headcounter.lighttpd;
+  cfg = config.headcounter.services.lighttpd;
   lighttpd = pkgs.lighttpd.override { enableMagnet = true; };
   lightyCfgFile = pkgs.writeText "lighttpd.conf" lightyConf;
 
@@ -80,7 +80,7 @@ let
   '';
 
 in {
-  options.services.headcounter.lighttpd = let
+  options.headcounter.services.lighttpd = let
     mkOptModuleFull = desc: ex: def: {
       enable = mkEnableOption desc;
       config = mkOption {
@@ -292,7 +292,7 @@ in {
     };
   };
 
-  config = mkIf config.services.headcounter.lighttpd.enable {
+  config = mkIf cfg.enable {
     users.extraUsers = singleton {
       uid = 498;
       name = cfg.user;

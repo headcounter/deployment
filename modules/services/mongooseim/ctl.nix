@@ -4,8 +4,8 @@ with lib;
 with import ./erlexpr.nix;
 
 let
-  cfg = config.programs.headcounter.mongooseimctl;
-  inherit (config.services.headcounter.mongooseim) package;
+  cfg = config.headcounter.programs.mongooseimctl;
+  inherit (config.headcounter.services.mongooseim) package;
 
   ctlArgsFile = pkgs.writeText "ctl.args" ''
     -setcookie ${shErlEsc erlAtom cfg.cookie}
@@ -24,7 +24,7 @@ let
   '';
 
 in {
-  options.programs.headcounter.mongooseimctl = {
+  options.headcounter.programs.mongooseimctl = {
     enable = mkEnableOption "MongooseIM controller";
 
     ctlHost = mkOption {
@@ -64,7 +64,7 @@ in {
 
   config = mkIf cfg.enable {
     environment.systemPackages = singleton mongooseimctl;
-    programs.headcounter.mongooseimctl = {
+    headcounter.programs.mongooseimctl = {
       ctlTool = "${mongooseimctl}/bin/mongooseimctl";
     };
   };

@@ -290,8 +290,8 @@ in {
   nodes = {
     server1 = { config, pkgs, ... }: {
       imports = [ ../common.nix ];
-      services.headcounter.epmd.addresses = [ "0.0.0.0" ];
-      services.headcounter.mongooseim = {
+      headcounter.services.epmd.addresses = [ "0.0.0.0" ];
+      headcounter.services.mongooseim = {
         enable = true;
         inherit cookie;
         settings = mkConfig server1;
@@ -300,8 +300,8 @@ in {
 
     server2 = { config, pkgs, ... }: {
       imports = [ ../common.nix ];
-      services.headcounter.epmd.addresses = [ "0.0.0.0" ];
-      services.headcounter.mongooseim = {
+      headcounter.services.epmd.addresses = [ "0.0.0.0" ];
+      headcounter.services.mongooseim = {
         enable = true;
         inherit cookie;
         settings = mkConfig server2;
@@ -310,7 +310,7 @@ in {
 
     client = {
       imports = [ ../common.nix ];
-      programs.headcounter.mongooseimctl = {
+      headcounter.programs.mongooseimctl = {
         enable = true;
         inherit cookie;
         destNodeName = nodeName1;

@@ -101,7 +101,7 @@ in {
     ];
   };
 
-  services.headcounter.lighttpd = {
+  headcounter.services.lighttpd = {
     enable = true;
     defaultPort = null;
 

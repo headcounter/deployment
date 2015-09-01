@@ -72,7 +72,7 @@ in {
     deployment.container.host = nodes.ultron.config;
     imports = [ ./common.nix ]
            ++ lib.optional (lib.pathExists ./private/default.nix) ./private;
-    services.headcounter.webspace.enable = true;
+    headcounter.services.webspace.enable = true;
     users.mutableUsers = false;
   };
 }

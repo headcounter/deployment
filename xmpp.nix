@@ -35,7 +35,7 @@ in {
   # XXX: Refactor me!
   config.users.extraUsers.mongoose.extraGroups = [ "keys" ];
 
-  config.services.headcounter.mongooseim = {
+  config.headcounter.services.mongooseim = {
     enable = true;
     settings = {
       hosts = [

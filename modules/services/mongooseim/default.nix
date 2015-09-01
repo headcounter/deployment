@@ -4,7 +4,7 @@ with lib;
 with import ./erlexpr.nix;
 
 let
-  cfg = config.services.headcounter.mongooseim;
+  cfg = config.headcounter.services.mongooseim;
 
   progName = "mongooseim";
   gcRoot = "/nix/var/nix/gcroots/running-mongooseim";
@@ -13,7 +13,7 @@ let
             then cfg.configFile
             else cfg.settings.generatedConfigFile;
 
-  inherit (config.programs.headcounter.mongooseimctl) ctlTool;
+  inherit (config.headcounter.programs.mongooseimctl) ctlTool;
 
   serverArgsFile = pkgs.writeText "server.args" ''
     +K true
@@ -62,7 +62,7 @@ let
   '';
 
 in {
-  options.services.headcounter.mongooseim = {
+  options.headcounter.services.mongooseim = {
     enable = mkEnableOption "MongooseIM";
 
     nodeName = mkOption {
@@ -122,12 +122,12 @@ in {
 
   config = mkMerge [
     {
-      services.headcounter.mongooseim = {
+      headcounter.services.mongooseim = {
         package = mkDefault pkgs.headcounter.mongooseim;
       };
     }
     (mkIf cfg.enable {
-      services.headcounter.mongooseim = {
+      headcounter.services.mongooseim = {
         cookie = mkDefault (let
           randCookie = pkgs.runCommand "erlang-cookie.nix" {
             preferLocalBuild = true;
@@ -140,7 +140,7 @@ in {
         in import randCookie);
       };
 
-      programs.headcounter.mongooseimctl = {
+      headcounter.programs.mongooseimctl = {
         enable = true;
         ctlHost = head (builtins.match "[^@]+@([^@]+)" cfg.nodeName);
         destNodeName = cfg.nodeName;
@@ -155,7 +155,7 @@ in {
         createHome = true;
       };
 
-      services.headcounter.epmd.enable = true;
+      headcounter.services.epmd.enable = true;
 
       systemd.services.mongooseim = rec {
         description = "MongooseIM XMPP Server";

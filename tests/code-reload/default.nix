@@ -48,7 +48,7 @@ let
     server = {
       imports = [ ../../common.nix ];
       networking.extraHosts = "127.0.0.1 server";
-      services.headcounter.mongooseim = {
+      headcounter.services.mongooseim = {
         enable = true;
         settings = {
           hosts = [ "server" ];
@@ -79,13 +79,13 @@ let
   };
 
   newServerConfig = {
-    services.headcounter.mongooseim.settings.extraConfig = ''
+    headcounter.services.mongooseim.settings.extraConfig = ''
       {access, c2s, [{deny, all}]}.
     '';
   };
 
   newServerCode = {
-    services.headcounter.mongooseim.package = let
+    headcounter.services.mongooseim.package = let
       patched = pkgs.headcounter.mongooseim.overrideDerivation (drv: {
         postPatch = (drv.postPatch or "") + ''
           sed -i -e 's!<<"Pong">>!<<"Pang">>!' \

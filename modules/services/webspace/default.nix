@@ -3,14 +3,14 @@
 with lib;
 
 let
-  cfg = config.services.headcounter.webspace;
+  cfg = config.headcounter.services.webspace;
 
   openssh = lib.overrideDerivation pkgs.openssh (o: {
     patches = (o.patches or []) ++ singleton ./openssh.patch;
   });
 
   basedir = "/var/www";
-  group = config.services.headcounter.lighttpd.group;
+  group = config.headcounter.services.lighttpd.group;
 
   sftpdConfigFile = pkgs.writeText "sftpd.config" ''
     Protocol 2
@@ -40,7 +40,7 @@ let
     '') cfg.accounts)}
   '';
 in {
-  options.services.headcounter.webspace = {
+  options.headcounter.services.webspace = {
     enable = mkEnableOption "headcounter webspace";
 
     accounts = mkOption {
@@ -101,7 +101,7 @@ in {
           description = ''
             Virtual hosts to be routed to this webspace account.
             The options are the same as
-            <option>services.headcounter.lighttpd.virtualHosts</option>.
+            <option>headcounter.services.lighttpd.virtualHosts</option>.
           '';
         };
       });
@@ -109,13 +109,13 @@ in {
         Webspace account and virtual host definitions. All
         <option>userOptions</option> are merged with values of
         <option>users.extraUsers</option> and <option>virtualHosts</option> are
-        merged with <option>services.headcounter.lighttpd.virtualHosts</option>.
+        merged with <option>headcounter.services.lighttpd.virtualHosts</option>.
       '';
     };
   };
 
   config = mkIf cfg.enable {
-    services.headcounter.lighttpd = {
+    headcounter.services.lighttpd = {
       enable = true;
 
       configuration = ''
