@@ -188,6 +188,7 @@ in {
         serviceConfig.Group = "mongoose";
         serviceConfig.PrivateTmp = true;
         serviceConfig.PermissionsStartOnly = true;
+        serviceConfig.TimeoutStartSec = 0;
 
         serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl ${progName}"
                                 + " -args_file ${serverArgsFile}";
