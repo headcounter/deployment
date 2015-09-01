@@ -40,7 +40,7 @@ in {
         "aszlig.net"
         "no-icq.org"
         "noicq.org"
-        "anonymous.headcounter.org"
+        #"anonymous.headcounter.org"
       ];
 
       s2s.filterDefaultPolicy = "allow";
@@ -330,11 +330,12 @@ in {
         %%
         {watchdog_admins, []}.
 
-        {host_config, "anonymous.headcounter.org", [
-          {auth_method, anonymous},
-          {allow_multiple_connections, true},
-          {anonymous_protocol, both}
-        ]}.
+        % See issue #13!
+        % {host_config, "anonymous.headcounter.org", [
+        %   {auth_method, anonymous},
+        %   {allow_multiple_connections, true},
+        %   {anonymous_protocol, both}
+        % ]}.
 
         % Default language for server messages
         {language, "en"}.
