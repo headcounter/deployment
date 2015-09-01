@@ -204,8 +204,8 @@ in {
             })
           ];
           extra_domains = map (base: "${base}.headcounter.org") [
-            "icq" "irc" "pubsub" "vjud"
-            # TODO: routing!
+            # TODO: Generate this based on available services!
+            "conference"
           ];
         };
 
