@@ -3,19 +3,14 @@
 with lib;
 
 let
-  ciphers = concatStringsSep ":" [
-    "ECDHE-RSA-AES256-GCM-SHA384"
-    "ECDHE-ECDSA-AES256-GCM-SHA384"
-    "ECDHE-RSA-AES256-SHA384"
-    "ECDHE-ECDSA-AES256-SHA384"
-    "DHE-DSS-AES256-GCM-SHA384"
-    "DHE-RSA-AES256-GCM-SHA384"
-    "DHE-RSA-AES256-SHA256"
-    "DHE-DSS-AES256-SHA256"
-    "ECDH-RSA-AES256-GCM-SHA384"
-    "ECDH-ECDSA-AES256-GCM-SHA384"
-    "ECDH-RSA-AES256-SHA384"
-    "ECDH-ECDSA-AES256-SHA384"
+  tlsv1 = [
+    "ECDH-ECDSA-AES256-SHA"
+    "ECDH-RSA-AES256-SHA"
+    "ECDHE-ECDSA-AES256-SHA"
+    "ECDHE-RSA-AES256-SHA"
+  ];
+
+  aes128fs = [
     "ECDHE-RSA-AES128-GCM-SHA256"
     "ECDHE-ECDSA-AES128-GCM-SHA256"
     "ECDHE-RSA-AES128-SHA256"
@@ -28,8 +23,27 @@ let
     "ECDH-ECDSA-AES128-GCM-SHA256"
     "ECDH-RSA-AES128-SHA256"
     "ECDH-ECDSA-AES128-SHA256"
-    "@STRENGTH"
   ];
+
+  aes256fs = [
+    "ECDHE-RSA-AES256-GCM-SHA384"
+    "ECDHE-ECDSA-AES256-GCM-SHA384"
+    "ECDHE-RSA-AES256-SHA384"
+    "ECDHE-ECDSA-AES256-SHA384"
+    "DHE-DSS-AES256-GCM-SHA384"
+    "DHE-RSA-AES256-GCM-SHA384"
+    "DHE-RSA-AES256-SHA256"
+    "DHE-DSS-AES256-SHA256"
+    "ECDH-RSA-AES256-GCM-SHA384"
+    "ECDH-ECDSA-AES256-GCM-SHA384"
+    "ECDH-RSA-AES256-SHA384"
+    "ECDH-ECDSA-AES256-SHA384"
+  ];
+
+  mkCiphers = clist: concatStringsSep ":" (clist ++ [ "@STRENGTH" ]);
+
+  clientCiphers = mkCiphers (aes128fs ++ aes256fs ++ tlsv1);
+  serverCiphers = mkCiphers aes256fs;
 
 in {
   # XXX: Refactor me!
@@ -65,7 +79,7 @@ in {
             access.atom = "c2s";
             max_stanza_size = 65536;
             shaper = "c2s_shaper";
-            inherit ciphers;
+            ciphers = clientCiphers;
           } // (if isLegacy then {
             tls.flag = true;
           } else {
@@ -86,6 +100,7 @@ in {
           options = {
             max_stanza_size = 131072;
             shaper = "s2s_shaper";
+            ciphers = serverCiphers;
           } // optionalAttrs (domain.ssl.privateKey != null) {
             certfile = domain.ssl.privateKey.path;
           };
@@ -343,7 +358,7 @@ in {
         % Default language for server messages
         {language, "en"}.
 
-        {s2s_ciphers, "${ciphers}"}.
+        {s2s_ciphers, "${serverCiphers}"}.
 
         % S2S certificates
         ${concatStrings (mapAttrsToList (name: domain: ''
