@@ -27,6 +27,7 @@ let
 
   overrides = {
     exml.buildInputs = [ pkgs.expat ];
+    exometer.EXOMETER_PACKAGES = "(minimal)";
     hamcrest.src.repo = "hamcrest-erlang";
     idna.src.repo = "erlang-idna";
     katt.postPatch = ''
@@ -81,7 +82,6 @@ let
     rebarFR       = "bcbf1ba233a5f8388f6d530c707d98db2021a48a";
     redo          = "7c7eaef4cd65271e2fc4ea88587e848407cf0762";
     reloader      = "9dd05d613c2abe563bc1c472950b96d2a832663b";
-    seestar       = "94b17823f182fef20f878b19ea20761c00795879";
     usec          = "f85ffd8350d7000c26392c18bdfcdbb30f3b5ee8";
   };
 
@@ -91,13 +91,15 @@ let
     ecoveralls   = [ jsx ];
     escalus      = [ exml fusco base16 lhttpc mustache wsecli ];
     espec        = [ reloader ];
+    exometer     = [ lager parse_trans setup ];
     folsom       = [ bear meck ];
     katt         = [ mochijson3 lhttpc neotoma meck ];
     lager        = [ goldrush ];
     mustache     = [ meck ];
     p1_cache_tab = [ p1_utils ];
     pa           = [ proper ];
-    seestar      = [ edown ];
+    parse_trans  = [ edown ];
+    setup        = [ edown ];
     wsecli       = [ espec cucumberl hamcrest meck rebarFR wsock ];
   };
 
@@ -114,6 +116,7 @@ let
     escalus       = "1ncwf95gf839bbpkdkm62rkiwgfcqiydyvblaks64gdsby8w7dlj";
     espec         = "1k070c54f6kcdk3ciipq9y651cmdci7g67kqmb4r1gib2y1apzad";
     exml          = "1qmixn7i4gvc080pvhy9c0pwlswyshnghwavg4y36x1sl8rhcv7g";
+    exometer      = "1s3pr65b7sdp80hsq2y8pc578lmvxl2p0v8vppw1ivkvg4gvhgvs";
     folsom        = "0xfi5r4z0wq7sjpcyhc2w19jqj8g8qr9ifdrv77p5gj84rx1fxbq";
     fusco         = "05idlhxwlk5l0xni9fc52ncp3isin7k0gdzxzgifw1mk1157cg8g";
     goldrush      = "0fhi3jidn40gri49scvqvavqxh0ggfllx4xii8yqrs0l2l4lq9b5";
@@ -132,13 +135,14 @@ let
     p1_stringprep = "0q6xkywanh2wjjr0601pqh63qm08bq1firap7n3sdcfh0h0d9vnx";
     p1_utils      = "0rlxgw4gsxacihlriv5spdnva88vygpx659m6x8bvqqmd6yhnpgr";
     pa            = "1kzh2g71sim98jd03xh697s8q0az0ma2p2inqc8cwhhr1lyfj2yp";
+    parse_trans   = "0shvlxga5nwiqbpz9ibgs9p6zjcsl0kp3628ygd66hg1dpxjmyry";
     proper        = "14g5sjspg0vc3jfr1m8pq6fsj3wlj72pad1qfw1w4vx87z15xzq6";
     ranch         = "02b6nzdllrym90a5bhzlz4s52hyj9vwcn048na4j5jiivknm8g3r";
     rebarFR       = "17rkqx1cx8nvg9f0zy97d7xpy877bm68y37ywbmv5irj6kwbsqkk";
     recon         = "0gpj6i1a4gyqvwb4q8kkzc58n4n1v225pf47vbzab9arix6xj4ym";
     redo          = "14hg2jcs3qyl7aaz8ni9h8s97kjs0ksdfnh25m3hava7ga45jq1c";
     reloader      = "1ansv02klh9i53gmvxjk7vl83nsvyada58xn1pmc9gid0cl5vnl4";
-    seestar       = "13l47hj7lm9ciqyk0rk3pzllj12141jcqkr5j7hpnwg44j4xd8wm";
+    setup         = "0gyvfa84y6yz94bnybp7w2311gpgq69bazrmnpq43bd4s56dqlmj";
     usec          = "19xzx81lwgff45qic6508m7m5kkbm6s0glncqmzr9pbac2ikjlds";
     wsecli        = "010jv736h5f8w6n6zkz3s5cn4p6i54wvg7fnnk0db8m8lykzf9m2";
     wsock         = "1z8i4k8fja05s4pxy3y32hmc8mh1wc5s2i8gw5q3j0klci2sqsxq";
@@ -157,6 +161,7 @@ let
     escalus       = ghe "2.6.1"    "esl";
     espec         = ghe "1"        "lucaspiller";
     exml          = ghe "2.1.5"    "esl";
+    exometer      = ghe "1.1"      "Feuerlabs";
     folsom        = ghe "0.7.4"    "boundary";
     fusco         = ghe "0.0.0"    "esl";
     goldrush      = ghe "0.1.6"    "DeadZen";
@@ -175,13 +180,14 @@ let
     p1_stringprep = ghe "0.1.0"    "processone";
     p1_utils      = ghe "1"        "processone";
     pa            = ghe "0.2.0"    "lavrin";
+    parse_trans   = ghe "2.9"      "uwiger";
     proper        = ghe "1.1"      "manopapad";
     ranch         = ghe "1.1.0"    "ninenines";
     rebarFR       = ghe "0.1"      "madtrick";
     recon         = ghe "2.2.1"    "ferd";
     redo          = ghe "1.1.0"    "jkvor";
     reloader      = ghe "1"        "lucaspiller";
-    seestar       = ghe "0.0.1"    "iamaleksey";
+    setup         = ghe "1.4"      "uwiger";
     usec          = ghe "0.1"      "esl";
     wsecli        = ghe "1.1.1"    "madtrick";
     wsock         = ghe "1.1.5"    "madtrick";

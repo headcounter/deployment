@@ -1,50 +1,49 @@
 diff --git a/rel/reltool.config.script b/rel/reltool.config.script
-index 40877c9..b488abf 100644
+index edc57d8..930112c 100644
 --- a/rel/reltool.config.script
 +++ b/rel/reltool.config.script
-@@ -55,17 +55,19 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+@@ -58,7 +58,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
  
  
  [{sys, [
 -        {lib_dirs, ["../apps", "../deps"]},
 +        {lib_dirs, ["../apps"]},
          {incl_cond, exclude},
--        {rel, "mongooseim", "", [mongoose | AppsToRun]},
-+        {rel, "mongooseim", "", [mongooseim | AppsToRun]},
+         {rel, "mongooseim", "", [mongooseim | AppsToRun]},
          {rel, "start_clean", "", [kernel,stdlib]},
-         {boot_rel, "mongooseim"},
-         {profile, embedded},
+@@ -67,6 +67,8 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
          {excl_archive_filters, [".*"]}, % do no archive built libs
          {excl_sys_filters, ["^bin/.*",
                              "^erts.*/bin/(dialyzer|typer)"]},
 +        {excl_lib, otp_root},
 +        {relocatable, false},
  
--        {app, mongoose, [{incl_cond, include}, {lib_dir, ".."}]}
-+        {app, mongooseim, [{incl_cond, include}, {lib_dir, ".."}]}
+         {app, mongooseim, [{incl_cond, include}, {lib_dir, ".."}]}
         ] ++ IncludeApps},
+@@ -76,24 +78,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
  
+ {overlay_vars, "vars.config"},
  
-@@ -80,8 +82,6 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
-            {copy, "files/mongooseimctl", "bin/mongooseimctl"},
-            {copy, "files/app.config", "etc/app.config"},
-            {template, "files/vm.args", "etc/vm.args"},
--           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"},
+-{overlay, [{mkdir, "log/sasl"},
 -           {mkdir, "var"},
--           {mkdir, "var/log"}
-+           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"}
+-           {mkdir, "var/log"},
+-           {mkdir, "priv"},
+-           {mkdir, "priv/ssl"},
+-
+-           {copy, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
+-           {copy, "files/nodetool", "\{\{erts_vsn\}\}/bin/nodetool"},
+-           {copy, "files/mongooseimctl", "bin/mongooseimctl"},
+-
+-           {template, "files/mongooseim", "bin/mongooseim"},
+-           {template, "files/app.config", "etc/app.config"},
+-           {template, "files/vm.args", "etc/vm.args"},
+-           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"},
+-
+-           {copy, "../fake_cert.pem", "priv/ssl/fake_cert.pem"},
+-           {copy, "../fake_key.pem", "priv/ssl/fake_key.pem"},
+-           {copy, "../fake_server.pem", "priv/ssl/fake_server.pem"},
+-           {copy, "files/sample_external_auth.py", "priv/sample_external_auth.py"}
++{overlay, [{template, "files/app.config", "etc/app.config"},
++           {template, "files/vm.args", "etc/vm.args"}
            ]}
  ].
-diff --git a/src/mongooseim.app.src b/src/mongooseim.app.src
-index 840edc7..0795689 100644
---- a/src/mongooseim.app.src
-+++ b/src/mongooseim.app.src
-@@ -1,7 +1,7 @@
- %% Dummy application resource file so that ejabberd may be used as a rebar
- %% dependency in other erlang applications.
- {application,mongooseim,
--             [{description,mongooseim},
-+             [{description,"MongooseIM"},
-               {vsn,"1.5.1"},
-               {modules,[]},
-               {registered,[]},
