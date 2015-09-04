@@ -16,7 +16,7 @@ let
 
     patches = [
       ./reltool.patch ./journald.patch ./systemd.patch
-      ./s2s-listener-certfile.patch
+      ./s2s-listener-certfile.patch ./starttls.patch
     ];
 
     buildInputs = [ pam zlib openssl expat ];

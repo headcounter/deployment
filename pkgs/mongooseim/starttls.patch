@@ -1,0 +1,32 @@
+diff --git a/apps/ejabberd/src/ejabberd_c2s.erl b/apps/ejabberd/src/ejabberd_c2s.erl
+index db3e1f5..b1475c0 100644
+--- a/apps/ejabberd/src/ejabberd_c2s.erl
++++ b/apps/ejabberd/src/ejabberd_c2s.erl
+@@ -313,16 +313,17 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
+ 			    false ->
+ 				[]
+ 			end,
+-		    send_element(StateData,
+-				 #xmlel{name = <<"stream:features">>,
+-					children = TLSFeature ++ CompressFeature ++
+-						   [#xmlel{name = <<"mechanisms">>,
+-						           attrs = [{<<"xmlns">>, ?NS_SASL}],
+-						           children = Mechs}] ++
+-						   ejabberd_hooks:run_fold(
+-						     c2s_stream_features,
+-						     Server,
+-						     [], [Server])}),
++		    Features = case TLSRequired of
++		        true -> TLSFeature;
++		        _ -> TLSFeature ++ CompressFeature ++
++		             [#xmlel{name = <<"mechanisms">>,
++		                     attrs = [{<<"xmlns">>, ?NS_SASL}],
++		                     children = Mechs}] ++
++		             ejabberd_hooks:run_fold(c2s_stream_features, Server, [],
++		                                     [Server])
++		    end,
++		    send_element(StateData, #xmlel{name = <<"stream:features">>,
++		                                   children = Features}),
+ 		    fsm_next_state(wait_for_feature_request,
+ 			       StateData#state{
+ 				 server = Server,
