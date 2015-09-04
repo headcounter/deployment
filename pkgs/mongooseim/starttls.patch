@@ -1,5 +1,5 @@
 diff --git a/apps/ejabberd/src/ejabberd_c2s.erl b/apps/ejabberd/src/ejabberd_c2s.erl
-index db3e1f5..b1475c0 100644
+index db3e1f5..34d1c9d 100644
 --- a/apps/ejabberd/src/ejabberd_c2s.erl
 +++ b/apps/ejabberd/src/ejabberd_c2s.erl
 @@ -313,16 +313,17 @@ wait_for_stream({xmlstreamstart, _Name, Attrs}, StateData) ->
@@ -16,7 +16,7 @@ index db3e1f5..b1475c0 100644
 -						     c2s_stream_features,
 -						     Server,
 -						     [], [Server])}),
-+		    Features = case TLSRequired of
++		    Features = case (TLSRequired == true) andalso (TLSEnabled == false) of
 +		        true -> TLSFeature;
 +		        _ -> TLSFeature ++ CompressFeature ++
 +		             [#xmlel{name = <<"mechanisms">>,
