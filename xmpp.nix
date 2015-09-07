@@ -10,6 +10,11 @@ let
     "ECDHE-RSA-AES256-SHA"
   ];
 
+  legacy = [
+    "DHE-RSA-AES256-SHA"
+    "DHE-DSS-AES256-SHA"
+  ];
+
   aes128fs = [
     "ECDHE-RSA-AES128-GCM-SHA256"
     "ECDHE-ECDSA-AES128-GCM-SHA256"
@@ -42,7 +47,7 @@ let
 
   mkCiphers = clist: concatStringsSep ":" (clist ++ [ "@STRENGTH" ]);
 
-  clientCiphers = mkCiphers (aes128fs ++ aes256fs ++ tlsv1);
+  clientCiphers = mkCiphers (aes128fs ++ aes256fs ++ tlsv1 ++ legacy);
   serverCiphers = mkCiphers aes256fs;
 
 in {
