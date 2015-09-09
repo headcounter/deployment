@@ -285,8 +285,7 @@ in {
         {acl, anonymous, {server, "anonymous.headcounter.org"}}.
 
         % we don't allow too short names!
-        {acl, weirdnames, {user_glob, "?"}}.
-        {acl, weirdnames, {user_glob, "??"}}.
+        {acl, weirdnames, {user_regexp, "^..?$"}}.
 
         % Everybody can create pubsub nodes
         {access, pubsub_createnode, [{allow, all}]}.
