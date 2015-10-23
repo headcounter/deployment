@@ -38,7 +38,7 @@ in stdenv.mkDerivation {
     echo "${hxcpp}" > hxcpp/.dev
 
     haxe -main Headcounter -cpp build -lib hase -dce full -D HXCPP_M64
-    patchelf --set-rpath "${hxcpp}/bin/Linux64:${stdenv.gcc.gcc}/lib64" \
+    patchelf --set-rpath "${hxcpp}/bin/Linux64:${stdenv.cc.cc}/lib64" \
       build/Headcounter
 
     haxe -main Headcounter -lib hase -js headcounter.js -dce full
