@@ -7,7 +7,7 @@ let
   lighttpd = pkgs.lighttpd.override { enableMagnet = true; };
   lightyCfgFile = pkgs.writeText "lighttpd.conf" lightyConf;
 
-  lightyEscape = value: "\"${escape ["\""] value}\"";
+  lightyEscape = value: "\"${escape ["\""] (toString value)}\"";
 
   toLightyList = items: concatStringsSep ", " (map lightyEscape items);
 
