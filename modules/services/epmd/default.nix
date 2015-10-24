@@ -8,14 +8,6 @@ let
   epmdPatched = lib.overrideDerivation pkgs.erlang (o: {
     name = "epmd-${o.version}";
 
-    patchPhase = null;
-    postPatch = o.patchPhase;
-
-    patches = singleton (pkgs.fetchpatch {
-      url = "https://github.com/erlang/otp/compare/4e96974...5db2345.diff";
-      sha256 = "0vz1zl4qb0rwyik87vlijp3k993kvnp5irjk8bxdj3d00s05i7aw";
-    });
-
     preConfigure = o.preConfigure + ''
       export ERL_TOP="$(pwd)"
       cd erts
