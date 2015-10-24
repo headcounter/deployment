@@ -1,4 +1,4 @@
-{ resources, ... }:
+{ lib, resources, ... }:
 
 let
   nixosSigningKey = ''
@@ -33,14 +33,13 @@ in {
   users.extraUsers.hydrabuild = {
     uid = 1000;
     description = "Hydra build user";
-    group = "users";
-    home = "/home/hydrabuild";
     useDefaultShell = true;
-    createHome = true;
-    openssh.authorizedKeys.keys = [
-      resources.sshKeyPairs."hydra-build".publicKey
-    ];
+    openssh.authorizedKeys.keys = let
+      mkServe = key: "command=\"nix-store --serve --write\" ${key}";
+    in lib.singleton (mkServe resources.sshKeyPairs.hydra-build.publicKey);
   };
+
+  nix.trustedUsers = [ "hydrabuild" ];
 
   environment.etc."nix/signing-key.pub".text = nixosSigningKey;
 
