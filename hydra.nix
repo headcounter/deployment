@@ -56,6 +56,11 @@ in {
     supportedFeatures = [ "kvm" "nixos-test" ];
   });
 
+  nix.extraOptions = ''
+    gc-keep-outputs = true
+    gc-keep-derivations = true
+  '';
+
   deployment.keys."binary-cache.secret" = {
     text = (import ./ssl/hydra.nix).secret;
     user = "hydra-www";
