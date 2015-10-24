@@ -104,7 +104,7 @@ in {
   };
 
   config.generatedConfig = let
-    justModules = removeAttrs config [ "generatedConfig" ];
+    justModules = removeAttrs config [ "generatedConfig" "_module" ];
     enabled = filterAttrs (name: mod: mod.enable) justModules;
     mkMod = name: cfg: "{mod_${name}, ${erlPropList cfg.options}}";
   in concatStringsSep ",\n  " (mapAttrsToList mkMod enabled);

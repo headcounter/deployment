@@ -3,11 +3,11 @@
 with lib;
 
 let
-  hydraSrc = pkgs.fetchFromGitHub {
+  hydraSrc = (import <nixpkgs> {}).fetchFromGitHub {
     repo = "hydra";
     owner = "NixOS";
-    rev = "ad2b7646ac394a72374a718d6a5f28577a82dad7";
-    sha256 = "1w4gk8yccvvka93i85rg4yv14vg4qwmzidmazkvczhzi8ijwfqda";
+    rev = "53c80d9526fb029b7adde47d0cfaa39a80926c48";
+    sha256 = "095zvi1pbcxr395ss44c399vmpp5z422lvm0iwjpkia19nr96zd5";
   };
 
   hydraRelease = import "${hydraSrc}/release.nix" {
@@ -33,19 +33,17 @@ in {
     enable = true;
     hydraURL = "https://headcounter.org/hydra/";
     notificationSender = "hydra@headcounter.org";
-    dbi = "dbi:Pg:dbname=hydra;";
     listenHost = "localhost";
     extraConfig = ''
       binary_cache_secret_key_file = /run/keys/binary-cache.secret
     '';
   };
 
-  users.extraUsers.hydra.uid = 2000;
-  users.extraUsers.hydra.extraGroups = [ "keys" ];
-  systemd.services.hydra-server.requires = [ "keys.target" ];
-  systemd.services.hydra-server.after = [ "keys.target" ];
+  users.extraUsers.hydra-www.extraGroups = [ "keys" ];
+  users.extraUsers.hydra-queue-runner.extraGroups = [ "keys" ];
+  systemd.services.hydra-init.requires = [ "keys.target" ];
+  systemd.services.hydra-init.after = [ "keys.target" ];
 
-  nix.maxJobs = mkForce 0;
   nix.distributedBuilds = true;
   nix.buildMachines = flip mapAttrsToList buildNodes (hostName: node: {
     inherit hostName;
@@ -58,21 +56,27 @@ in {
     supportedFeatures = [ "kvm" "nixos-test" ];
   });
 
+  nix.extraOptions = ''
+    gc-keep-outputs = true
+    gc-keep-derivations = true
+  '';
+
   deployment.keys."binary-cache.secret" = {
     text = (import ./ssl/hydra.nix).secret;
-    user = "hydra";
+    user = "hydra-www";
+    permissions = "0400";
+  };
+
+  deployment.keys."buildkey.priv" = {
+    text = buildKey;
+    user = "hydra-queue-runner";
     permissions = "0400";
   };
 
   deployment.keys."signkey.priv".text = readFile ./ssl/signing-key.sec;
-  deployment.keys."buildkey.priv".text = buildKey;
   deployment.storeKeysOnMachine = false;
 
   environment.etc."nix/signing-key.sec".source = "/run/keys/signkey.priv";
 
-  services.postgresql.enable = true;
   services.postgresql.package = pkgs.postgresql93;
-  services.postgresql.authentication = ''
-    local hydra hydra peer
-  '';
 }

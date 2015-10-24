@@ -12,7 +12,7 @@ rec {
      then "'${escape ["'"] val}'"
      else val;
 
-  erlString = val: "\"${escape ["\""] val}\"";
+  erlString = val: "\"${escape ["\""] (toString val)}\"";
   erlInt = toString;
   erlBool = val: erlAtom (if val then "true" else "false");
   erlList = val: "[${concatStringsSep ", " (map toErl val)}]";
