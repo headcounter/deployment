@@ -63,7 +63,7 @@ let
       };
     };
 
-    client = {
+    client = { pkgs, ... }: {
       imports = [ ../../common.nix ];
       networking.extraHosts = "127.0.0.1 client";
       systemd.services.testclient = {
@@ -84,7 +84,7 @@ let
     '';
   };
 
-  newServerCode = {
+  newServerCode = { pkgs, ... }: {
     headcounter.services.mongooseim.package = let
       patched = pkgs.headcounter.mongooseim.overrideDerivation (drv: {
         postPatch = (drv.postPatch or "") + ''
