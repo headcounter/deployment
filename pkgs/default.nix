@@ -4,10 +4,6 @@ let
   callPackage = pkgs.lib.callPackageWith (pkgs // headcounter);
 
   headcounter = rec {
-    # XXX: This is needed for MongooseIM < 1.6.0 for now
-    # Don't forget to remove this in common.nix as well!
-    erlang = pkgs.erlangR17;
-
     buildErlang = callPackage ./build-support/build-erlang {};
     writeEscript = callPackage ./build-support/write-escript.nix {};
 
