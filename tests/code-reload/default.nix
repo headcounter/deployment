@@ -1,7 +1,7 @@
-import ../make-test.nix ({ pkgs, lib, system, ... }:
+import ../make-test.nix ({ lib, system, ... }:
 
 let
-  testClient = pkgs.headcounter.buildErlang rec {
+  testClient = pkgs: pkgs.headcounter.buildErlang rec {
     name = "testclient";
     version = "1.0";
 
@@ -34,9 +34,10 @@ let
     };
   };
 
-  deps = [ testClient ] ++ testClient.recursiveErlangDeps;
-
-  argsFile = pkgs.writeText "testclient.args" ''
+  argsFile = pkgs: let
+    client = testClient pkgs;
+    deps = [ client ] ++ client.recursiveErlangDeps;
+  in pkgs.writeText "testclient.args" ''
     ${lib.concatMapStringsSep "\n" (dep: "-pa ${dep.appDir}/ebin") deps}
     -sname test@client
     -setcookie testclient
@@ -66,14 +67,15 @@ let
     client = { pkgs, ... }: {
       imports = [ ../../common.nix ];
       networking.extraHosts = "127.0.0.1 client";
+      environment.systemPackages = [ pkgs.erlang ];
       systemd.services.testclient = {
         description = "Test Client";
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" "fs.target" "keys.target" ];
 
-        environment.HOME = testClient;
+        environment.HOME = testClient pkgs;
         serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl testclient"
-                                + " -args_file ${argsFile}";
+                                + " -args_file ${argsFile pkgs}";
       };
     };
   };
@@ -124,7 +126,7 @@ in {
   in ''
     sub sendTestClientCommand {
       return $client->succeed(
-        '${pkgs.erlang}/bin/erl_call -sname test@client -c testclient '.
+        'erl_call -sname test@client -c testclient '.
         '-a "gen_server call [testclient, '.$_[0].', 60000]"'
       );
     }
