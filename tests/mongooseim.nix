@@ -324,14 +324,13 @@ in {
     $server2->waitForUnit("mongooseim.service");
 
     $client->succeed('cp -Lr "${mongooseimTests}/tests" .');
-    $client->succeed('cp "${mongooseimTests}/etc/vcard.config" .');
     $client->succeed('cp "${mongooseimTests}/etc/default.spec" .');
     $client->succeed('cp "${escalusConfig}" test.config');
 
     $client->succeed('sed -i '.
                      '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
                      '-e \'s/localhost/${server1}/g\' '.
-                     'tests/*.erl vcard.config');
+                     'tests/*.erl');
 
     my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
     chomp $clientip;
