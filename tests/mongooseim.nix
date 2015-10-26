@@ -290,6 +290,7 @@ in {
   nodes = {
     server1 = { config, pkgs, ... }: {
       imports = [ ../common.nix ];
+      virtualisation.memorySize = 512;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
         enable = true;
@@ -300,6 +301,7 @@ in {
 
     server2 = { config, pkgs, ... }: {
       imports = [ ../common.nix ];
+      virtualisation.memorySize = 512;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
         enable = true;
