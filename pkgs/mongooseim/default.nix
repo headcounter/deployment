@@ -5,13 +5,13 @@
 let
   self = buildErlang rec {
     name = "mongooseim";
-    version = "1.6.0pre";
+    version = "1.6.0";
 
     src = fetchFromGitHub {
       owner = "esl";
       repo = "MongooseIM";
-      rev = "9eeb17b01a7a41bcc5af12381bc81bd90948079b";
-      sha256 = "0nbjjl2fdd68cwlxnarl1r5hd2fjbdlms1kib1rziqg0ybd23pa2";
+      rev = version;
+      sha256 = "1l7xnz268zl059xvvyxvvvyhncdi68s9gla7ay6gl99w6jxa6lfk";
     };
 
     patches = [
