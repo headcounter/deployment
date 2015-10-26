@@ -76,7 +76,6 @@ let
     disco = mkModule "Service Discovery (${xep "0030"})";
     last = mkModuleODBC "Last Activity (${xep "0012"})";
     mam = mkModule "Message Archive Management (${xep "0313"})";
-    metrics = mkModule "MongooseIM metrics";
     muc = mkModule "Multi-User Chat (${xep "0045"})";
     muc_log = mkModuleDep "mod_muc" "Multi-User Chat room logging";
     offline = mkModule "Offline message storage (${xep "0160"})";

@@ -278,7 +278,6 @@ in {
           vcard.enable = true;
           vcard.options.allow_return_all = true;
           vcard.options.search_all_hosts = true;
-          metrics.enable = true;
         };
       });
       default = {};
