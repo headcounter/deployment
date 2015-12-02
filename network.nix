@@ -42,8 +42,12 @@ in {
       btrfs / --data=1 --metadata=1 --label=root btrfs.1 btrfs.2
     '';
     deployment.encryptedLinksTo = [ "ultron" ];
+
     services.hydra.listenHost = lib.mkForce
       config.networking.p2pTunnels.ssh.ultron.localIPv4;
+    services.hydra.dbi = let
+      inherit (config.networking.p2pTunnels.ssh) ultron;
+    in "dbi:Pg:dbname=hydra;user=hydra;host=${ultron.remoteIPv4}";
   };
 
   benteflork = mkMachine {

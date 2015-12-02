@@ -101,6 +101,18 @@ in {
     ];
   };
 
+  services.postgresql = let
+    inherit (nodes.taalo.config.networking.p2pTunnels.ssh) ultron;
+  in {
+    enable = true;
+    extraConfig = ''
+      listen_addresses = '${ultron.remoteIPv4}'
+    '';
+    authentication = mkAfter ''
+      host hydra all ${ultron.localIPv4}/32 trust
+    '';
+  };
+
   headcounter.services.lighttpd = {
     enable = true;
     defaultPort = null;
