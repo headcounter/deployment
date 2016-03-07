@@ -1,6 +1,7 @@
 [
   ./config/vhosts.nix
   ./config/imperative-containers.nix
+  ./services/dyndns
   ./services/epmd
   ./services/lighttpd.nix
   ./services/mongooseim
