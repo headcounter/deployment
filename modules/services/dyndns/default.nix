@@ -101,7 +101,7 @@ let
     };
   in {
     wantedBy = [ "multi-user.target" ];
-    after = lib.singleton "networking.target";
+    after = [ "network.target" ];
     description = "Dynamic DNS ${modeUCFirst} Server";
     restartTriggers = [ cfgFile ];
     serviceConfig = commonSC // specificSC // userGroupSC;
