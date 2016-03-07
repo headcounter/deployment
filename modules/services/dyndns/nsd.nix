@@ -15,6 +15,22 @@ let
   '';
 
 in {
+  systemd.services.dyndns-slave.after = [ "nsd.service" ];
+
+  systemd.services.dyndns-create-zonedir = {
+    description = "Create NSD Zone Directory For Dynamic DNS Slave";
+    requiredBy = [ "nsd.service" ];
+    after = [ "nsd.service" ];
+    before = [ "dyndns-slave.service" ];
+    serviceConfig.Type = "oneshot";
+    serviceConfig.UMask = "0007";
+    script = ''
+      mkdir -p /var/lib/nsd/dynzones
+      chown dyndns:nsd /var/lib/nsd/dynzones
+      chmod g+s /var/lib/nsd/dynzones
+    '';
+  };
+
   services.nsd = {
     enable = setOpt true;
     xfrdReloadTimeout = setOpt 0;
@@ -54,6 +70,7 @@ in {
     zoneCommand = toString (pkgs.writeScript "write-zone" ''
       #!${pkgs.stdenv.shell} -e
       fqdn="$1"
+      umask 0007
       zonefile="/var/lib/nsd/dynzones/$fqdn.zone"
 
       touchZonefile() {
@@ -64,7 +81,6 @@ in {
         "${pkgs.nsd}/bin/nsd-control" -c "${nsdControlConfig}" "$@"
       }
 
-      mkdir -p "$(dirname "$zonefile")"
       if [ -e "$zonefile" ]; then
         oldMTime="$(stat -c %Y "$zonefile")"
         exists=1
