@@ -38,7 +38,7 @@ in {
     extraConfig = ''
       # XXX for <nixpkgs> before 8442a7d12c399cc8bbe6cd6c4092b0df9f55dbac
       remote-control:
-        control-port: 8952
+        control-port: ${toString nsdcfg.port}
 
       pattern:
         name: "dyndns"
