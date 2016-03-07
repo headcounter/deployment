@@ -168,7 +168,7 @@ let
   };
 
   slaveNSDConfig = mkIf cfg.slave.useNSD (import ./nsd.nix {
-    inherit pkgs lib;
+    inherit config pkgs lib;
   });
 
   slaveConfig = mkMerge [ slaveBaseConfig slaveNSDConfig ];
