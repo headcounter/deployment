@@ -22,9 +22,7 @@ in import ./make-test.nix ({ lib, ... }: {
 
       services.nsd = {
         enable = true;
-
         interfaces = lib.mkForce [];
-        xfrdReloadTimeout = 0;
         verbosity = 1;
 
         zones."example.org.".data = ''
@@ -35,107 +33,12 @@ in import ./make-test.nix ({ lib, ... }: {
           alice IN NS ns.example.com
           bob IN NS ns.example.com
         '';
-
-        extraConfig = ''
-          # XXX for <nixpkgs> before 8442a7d12c399cc8bbe6cd6c4092b0df9f55dbac
-          remote-control:
-            control-port: 8952
-
-          pattern:
-            name: "dyndns"
-            zonefile: "/var/lib/nsd/dynzones/%s.zone"
-        '';
-
-        remoteControl = let
-          snakeOil = pkgs.runCommand "nsd-control-certs" {
-            buildInputs = [ pkgs.openssl ];
-          } ''
-            mkdir -p "$out"
-            "${pkgs.nsd}/bin/nsd-control-setup" -d "$out"
-          '';
-        in {
-          enable = true;
-          interfaces = lib.mkForce [ "127.0.0.1" ];
-          controlKeyFile = "${snakeOil}/nsd_control.key";
-          controlCertFile = "${snakeOil}/nsd_control.pem";
-          serverKeyFile = "${snakeOil}/nsd_server.key";
-          serverCertFile = "${snakeOil}/nsd_server.pem";
-        };
       };
 
       headcounter.services.dyndns.slave = {
         enable = true;
+        useNSD = true;
         master.host = "192.168.0.2";
-        zoneCommand = toString (pkgs.writeScript "write-zone" ''
-          #!${pkgs.stdenv.shell} -e
-          fqdn="$1"
-          zonefile="/var/lib/nsd/dynzones/$fqdn.zone"
-
-          # XXX!
-          cfgfile="$(systemctl show -p ExecStart nsd.service \
-            | sed -re 's/^.* ([^ ]+\.conf).*$/\1/')"
-
-          touchZonefile() {
-            touch -r "$zonefile" -d '1 sec' "$zonefile"
-          }
-
-          ctrl() {
-            "${pkgs.nsd}/bin/nsd-control" -c "$cfgfile" "$@"
-          }
-
-          mkdir -p "$(dirname "$zonefile")"
-          if [ -e "$zonefile" ]; then
-            oldMTime="$(stat -c %Y "$zonefile")"
-            exists=1
-          else
-            oldMTime=0
-            exists=0
-          fi
-          cat > "$zonefile"
-          if [ "$oldMTime" -eq "$(stat -c %Y "$zonefile")" ]; then
-            touchZonefile
-          fi
-          coproc waitForUpdate {
-            "${pkgs.inotify-tools}/bin/inotifywait" \
-              --format %w -m -e close "$zonefile" 2>&1
-          }
-          watching=0
-          while read line <&''${waitForUpdate[0]}; do
-            if [ "x$line" = "xWatches established." ]; then
-              watching=1
-              break
-            fi
-          done
-          if [ $watching -eq 0 ]; then
-            kill -TERM %% &> /dev/null || :
-            echo "Could not establish inotify watch for $zonefile!" >&2
-            exit 1
-          fi
-          if [ $exists -eq 1 ]; then
-            echo -n "Reloading zone $fqdn: " >&2
-            ctrl reload "$fqdn" >&2
-          else
-            ctrl addzone "$fqdn" dyndns
-          fi
-
-          for waitTime in 1 2 5 10 30; do
-            if read -t $waitTime line <&''${waitForUpdate[0]}; then
-              if [ "x$line" = "x$zonefile" ]; then
-                kill -TERM %% &> /dev/null || :
-                wait &> /dev/null || :
-                echo "Reload of $fqdn successful." >&2
-                exit 0
-              fi
-            fi
-            echo "Reload of $fqdn failed, touching zone file and" \
-                 "resending reload..." >&2
-            touchZonefile
-            read touched <&''${waitForUpdate[0]}
-            ctrl reload "$fqdn" >&2
-          done
-          echo "Reloading of zone $fqdn failed after 5 retries." >&2
-          exit 1
-        '');
       };
     };
 
