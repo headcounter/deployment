@@ -30,6 +30,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.SafeCopy as SC
 import qualified Data.Serialize as S
 import qualified Data.Yaml as Y
+import qualified Data.Yaml.Include as YI
 
 import GHC.Generics
 
@@ -305,7 +306,7 @@ loadConfigAndRun :: (J.ToJSON a, J.FromJSON b)
                  => FilePath -> a -> (b -> IO (Either ByteString ()))
                  -> IO (Either ByteString ())
 loadConfigAndRun fp defcfg fun = do
-    cfg <- Y.decodeFileEither fp
+    cfg <- YI.decodeFileEither fp
     case cfg of
          Left err  -> return . Left $ BC.pack $ Y.prettyPrintParseException err
          Right val -> do

@@ -126,7 +126,9 @@ let
 
   masterConfig = mkIf cfg.master.enable {
     systemd.services.dyndns-master = mkService "master" ''
-      ${credentials}
+      ${if cfg.master.credentialFile != null then ''
+      credentials: !include ${yamlStr cfg.master.credentialFile}
+      '' else credentials}
       ${nameservers}
       httpConfig:
         host: ${yamlStr cfg.master.http.host}
@@ -151,11 +153,18 @@ let
     };
 
     assertions = let
-      opt = "headcounter.services.dyndns.master.nameservers";
-    in lib.singleton {
-      assertion = lib.length cfg.master.nameservers >= 1;
-      message = "You have to specify at least one nameserver in ${opt}.";
-    };
+      mkOpt = opt: "`headcounter.services.dyndns.master.${opt}'";
+    in [
+      { assertion = lib.length cfg.master.nameservers >= 1;
+        message = "You have to specify at least one nameserver in"
+                + " ${mkOpt "nameservers"}.";
+      }
+      { assertion = cfg.master.credentialFile != null
+                 -> cfg.master.credentials == {};
+        message = "You can either specify ${mkOpt "credentials"} or"
+                + " ${mkOpt "credentialFile"}, not both.";
+      }
+    ];
   };
 
   slaveBaseConfig = mkIf cfg.slave.enable {
@@ -199,6 +208,15 @@ in {
       description = ''
         Credentials consisting of usernames, passwords and allowed hosts that
         the master server allows.
+      '';
+    };
+
+    credentialFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = ''
+        Use this file for credentials instead of putting them directly into the
+        main configuration file.
       '';
     };
 
