@@ -1,15 +1,51 @@
 let
-  mkNetConfig = ipSuffix: { lib, ... }: {
-    networking.useDHCP = false;
-    networking.interfaces.eth1 = {
+  mkNetConfig = eth: net: ipSuffix: { lib, ... }: {
+    networking.useDHCP = lib.mkForce false;
+    virtualisation.vlans = lib.mkOrder eth (lib.singleton (net + 1));
+    networking.interfaces.${"eth${toString eth}"} = lib.mkForce {
       ip4 = lib.singleton {
-        address = "192.168.0.${toString ipSuffix}";
+        address = "192.168.${toString net}.${toString ipSuffix}";
         prefixLength = 24;
       };
       ip6 = lib.singleton {
-        address = "fc00::${toString ipSuffix}";
+        address = "fc0${toString net}::${toString ipSuffix}";
         prefixLength = 64;
       };
+    };
+  };
+
+  mkSlaveConfig = masterAddress: { lib, ... }: {
+    services.nsd = {
+      enable = true;
+      interfaces = lib.mkForce [];
+      verbosity = 1;
+
+      zones."example.org.".data = ''
+        @ SOA ns1.example.org noc.example.org 666 7200 3600 1209600 3600
+        ns1 IN A 192.168.0.1
+        ns1 IN AAAA fc00::1
+
+        ns2 IN A 192.168.1.1
+        ns2 IN AAAA fc01::1
+
+        www IN A 192.168.0.2
+        www IN AAAA fc00::2
+
+        alice IN NS ns1
+        alice IN NS ns2
+
+        alice2 IN NS ns1
+        alice2 IN NS ns2
+
+        bob IN NS ns1
+        bob IN NS ns2
+      '';
+    };
+
+    headcounter.services.dyndns.slave = {
+      enable = true;
+      useNSD = true;
+      master.host = masterAddress;
     };
   };
 
@@ -17,39 +53,30 @@ in import ./make-test.nix ({ lib, ... }: {
   name = "dyndns";
 
   nodes = {
-    nameserver = { config, pkgs, lib, ... }: {
-      imports = [ ../common.nix (mkNetConfig 1) ];
+    nameserver1 = {
+      imports = [
+        ../common.nix
+        (mkNetConfig 1 0 1)
+        (mkSlaveConfig "192.168.0.2")
+      ];
+    };
 
-      services.nsd = {
-        enable = true;
-        interfaces = lib.mkForce [];
-        verbosity = 1;
-
-        zones."example.org.".data = ''
-          @ SOA ns.example.org noc.example.org 666 7200 3600 1209600 3600
-          ns IN A 192.168.0.1
-          ns IN AAAA fc00::1
-
-          alice IN NS ns.example.com
-          bob IN NS ns.example.com
-        '';
-      };
-
-      headcounter.services.dyndns.slave = {
-        enable = true;
-        useNSD = true;
-        master.host = "192.168.0.2";
-      };
+    nameserver2 = {
+      imports = [
+        ../common.nix
+        (mkNetConfig 1 1 1)
+        (mkSlaveConfig "192.168.1.2")
+      ];
     };
 
     webserver = {
-      imports = [ ../common.nix (mkNetConfig 2) ];
+      imports = [ ../common.nix (mkNetConfig 1 0 2) (mkNetConfig 2 1 2) ];
 
       headcounter.services.dyndns.master = {
         enable = true;
         emailAddress = "noc@example.org";
         nameservers = [ "ns.example.org" ];
-        slave.hosts = [ "*" ];
+        slave.hosts = [ "192.168.0.2" "192.168.1.2" ];
         credentials = {
           alice.password = "myrealpassword";
           alice.domains = [ "alice.example.org" "alice2.example.org" ];
@@ -61,8 +88,11 @@ in import ./make-test.nix ({ lib, ... }: {
     };
 
     client = { lib, ... }: {
-      imports = [ ../common.nix (mkNetConfig 10) ];
-      networking.nameservers = lib.mkForce [ "192.168.0.1" "fc00::1" ];
+      imports = [ ../common.nix (mkNetConfig 1 0 10) (mkNetConfig 2 1 10) ];
+      networking.nameservers = lib.mkForce [
+        "192.168.0.1" "fc00::1"
+        "192.168.1.1" "fc01::1"
+      ];
     };
   };
 
@@ -71,7 +101,7 @@ in import ./make-test.nix ({ lib, ... }: {
       mkQstring = key: val: "${key}=${val}";
       attrs = removeAttrs allAttrs [ "fail" ];
       qstring = lib.concatStringsSep "&" (lib.mapAttrsToList mkQstring attrs);
-    in "http://webserver:3000/?${qstring}";
+    in "http://www.example.org:3000/?${qstring}";
 
     dynTest = attrs: let
       method = if attrs.fail or false then "fail" else "succeed";
@@ -86,46 +116,49 @@ in import ./make-test.nix ({ lib, ... }: {
       my ($type, $fqdn, $expect, $eserial) = @_;
       my $uctype = uc $type;
       my $addr = uc $expect;
-      my $soaCmd = "host -r -t soa $fqdn 2> /dev/null | grep serial";
-      $client->nest("waiting for $uctype of $fqdn to point to $addr", sub {
-        Machine::retry sub {
-          my ($soaStatus, $soaOut) = $client->execute($soaCmd);
-          return 0 if $soaStatus != 0;
-          chomp $soaOut;
-          my $serial = $1 if $soaOut =~ /^\s*(\d+)\s*;/ or return 0;
-          $client->log("SOA serial is: $serial");
-          my ($status, $out) = $client->execute("host -t $type $fqdn");
-          return 0 if $status != 0;
-          chomp $out;
-          my ($rfqdn, $rtype, $raddr) = split /\s+/, $out;
-          return 0 if exists $dnsReplies{"$uctype $fqdn"} and
-            $dnsReplies{"$uctype $fqdn"} eq "$serial $out";
-          return 0 if $serial < $eserial;
-          die "expected FQDN $fqdn, but got $rfqdn" if $rfqdn ne $fqdn;
-          die "expected type $uctype, but got $rtype" if $rtype ne $uctype;
-          die "expected address $addr, but got $raddr" if $raddr ne $addr;
-          die "expected SOA serial $eserial, but got $serial"
-            if $eserial ne $serial;
-          $dnsReplies{"$uctype $fqdn"} = "$serial $out";
-          return 1;
-        };
-      });
+      for my $ns ("ns1.example.org", "ns2.example.org") {
+        my $soaCmd = "host -r -t soa $fqdn $ns 2> /dev/null | grep serial";
+        my $msg = "waiting for $uctype of $fqdn to point to $addr on $ns";
+        $client->nest($msg, sub {
+          Machine::retry sub {
+            my ($soaStatus, $soaOut) = $client->execute($soaCmd);
+            return 0 if $soaStatus != 0;
+            chomp $soaOut;
+            my $serial = $1 if $soaOut =~ /^\s*(\d+)\s*;/ or return 0;
+            $client->log("SOA serial is: $serial");
+            my ($status, $out) = $client->execute("host -t $type $fqdn $ns");
+            return 0 if $status != 0;
+            chomp $out;
+            my ($rfqdn, $rtype, $raddr) = split /\s+/, $out;
+            return 0 if exists $dnsReplies{"$ns $uctype $fqdn"} and
+              $dnsReplies{"$ns $uctype $fqdn"} eq "$serial $out";
+            return 0 if $serial < $eserial;
+            die "expected FQDN $fqdn, but got $rfqdn" if $rfqdn ne $fqdn;
+            die "expected type $uctype, but got $rtype" if $rtype ne $uctype;
+            die "expected address $addr, but got $raddr" if $raddr ne $addr;
+            die "expected SOA serial $eserial, but got $serial"
+              if $eserial ne $serial;
+            $dnsReplies{"$ns $uctype $fqdn"} = "$serial $out";
+            return 1;
+          };
+        });
+      }
     }
 
     startAll;
 
     $webserver->waitForUnit("dyndns-master.service");
-    $nameserver->waitForUnit("nsd.service");
 
-    $nameserver->waitForUnit("dyndns-slave.service");
-    $nameserver->waitUntilSucceeds(
-      "netstat -ntpe | grep -q 'ESTABLISHED.*dyndns'"
-    );
+    for my $ns ($nameserver1, $nameserver2) {
+      $ns->waitForUnit("nsd.service");
+      $ns->waitForUnit("dyndns-slave.service");
+      $ns->waitUntilSucceeds("netstat -ntpe | grep -q 'ESTABLISHED.*dyndns'");
+    }
 
     $client->waitForUnit("multi-user.target");
 
-
-    $client->succeed("host ns.example.org");
+    $client->succeed("host ns1.example.org ns1.example.org");
+    $client->succeed("host ns2.example.org ns2.example.org");
 
     ${dynTest {
       username = "alice";
