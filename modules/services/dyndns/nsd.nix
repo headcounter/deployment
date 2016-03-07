@@ -1,7 +1,18 @@
-{ pkgs, lib, ... }:
+{ config, pkgs, lib, ... }:
 
 let
   setOpt = lib.mkOverride 900;
+
+  nsdcfg = config.services.nsd.remoteControl;
+
+  nsdControlConfig = pkgs.writeText "nsd-control.config" ''
+    remote-control:
+      control-enable:    yes
+      control-key-file:  "${nsdcfg.controlKeyFile}"
+      control-cert-file: "${nsdcfg.controlCertFile}"
+      control-port:      ${toString nsdcfg.port}
+      server-cert-file:  "${nsdcfg.serverCertFile}"
+  '';
 
 in {
   services.nsd = {
@@ -43,16 +54,12 @@ in {
       fqdn="$1"
       zonefile="/var/lib/nsd/dynzones/$fqdn.zone"
 
-      # XXX!
-      cfgfile="$(systemctl show -p ExecStart nsd.service \
-        | sed -re 's/^.* ([^ ]+\.conf).*$/\1/')"
-
       touchZonefile() {
         touch -r "$zonefile" -d '1 sec' "$zonefile"
       }
 
       ctrl() {
-        "${pkgs.nsd}/bin/nsd-control" -c "$cfgfile" "$@"
+        "${pkgs.nsd}/bin/nsd-control" -c "${nsdControlConfig}" "$@"
       }
 
       mkdir -p "$(dirname "$zonefile")"
