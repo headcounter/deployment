@@ -38,14 +38,16 @@ in {
         mkdir -p "$out"
         "${pkgs.nsd}/bin/nsd-control-setup" -d "$out"
       '';
-    in {
-      enable = setOpt true;
-      interfaces = setOpt [ "127.0.0.1" ];
-      controlKeyFile = setOpt "${snakeOil}/nsd_control.key";
-      controlCertFile = setOpt "${snakeOil}/nsd_control.pem";
-      serverKeyFile = setOpt "${snakeOil}/nsd_server.key";
-      serverCertFile = setOpt "${snakeOil}/nsd_server.pem";
-    };
+    in lib.mkMerge [
+      { interfaces = setOpt [ "127.0.0.1" ]; }
+      (lib.mkIf (nsdcfg.interfaces == [ "127.0.0.1" ]) {
+        enable = setOpt true;
+        controlKeyFile = setOpt "${snakeOil}/nsd_control.key";
+        controlCertFile = setOpt "${snakeOil}/nsd_control.pem";
+        serverKeyFile = setOpt "${snakeOil}/nsd_server.key";
+        serverCertFile = setOpt "${snakeOil}/nsd_server.pem";
+      })
+    ];
   };
 
   headcounter.services.dyndns.slave = {
