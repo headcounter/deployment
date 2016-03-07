@@ -305,6 +305,5 @@ in import ./make-test.nix ({ lib, ... }: {
 
     expectDNS("a", "bob.example.org", "2.2.2.2", 22);
     expectDNS("aaaa", "bob.example.org", "666:0:0:0:0:0:0:14", 22);
-    # dummy
   '';
 })
