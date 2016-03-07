@@ -9,6 +9,7 @@ let
   } // args);
 in {
   code-reload = callTest ./code-reload {};
+  dyndns = callTest ./dyndns.nix {};
   mongooseim = callTest ./mongooseim.nix {};
   headcounter = callTest ./headcounter {};
 }
