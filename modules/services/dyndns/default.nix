@@ -19,11 +19,11 @@ let
   };
 
   mkListenerOptions = desc: defHost: defPort: {
-    host = mkOption {
-      type = types.str;
-      default = defHost;
+    hosts = mkOption {
+      type = types.listOf types.str;
+      default = [ defHost ];
       description = ''
-        Host/IP to listen for ${desc}.
+        List of Hosts or IPs to listen for ${desc}.
       '';
     };
 
@@ -108,13 +108,14 @@ let
   };
 
   yamlStr = val: "'${lib.replaceStrings ["'"] ["''"] val}'";
+  yamlList = items: "[${lib.concatMapStringsSep ", " yamlStr items}]";
 
   credentials = let
     mkCredUser = username: attrs: [
       "  ${yamlStr username}:"
       "    password: ${yamlStr attrs.password}"
-      "    domains:"
-    ] ++ map (d: "      - ${yamlStr d}") attrs.domains;
+      "    domains: ${yamlList attrs.domains}"
+    ];
     users = lib.flatten (lib.mapAttrsToList mkCredUser cfg.master.credentials);
     result = lib.concatStringsSep "\n" (lib.singleton "credentials:" ++ users);
   in lib.optionalString (users != []) result;
@@ -131,10 +132,10 @@ let
       '' else credentials}
       ${nameservers}
       httpConfig:
-        host: ${yamlStr cfg.master.http.host}
+        hosts: ${yamlList cfg.master.http.hosts}
         port: ${toString cfg.master.http.port}
       slaveConfig:
-        host: ${yamlStr cfg.master.slave.host}
+        hosts: ${yamlList cfg.master.slave.hosts}
         port: ${toString cfg.master.slave.port}
       email: ${yamlStr cfg.master.emailAddress}
       stateDir: ${yamlStr cfg.master.stateDir}

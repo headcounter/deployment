@@ -49,7 +49,7 @@ in import ./make-test.nix ({ lib, ... }: {
         enable = true;
         emailAddress = "noc@example.org";
         nameservers = [ "ns.example.org" ];
-        slave.host = "*";
+        slave.hosts = [ "*" ];
         credentials = {
           alice.password = "myrealpassword";
           alice.domains = [ "alice.example.org" "alice2.example.org" ];
