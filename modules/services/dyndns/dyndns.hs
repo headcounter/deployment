@@ -4,11 +4,12 @@
 import Control.Concurrent (forkIO, killThread)
 import Control.Concurrent.STM (atomically)
 
+import qualified Control.Concurrent.Async as A
 import qualified Control.Concurrent.STM.TChan as TC
 import qualified Control.Concurrent.STM.TQueue as TQ
 
 import Control.Exception (bracket, onException)
-import Control.Monad (join, forever)
+import Control.Monad (join, forever, (<=<))
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get, put)
 
@@ -94,7 +95,7 @@ type Credentials = HM.HashMap T.Text UserInfo
 
 data ListenerConfig = ListenerConfig
     { port :: Word16
-    , host :: T.Text
+    , hosts :: [T.Text]
     } deriving (Generic, Show)
 
 instance J.FromJSON ListenerConfig
@@ -253,38 +254,43 @@ updateZone domain ns mail newV4 newV6 = do
 
 $(AS.makeAcidic ''ZoneDatabase ['getAllZones, 'updateZone])
 
+serveMany :: ListenerConfig -> ((NS.Socket, NS.SockAddr) -> IO ()) -> IO ()
+serveMany lc fun =
+    fmap snd . A.waitAny <=< mapM A.async $ fmap listenTo (hosts lc)
+  where
+    listenTo :: T.Text -> IO ()
+    listenTo h = NS.serve (fromString $ T.unpack h) (show $ port lc) fun
+
 masterWorker :: MasterConfig -> AS.AcidState ZoneDatabase
              -> TC.TChan UpdateInfo -> IO ()
-masterWorker cfg state workChan =
-    NS.serve sHost sPort $ \(sock, sockAddr) -> do
-        workQueue <- atomically $ TC.dupTChan workChan
-        existing <- AS.query state GetAllZones
-        NS.sendMany sock $ (S.runPut . SC.safePut) <$> existing
-        forever $ do
-            ui <- atomically $ TC.readTChan workQueue
-            newZone <- AS.update state $ UpdateZone
-                (uiDomain ui)
-                (mkFQDN <$> nameservers cfg)
-                (email2fqdn $ email cfg)
-                (uiIPv4Address ui)
-                (uiIPv6Address ui)
-            logBSLn [ "Zone update from ", BC.pack $ show sockAddr, ": "
-                    , BC.pack $ show newZone
-                    ]
-            NS.send sock . S.runPut $ SC.safePut newZone
-  where sHost = fromString . T.unpack . host $ slaveConfig cfg
-        sPort = show . port $ slaveConfig cfg
+masterWorker cfg state workChan = serveMany lc $ \(sock, sockAddr) -> do
+    workQueue <- atomically $ TC.dupTChan workChan
+    existing <- AS.query state GetAllZones
+    NS.sendMany sock $ (S.runPut . SC.safePut) <$> existing
+    forever $ do
+        ui <- atomically $ TC.readTChan workQueue
+        newZone <- AS.update state $ UpdateZone
+            (uiDomain ui)
+            (mkFQDN <$> nameservers cfg)
+            (email2fqdn $ email cfg)
+            (uiIPv4Address ui)
+            (uiIPv6Address ui)
+        logBSLn [ "Zone update from ", BC.pack $ show sockAddr, ": "
+                , BC.pack $ show newZone
+                ]
+        NS.send sock . S.runPut $ SC.safePut newZone
+  where lc = slaveConfig cfg
 
 defaultMasterConfig :: MasterConfig
 defaultMasterConfig = MasterConfig
     { credentials = HM.empty
     , httpConfig = ListenerConfig
         { port = 3000
-        , host = "127.0.0.1"
+        , hosts = ["127.0.0.1"]
         }
     , slaveConfig = ListenerConfig
         { port = 6000
-        , host = "*"
+        , hosts = ["*"]
         }
     , stateDir = "/tmp/dyndns.state"
     , nameservers = []
@@ -316,12 +322,17 @@ loadConfigAndRun fp defcfg fun = do
                       ["Could not convert to settings: ", BC.pack s]
                   J.Success settings -> fun settings
 
-getWarpSettings :: MasterConfig -> Warp.Settings
-getWarpSettings cfg =
-    Warp.setPort (fromIntegral $ port hc) $
-    Warp.setHost (fromString . T.unpack $ host hc)
-    Warp.defaultSettings
-  where hc = httpConfig cfg
+serveManyWarps :: ListenerConfig -> Application -> IO ()
+serveManyWarps lc app =
+    fmap snd . A.waitAny <=< mapM A.async $ fmap listenTo (hosts lc)
+  where
+    mkWarpSettings :: T.Text -> Warp.Settings
+    mkWarpSettings h =
+        Warp.setPort (fromIntegral $ port lc) $
+        Warp.setHost (fromString $ T.unpack h)
+        Warp.defaultSettings
+    listenTo :: T.Text -> IO ()
+    listenTo h = Warp.runSettings (mkWarpSettings h) app
 
 startMaster :: MasterConfig -> IO (Either ByteString ())
 startMaster MasterConfig { nameservers = [] } =
@@ -330,7 +341,7 @@ startMaster cfg = bracket openAcidState AS.closeAcidState $ \state -> do
     workChan <- TC.newBroadcastTChanIO
     let createWorker = forkIO $ masterWorker cfg state workChan
     bracket createWorker killThread . const $
-        Warp.runSettings (getWarpSettings cfg) $ httpApp cfg workChan
+        serveManyWarps (httpConfig cfg) $ httpApp cfg workChan
     return $ Right ()
   where
     openAcidState = AS.openLocalStateFrom (stateDir cfg) (ZoneDatabase M.empty)
