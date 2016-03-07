@@ -159,13 +159,19 @@ let
     };
   };
 
-  slaveConfig = mkIf cfg.slave.enable {
+  slaveBaseConfig = mkIf cfg.slave.enable {
     systemd.services.dyndns-slave = mkService "slave" ''
       masterHost: ${yamlStr cfg.slave.master.host}
       masterPort: ${toString cfg.slave.master.port}
       writeZoneCommand: ${yamlStr cfg.slave.zoneCommand}
     '';
   };
+
+  slaveNSDConfig = mkIf cfg.slave.useNSD (import ./nsd.nix {
+    inherit pkgs lib;
+  });
+
+  slaveConfig = mkMerge [ slaveBaseConfig slaveNSDConfig ];
 
 in {
 
@@ -215,6 +221,15 @@ in {
 
   options.headcounter.services.dyndns.slave = {
     enable = mkEnableOption "Headcounter dynamic DNS slave service";
+
+    useNSD = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to update zones of a locally running NSD (see
+        <option>services.nsd</option>).
+      '';
+    };
 
     zoneCommand = mkOption {
       type = types.str;
