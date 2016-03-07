@@ -196,21 +196,6 @@ authenticate cred ui =
          } | uiPassword ui == passwd && uiDomain ui `elem` doms -> Just ui
          _                                                      -> Nothing
 
-httpApp :: MasterConfig -> TC.TChan UpdateInfo -> Application
-httpApp cfg workChan request respond =
-    case parseQuery (queryString request) >>= authenticate (credentials cfg) of
-         Nothing ->
-             respondText status401 "User data wrong or incomplete."
-         Just UpdateInfo {
-             uiIPv4Address = Nothing,
-             uiIPv6Address = Nothing
-         } -> respondText status400 "IP address info wrong or incomplete."
-         Just ui -> do
-             atomically $ TC.writeTChan workChan ui
-             respondText status200 "DNS entry queued for update."
-  where
-    respondText s = respond . responseLBS s [("Content-Type", "text/plain")]
-
 getAllZones :: AS.Query ZoneDatabase [Zone]
 getAllZones = do
     ZoneDatabase db <- ask
@@ -254,6 +239,28 @@ updateZone domain ns mail newV4 newV6 = do
 
 $(AS.makeAcidic ''ZoneDatabase ['getAllZones, 'updateZone])
 
+httpApp :: MasterConfig -> AS.AcidState ZoneDatabase -> TC.TChan Zone
+        -> Application
+httpApp cfg state workChan request respond =
+    case parseQuery (queryString request) >>= authenticate (credentials cfg) of
+         Nothing ->
+             respondText status401 "User data wrong or incomplete."
+         Just UpdateInfo {
+             uiIPv4Address = Nothing,
+             uiIPv6Address = Nothing
+         } -> respondText status400 "IP address info wrong or incomplete."
+         Just ui -> do
+             newZone <- AS.update state $ UpdateZone
+                 (uiDomain ui)
+                 (mkFQDN <$> nameservers cfg)
+                 (email2fqdn $ email cfg)
+                 (uiIPv4Address ui)
+                 (uiIPv6Address ui)
+             atomically $ TC.writeTChan workChan newZone
+             respondText status200 "DNS entry queued for update."
+  where
+    respondText s = respond . responseLBS s [("Content-Type", "text/plain")]
+
 serveMany :: ListenerConfig -> ((NS.Socket, NS.SockAddr) -> IO ()) -> IO ()
 serveMany lc fun =
     fmap snd . A.waitAny <=< mapM A.async $ fmap listenTo (hosts lc)
@@ -262,19 +269,13 @@ serveMany lc fun =
     listenTo h = NS.serve (fromString $ T.unpack h) (show $ port lc) fun
 
 masterWorker :: MasterConfig -> AS.AcidState ZoneDatabase
-             -> TC.TChan UpdateInfo -> IO ()
+             -> TC.TChan Zone -> IO ()
 masterWorker cfg state workChan = serveMany lc $ \(sock, sockAddr) -> do
     workQueue <- atomically $ TC.dupTChan workChan
     existing <- AS.query state GetAllZones
     NS.sendMany sock $ (S.runPut . SC.safePut) <$> existing
     forever $ do
-        ui <- atomically $ TC.readTChan workQueue
-        newZone <- AS.update state $ UpdateZone
-            (uiDomain ui)
-            (mkFQDN <$> nameservers cfg)
-            (email2fqdn $ email cfg)
-            (uiIPv4Address ui)
-            (uiIPv6Address ui)
+        newZone <- atomically $ TC.readTChan workQueue
         logBSLn [ "Zone update from ", BC.pack $ show sockAddr, ": "
                 , BC.pack $ show newZone
                 ]
@@ -341,7 +342,7 @@ startMaster cfg = bracket openAcidState AS.closeAcidState $ \state -> do
     workChan <- TC.newBroadcastTChanIO
     let createWorker = forkIO $ masterWorker cfg state workChan
     bracket createWorker killThread . const $
-        serveManyWarps (httpConfig cfg) $ httpApp cfg workChan
+        serveManyWarps (httpConfig cfg) $ httpApp cfg state workChan
     return $ Right ()
   where
     openAcidState = AS.openLocalStateFrom (stateDir cfg) (ZoneDatabase M.empty)
