@@ -1,5 +1,5 @@
-{ stdenv, fetchFromGitHub, fetchhg, fetchurl, fetchsvn, makeWrapper, lua
-, openssl, libidn, prosody, luaPackages, cacert
+{ stdenv, fetchFromGitHub, fetchFromBitbucket, fetchhg, fetchurl, fetchsvn
+, makeWrapper, lua, openssl, libidn, prosody, luaPackages, cacert, unbound
 , databaseEngine ? "PostgreSQL", sqlite ? null, postgresql ? null
 }:
 
@@ -43,14 +43,48 @@ let
     '';
   };
 
+  luaUnboundPoke = stdenv.mkDerivation {
+    name = "luaunbound-xmppoke";
+
+    src = fetchhg {
+      url = "http://code.zash.se/luaunbound";
+      rev = "b4b293593d0ef64d623a54a8b8d2c1dea4c5e870";
+      sha256 = "0accfa56fg2rn2gvj24b9cq9da2q61x9hmj2asa97qlpp8i1wp9x";
+    };
+
+    postPatch = ''
+      rm util.lunbound.lua
+      sed -i -re 's/(require *")util\.(lunbound")/\1\2/' *.lua
+    '';
+
+    buildInputs = [ lua unbound ];
+
+    makeFlags = [ "LUA_DIR=$(out)" ];
+
+    preInstall = ''
+      mkdir -p "$out/lib/lua/${lua.luaversion}"
+    '';
+
+    postInstall = ''
+      for i in *.lua; do
+        install -m 0644 -vD "$i" "$out/share/lua/${lua.luaversion}/''${i/./\/}"
+      done
+
+      for i in net.unbound:net/adns fakedns:net/dns; do
+        install -m 0644 -vD "''${i%:*}.lua" \
+          "$out/share/lua/${lua.luaversion}/''${i#*:}.lua"
+      done
+    '';
+  };
+
   luaSec = stdenv.mkDerivation {
     name = "luasec-xmppoke";
 
     src = fetchFromGitHub {
       repo = "luasec";
       owner = "xnyhps";
-      rev = "a28dcbab5b5bcc81705bfae2fc5e462be5a05683";
-      sha256 = "1n8gvazz6471n0q9hc8wdgvbjzpwp27x17smi7dcpjf1ppsdyyg6";
+      rev = "64bebd9c9283ce11dfa60945938d0a529861d824";
+      sha256 = "1x7snljlbvnzsify4w4ma76cv493wbjg8f23wagsg38dwqs5wzl9";
     };
 
     makeFlags = [
@@ -131,13 +165,16 @@ let
 in stdenv.mkDerivation {
   name = "xmppoke";
 
-  src = fetchhg {
-    url = "https://bitbucket.org/xnyhps/xmppoke";
-    rev = "7acb1a8d622787bad2f6a21ea00ea89fbc87c3b7";
-    sha256 = "12l83zp0z00m5gz4d6nr44jqzm2b9jkbjajzs0vb2mwgzjrd52b1";
+  src = fetchFromBitbucket {
+    owner = "xnyhps";
+    repo = "xmppoke";
+    rev = "fbf8af64f6611b32bbc820a18643333d3459fb28";
+    sha256 = "0jjmq4yyc5wkwfy4xxhdr9mjv2sc1kkl9mmxjvyb4lkc8q456nhd";
   };
 
   buildInputs = [ makeWrapper ];
+
+  patches = [ ./server-handler.patch ];
 
   postPatch = ''
     sed -i -r -e '/^ *print\([^)]*\); *$/d' -e '/^local opts/,/}/ {
@@ -148,7 +185,7 @@ in stdenv.mkDerivation {
 
   installPhase = let
     luaPaths = [
-      "$out" luaSec verse luaDbi
+      "$out" luaUnboundPoke luaSec verse luaDbi
       luaPackages.luaexpat luaPackages.luabitop luaPackages.luafilesystem
       luaPackages.luasocket
     ];
@@ -168,7 +205,7 @@ in stdenv.mkDerivation {
     cp -vt "$out/share/lua/${lua.luaversion}/verse/plugins/" plugins/tls.lua
 
     mkdir -p "$out/share/xmppoke"
-    cp -vt "$out/share/xmppoke/" schema.pg.sql schema.sqlite3.sql
+    cp -vt "$out/share/xmppoke/" schema.pg.sql
 
     makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
       "$out/bin/xmppoke" \

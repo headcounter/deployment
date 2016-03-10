@@ -1,12 +1,13 @@
-{ stdenv, coreutils, gnutar, fetchhg, makeWrapper, php }:
+{ stdenv, coreutils, gnutar, fetchFromBitbucket, makeWrapper, php }:
 
 stdenv.mkDerivation {
   name = "xmppoke-genreport";
 
-  src = fetchhg {
-    url = "https://bitbucket.org/xnyhps/xmppoke-frontend";
-    rev = "25adccac40f5909c4791f774ffb90081303308be";
-    sha256 = "0q5fj63y16jlkrymsk7lsaf413fgc2w3k3y116ly9c5x064ycs9y";
+  src = fetchFromBitbucket {
+    owner = "xnyhps";
+    repo = "xmppoke-frontend";
+    rev = "64ae8f9f8afe693b452042cafb593bc77cabd5b8";
+    sha256 = "01jqfl5j0vwivdn10ndiaicvp5pwvdg2qy5lrz2jq5r75bihyvsi";
   };
 
   buildInputs = [ makeWrapper php ];

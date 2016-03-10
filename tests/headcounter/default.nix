@@ -2,10 +2,9 @@ let
   nodes = { pkgs, ... }: let
     patchedPoke = pkgs.lib.overrideDerivation pkgs.headcounter.xmppoke (o: {
       postPatch = (o.postPatch or "") + ''
-        sed -i -e '/dbi.Connect/{
-          s/"xmppoke", *"xmppoke"/"xmppoke", "root"/
-          s/"localhost"/nil/
-        }' poke.lua
+        sed -ri -e 's/(db_host *= *)[^,]*/\1nil/' \
+                -e '/Connecting to database/d' \
+                poke.lua
       '';
     });
   in {

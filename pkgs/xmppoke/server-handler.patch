@@ -1,0 +1,15 @@
+diff --git a/net/server_select.lua b/net/server_select.lua
+index eff86e0..d01f50a 100644
+--- a/net/server_select.lua
++++ b/net/server_select.lua
+@@ -450,7 +450,9 @@ wrapconnection = function( server, listeners, socket, ip, serverport, clientport
+ 		out_put("server.lua: client", tostring(handler), " ", tostring(socket));
+ 		if not socket then
+ 			disconnect( handler, "socket disappeared" );
+-			handler:close( true )
++			if handler then
++				handler:close( true )
++			end
+ 			return false
+ 		end
+ 		local buffer, err, part = receive( socket, pattern )	-- receive buffer with "pattern"
