@@ -2,7 +2,7 @@
 
 let
   inherit (import ../../ssl/snakeoil.nix fqdn) rootCAFile;
-  pokeOpts = "--cafile=${rootCAFile}";
+  pokeOpts = "--cafile=${rootCAFile} --delay=0";
 
   resultSql = "SELECT sr.total_score, sr.grade, tr.type"
             + "  FROM srv_results sr, test_results tr"
