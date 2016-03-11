@@ -95,9 +95,12 @@ in {
 
         c2s = mkC2S true ++ mkC2S false;
 
-        bosh = mkAddr "mod_bosh" {
+        cowboy = mkAddr "ejabberd_cowboy" {
           port = 5280;
           options.tls.flag = true;
+          options.modules = [
+            { tuple = ["_" "/http-bind" { atom = "mod_bosh"; }]; }
+          ];
         };
 
         s2s = mkAddr "ejabberd_s2s_in" {
@@ -110,7 +113,7 @@ in {
             certfile = domain.ssl.privateKey.path;
           };
         };
-      in c2s ++ s2s ++ bosh) config.headcounter.vhosts) /* ++ [
+      in c2s ++ s2s ++ cowboy) config.headcounter.vhosts) /* ++ [
         FIXME: ejabberd_service doesn't exist anymore in MongooseIM!
 
         { port = 5280;
@@ -246,7 +249,6 @@ in {
         private.options.access.atom = "public";
 
         bosh.enable = true;
-        bosh.options.port = 5280; # TODO: TLS and whatnot?
 
         muc.enable = true;
         muc.options = {
