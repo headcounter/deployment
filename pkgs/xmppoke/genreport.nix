@@ -21,7 +21,7 @@ stdenv.mkDerivation {
           -e '/include *(/d' common.php
       sed -e '1{/<?php/d}' -e '/include *(/d' \
           -e '/<div.*navbar/,/^$/d' \
-          -e '/>Permalink/d' -e '/>Retest/d' \
+          -e '/>Permalink/d' -e '/>Retest/d' -e '/<button.*Show PEM/d' \
           -e '/<h3>Badge/,/<\/pre>/d' result.php
     ) > getreport.php
     sed -i -e 's/${reget "type"}/$argv[1]/g' \
