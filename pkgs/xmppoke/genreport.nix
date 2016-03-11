@@ -35,7 +35,7 @@ stdenv.mkDerivation {
     install -vD getreport.php "$outfile"
 
     mkdir -p "$out/share/xmppoke-frontend"
-    cp -rt "$out/share/xmppoke-frontend" js css
+    cp -rt "$out/share/xmppoke-frontend" js css fonts img
 
     mkdir -p "$out/bin"
     cat > "$out/bin/xmppoke-genreport" <<RUNNER
@@ -48,6 +48,8 @@ stdenv.mkDerivation {
         "${coreutils}/bin/cp" -r --no-preserve=all \
           "$out/share/xmppoke-frontend/js" \
           "$out/share/xmppoke-frontend/css" \
+          "$out/share/xmppoke-frontend/fonts" \
+          "$out/share/xmppoke-frontend/img" \
           "\$tmpdir/xmppoke/"
         "${gnutar}/bin/tar" cf "\$1.tar" -C "\$tmpdir" xmppoke
         exit 0
