@@ -35,14 +35,15 @@ in {
       print HYDRA "report tls-s2s $out/xmppoke server.html\n";
       close HYDRA;
 
-      my $failed = 0;
+      my $failed = 2;
       my $result = $client->succeed("${getResult}");
       foreach (split /\n/, $result) {
         my @sr = split /:/;
-        if ($sr[1] ne 'A') {
+        if ($sr[1] eq 'A') {
+          $failed--;
+        } else {
           $client->log("The $sr[2] test passed with a grade of ".
                        "$sr[1] instead of A!");
-          $failed = 1;
         }
       }
       die if $failed;
