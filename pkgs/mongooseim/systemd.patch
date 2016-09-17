@@ -2,7 +2,7 @@ diff --git a/apps/ejabberd/src/ejabberd_app.erl b/apps/ejabberd/src/ejabberd_app
 index da18651..5cd6107 100644
 --- a/apps/ejabberd/src/ejabberd_app.erl
 +++ b/apps/ejabberd/src/ejabberd_app.erl
-@@ -68,7 +68,15 @@ start(normal, _Args) ->
+@@ -68,7 +68,17 @@ start(normal, _Args) ->
      start_modules(),
      ejabberd_listener:start_listeners(),
      ejabberd_admin:start(),
@@ -14,7 +14,9 @@ index da18651..5cd6107 100644
 +    EscMessage = lists:flatmap(fun($') -> [$', $\\, $', $'];
 +                                  (C)  -> [C] end, Message),
 +    SdNotify = "systemd-notify --ready --status='" ++ EscMessage ++ "'",
-+    os:cmd(SdNotify),
++    % XXX: Very ugly workaround because of the following issue:
++    %      http://comments.gmane.org/gmane.comp.sysutils.systemd.devel/18649
++    timer:apply_after(10000, os, cmd, [SdNotify]),
 +
      Sup;
  start(_, _) ->

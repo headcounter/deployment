@@ -77,6 +77,4 @@ in {
   deployment.storeKeysOnMachine = false;
 
   environment.etc."nix/signing-key.sec".source = "/run/keys/signkey.priv";
-
-  services.postgresql.package = pkgs.postgresql93;
 }
