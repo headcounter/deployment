@@ -20,7 +20,7 @@ in {
   };
 
   taalo = { pkgs, lib, config, ... }: mkMachine {
-    imports = [ ./hydra.nix ./chromium.nix ];
+    imports = [ ./hydra.nix ];
     deployment.hetzner.mainIPv4 = "188.40.96.202";
 
     fileSystems."/".options = lib.concatStringsSep "," [
