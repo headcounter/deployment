@@ -48,10 +48,11 @@ let
     };
 
     device = mkOption {
-      default = "eth0";
+      default = config.headcounter.vhostDefaultDevice;
       type = types.string;
       description = ''
-        Network device to assign this virtual host to.
+        Network device to assign this virtual host to. By default it's the
+        device set by <option>headcounter.vhostDefaultDevice</option>.
       '';
     };
 
@@ -140,6 +141,14 @@ in {
     type = types.attrsOf (types.submodule domainSubmodule);
     description = ''
       Domains/virtual host configuration.
+    '';
+  };
+
+  options.headcounter.vhostDefaultDevice = mkOption {
+    default = "eth0";
+    type = types.str;
+    description = ''
+      Default network device to use for all vhosts.
     '';
   };
 

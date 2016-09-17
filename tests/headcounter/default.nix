@@ -14,9 +14,7 @@ let
       headcounter.useSnakeOil = true;
       users.extraUsers.mongoose.extraGroups = [ "keys" ];
 
-      headcounter.vhosts = genAttrs testedVHosts (name: {
-        device = "eth1";
-      });
+      headcounter.vhostDefaultDevice = "eth1";
 
       virtualisation.vlans = [ 1 ];
     };
