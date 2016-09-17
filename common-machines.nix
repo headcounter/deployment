@@ -15,7 +15,11 @@ in {
   deployment.targetEnv = "hetzner";
 
   environment.systemPackages = with pkgs; [
-    htop iotop
+    atop htop iotop
+    sysstat dstat
+    smartmontools
+    perf-tools
+    netrw
   ];
 
   services.openntpd.enable = true;
