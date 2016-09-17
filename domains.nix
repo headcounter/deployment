@@ -22,8 +22,8 @@ in {
       ipv6 = "2a01:4f8:162:4187::1";
     };
 
-    jabber = withSSL {
-      fqdn = "jabber.headcounter.org";
+    torservers = withSSL {
+      fqdn = "torservers.net";
       ipv4 = "78.47.32.130";
       ipv6 = "2a01:4f8:162:4187::2";
     };

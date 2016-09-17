@@ -21,6 +21,7 @@
       )
     '';
 
+    # FIXME: torservers.net needs to be handled differently here!
     mkZone = domain: text: ''
       \$ORIGIN ${domain}.
       \$TTL 60
@@ -95,6 +96,14 @@
         ; Generic stuff
         @      IN  A    ${vhosts.noicq.ipv4}
         @      IN  AAAA ${vhosts.noicq.ipv6}
+
+        ${mkXMPPRecords "@"}
+      '';
+
+      "jabber.torservers.net.".data = mkZone "jabber.torservers.net" ''
+        ; Generic stuff
+        @      IN  A    ${vhosts.torservers.ipv4}
+        @      IN  AAAA ${vhosts.torservers.ipv6}
 
         ${mkXMPPRecords "@"}
       '';

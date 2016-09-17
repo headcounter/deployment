@@ -68,7 +68,7 @@ let
     };
   };
 
-  testedVHosts = [ "headcounter" "aszlig" "noicq" "no_icq" ];
+  testedVHosts = [ "headcounter" "aszlig" "noicq" "no_icq" "torservers" ];
 
   mkVHostTest = vhost: let
     runner = import ../make-test.nix;

@@ -62,6 +62,7 @@ in {
         "aszlig.net"
         "no-icq.org"
         "noicq.org"
+        "torservers.net"
         #"anonymous.headcounter.org"
       ];
 
@@ -182,7 +183,7 @@ in {
             "Welcome!"
             "Welcome to the Headcounter Jabber Service. "
             "For information about this Network, please visit "
-            "https://jabber.headcounter.org/"
+            "https://headcounter.org/"
           ];
         };
 
@@ -213,7 +214,7 @@ in {
             (mkInfo {
               modules = singleton "mod_muc";
               field = "Web chatroom logs";
-              value = "https://jabber.headcounter.org/chatlogs/";
+              value = "https://headcounter.org/chatlogs/";
             })
             (mkInfo {
               modules = singleton "mod_disco";
@@ -280,6 +281,7 @@ in {
         % administrative
         {acl, admin, {user, "TODO", "aszlig.net"}}.
         {acl, wallops, {user, "TODO", "aszlig.net"}}.
+        {acl, torservers_admin, {user, "TODO", "torservers.net"}}.
 
         % Local users:
         {acl, local, {user_regexp, ""}}.
@@ -325,11 +327,13 @@ in {
 
         % For all users except admins use "normal" shaper
         {access, c2s_shaper, [{none, admin},
+                              {none, torservers_admin},
                               {none, wallops},
                               {normal, all}]}.
 
         % For all users except admins use "ultrafast" shaper
         {access, ft_shaper, [{none, admin},
+                             {none, torservers_admin},
                              {none, wallops},
                              {ultrafast, all}]}.
 
@@ -338,6 +342,9 @@ in {
 
         % Admins of this server are also admins of MUC service:
         {access, muc_admin, [{allow, admin}]}.
+
+        % Torservers access rule
+        {access, muc_torservers_admin, [{allow, muc_torservers_admin}]}.
 
         % Restricted MUC admin
         {access, muc_wallops, [{allow, admin},
