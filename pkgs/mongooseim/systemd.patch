@@ -1,23 +1,45 @@
 diff --git a/apps/ejabberd/src/ejabberd_app.erl b/apps/ejabberd/src/ejabberd_app.erl
-index da18651..5cd6107 100644
+index 634a1c5..50bf928 100644
 --- a/apps/ejabberd/src/ejabberd_app.erl
 +++ b/apps/ejabberd/src/ejabberd_app.erl
-@@ -68,7 +68,17 @@ start(normal, _Args) ->
-     start_modules(),
+@@ -68,7 +68,11 @@ start(normal, _Args) ->
+     mongoose_metrics:init(),
      ejabberd_listener:start_listeners(),
      ejabberd_admin:start(),
 -    ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
-+
-+    %% Notify systemd about startup
-+    Message = io_lib:format("ejabberd ~s is started on node ~p",
-+                            [?VERSION, node()]),
-+    EscMessage = lists:flatmap(fun($') -> [$', $\\, $', $'];
-+                                  (C)  -> [C] end, Message),
-+    SdNotify = "systemd-notify --ready --status='" ++ EscMessage ++ "'",
-+    % XXX: Very ugly workaround because of the following issue:
-+    %      http://comments.gmane.org/gmane.comp.sysutils.systemd.devel/18649
-+    timer:apply_after(10000, os, cmd, [SdNotify]),
-+
++    Message = io_lib:format(
++        "MongooseIM ~s has finished starting up on node ~p",
++        [?VERSION, node()]
++    ),
++    sd_notify:sd_notify(0, "READY=1\nSTATUS=" ++ Message ++ "\n"),
      Sup;
  start(_, _) ->
      {error, badarg}.
+diff --git a/rebar.config b/rebar.config
+index c19db14..9937c04 100644
+--- a/rebar.config
++++ b/rebar.config
+@@ -39,7 +39,8 @@
+   {usec, ".*", {git, "git://github.com/esl/usec.git", {branch, "master"}}},
+   {ecoveralls, ".*", {git, "git://github.com/nifoc/ecoveralls.git", "40fa0d2f2057fff29e964f94fccf6ef2f13d34d2"}},
+   {mustache, ".*", {git, "git://github.com/mojombo/mustache.erl.git", "d0246fe143058b6404f66cf99fece3ff6e87b7ed"}},
+-  {recon, "2.2.1", {git, "git://github.com/ferd/recon.git", {tag, "2.2.1"}}}
++  {recon, "2.2.1", {git, "git://github.com/ferd/recon.git", {tag, "2.2.1"}}},
++  {sd_notify, "1", {git, "git://github.com/systemd/erlang-sd_notify.git", {branch, "master"}}}
+  ]}.
+ 
+ {pre_hooks, [{compile, "tools/compile_riak_pb.sh"}]}.
+diff --git a/rel/reltool.config.script b/rel/reltool.config.script
+index 3f9b26e..4ca657c 100644
+--- a/rel/reltool.config.script
++++ b/rel/reltool.config.script
+@@ -45,7 +45,8 @@ BaseAppsToInclude = AppsToRun ++
+                      alarms,
+                      idna,
+                      recon,
+-                     setup
++                     setup,
++                     sd_notify
+                      ],
+ 
+ 

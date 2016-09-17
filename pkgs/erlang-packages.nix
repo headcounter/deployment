@@ -50,6 +50,8 @@ let
       patchShebangs write_compile_flags
     '';
     rebarFR.name = "rebar_feature_runner";
+    sd_notify.src.repo = "erlang-sd_notify";
+    sd_notify.buildInputs = [ pkgs.systemd ];
   };
 
   overrideFuns = {
@@ -82,6 +84,7 @@ let
     rebarFR       = "bcbf1ba233a5f8388f6d530c707d98db2021a48a";
     redo          = "7c7eaef4cd65271e2fc4ea88587e848407cf0762";
     reloader      = "9dd05d613c2abe563bc1c472950b96d2a832663b";
+    sd_notify     = "a1b6e244a122c4ccfa8d8e16ccd24ce1fd3109a2";
     usec          = "f85ffd8350d7000c26392c18bdfcdbb30f3b5ee8";
   };
 
@@ -143,6 +146,7 @@ let
     redo          = "14hg2jcs3qyl7aaz8ni9h8s97kjs0ksdfnh25m3hava7ga45jq1c";
     reloader      = "1ansv02klh9i53gmvxjk7vl83nsvyada58xn1pmc9gid0cl5vnl4";
     setup         = "0gyvfa84y6yz94bnybp7w2311gpgq69bazrmnpq43bd4s56dqlmj";
+    sd_notify     = "010ar96df8kn4by3kw25s454ghmjrfdrjql533d0kqi3dw8nvp8g";
     usec          = "19xzx81lwgff45qic6508m7m5kkbm6s0glncqmzr9pbac2ikjlds";
     wsecli        = "010jv736h5f8w6n6zkz3s5cn4p6i54wvg7fnnk0db8m8lykzf9m2";
     wsock         = "1z8i4k8fja05s4pxy3y32hmc8mh1wc5s2i8gw5q3j0klci2sqsxq";
@@ -188,6 +192,7 @@ let
     redo          = ghe "1.1.0"    "jkvor";
     reloader      = ghe "1"        "lucaspiller";
     setup         = ghe "1.4"      "uwiger";
+    sd_notify     = ghe "1"        "systemd";
     usec          = ghe "0.1"      "esl";
     wsecli        = ghe "1.1.1"    "madtrick";
     wsock         = ghe "1.1.5"    "madtrick";

@@ -34,7 +34,7 @@ let
     erlangDeps = with erlangPackages; [
       alarms base16 cowboy cuesport ecoveralls exml exometer folsom fusco idna
       lager mochijson2 mustache p1_cache_tab p1_stringprep pa proper recon redo
-      usec
+      sd_notify usec
     ];
 
     postBuild = ''
