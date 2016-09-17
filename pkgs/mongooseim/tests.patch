@@ -1,8 +1,8 @@
 diff --git a/tests/ejabberdctl_SUITE.erl b/tests/ejabberdctl_SUITE.erl
-index 79fbca8..0f9f093 100644
+index 8c50ddc..8f48c61 100644
 --- a/tests/ejabberdctl_SUITE.erl
 +++ b/tests/ejabberdctl_SUITE.erl
-@@ -80,20 +80,15 @@ suite() ->
+@@ -108,20 +108,15 @@ suite() ->
      escalus:suite().
  
  init_per_suite(Config) ->
@@ -18,16 +18,20 @@ index 79fbca8..0f9f093 100644
 -              end,
  
      AuthMods = auth_modules(),
-     
+ 
 -    NewConfig = escalus:init_per_suite([{ctl_path, CtlPath},
 +    NewConfig = escalus:init_per_suite([{ctl_path, os:find_executable("mongooseimctl")},
                                          {ctl_auth_mods, AuthMods},
                                          {roster_template, TemplatePath} | Config]),
      escalus:create_users(NewConfig, {by_name, [alice, mike, bob, kate]}).
-@@ -621,7 +616,7 @@ get_user_data(User, _Config) ->
-     {Username, Domain, Password}.
+diff --git a/tests/ejabberdctl_helper.erl b/tests/ejabberdctl_helper.erl
+index d717f29..96aa09e 100644
+--- a/tests/ejabberdctl_helper.erl
++++ b/tests/ejabberdctl_helper.erl
+@@ -34,7 +34,7 @@ normalize_args(Args) ->
+               end, Args).
  
- run(Cmd) -> 
+ run(Cmd) ->
 -    run(Cmd, 5000).
 +    run(Cmd, 60000).
  

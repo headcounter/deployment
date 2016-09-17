@@ -1,10 +1,11 @@
 diff --git a/rel/files/app.config b/rel/files/app.config
-index f7ceb72..8eb854a 100644
+index a9a8574..3fb11d0 100644
 --- a/rel/files/app.config
 +++ b/rel/files/app.config
-@@ -1,10 +1,10 @@
+@@ -1,11 +1,11 @@
  [
- {lager, [
+  {ssl, [{session_lifetime, 600}]}, %% 10 minutes
+  {lager, [
 -    {log_root, {{app_config_lager_log_dir}} },
 -    {crash_log, "crash.log"},
 +    {crash_log, undefined},

@@ -5,13 +5,13 @@
 let
   self = buildErlang rec {
     name = "mongooseim";
-    version = "1.6.0";
+    version = "1.6.2";
 
     src = fetchFromGitHub {
       owner = "esl";
       repo = "MongooseIM";
       rev = version;
-      sha256 = "1l7xnz268zl059xvvyxvvvyhncdi68s9gla7ay6gl99w6jxa6lfk";
+      sha256 = "0g7wfn8bxnyy70dx57z9f98cwz8sjbmqaln03rf4jzhlfqpsyakc";
     };
 
     patches = [
@@ -34,6 +34,7 @@ let
     erlangDeps = with erlangPackages; [
       alarms base16 cowboy cuesport ecoveralls exml exometer folsom fusco idna
       lager mochijson2 mustache p1_cache_tab p1_stringprep pa proper recon redo
+      usec
     ];
 
     postBuild = ''
