@@ -29,9 +29,7 @@ in {
     nrBuildUsers = 100;
     useChroot = true;
     readOnlyStore = true;
-    extraOptions = ''
-      build-cores = 0
-    '';
+    buildCores = 0;
   };
 
   nixpkgs.config.allowUnfree = true;
