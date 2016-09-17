@@ -5,7 +5,7 @@ with lib;
 let
   cfg = config.headcounter;
 
-  domainOptions = {
+  domainSubmodule.options = {
     fqdn = mkOption {
       default = null;
       example = "example.com";
@@ -137,8 +137,7 @@ let
 in {
   options.headcounter.vhosts = mkOption {
     default = {};
-    type = types.attrsOf types.optionSet;
-    options = [ domainOptions ];
+    type = types.attrsOf (types.submodule domainSubmodule);
     description = ''
       Domains/virtual host configuration.
     '';
