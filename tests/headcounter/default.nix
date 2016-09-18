@@ -33,13 +33,11 @@ let
 
       virtualisation.vlans = [ 1 ];
 
-      networking.localCommands = let
-        mkRoute = _: vhost: ''
+      networking.localCommands = ''
+        ${concatStrings (mapAttrsToList (const (vhost: ''
           ip -4 route add '${vhost.ipv4}' dev eth1
           ip -6 route add '${vhost.ipv6}' dev eth1
-        '';
-      in ''
-        ${concatStrings (mapAttrsToList mkRoute vhosts)}
+        '')) vhosts)}
         ip -4 route flush cache
         ip -6 route flush cache
       '';
