@@ -250,6 +250,7 @@ let
         atom = "max_user_offline_messages";
       };
       register.options.ip_access = [];
+      register.options.access.atom = "register";
       websockets.enable = true;
     };
 
