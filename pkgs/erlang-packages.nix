@@ -117,7 +117,7 @@ let
     cuesport      = "0sv7br7ixag3vliq3mg52zmy2im2pvplk4c21bnakjs9rfcgaisy";
     ecoveralls    = "0phyxiaf36fcnjagak81z0bh6mmdh1f8vba6acfbn9mx6c5ffa4l";
     edown         = "1gdbnmvnfpgyphdf04lidzmvcxwmsd01jinl9cmcc2fj2vjzp2ir";
-    escalus       = "0k97zzkmnkksfihr0hy3sdy37w890cwilc9rps9ya9c1ga7yn717";
+    escalus       = "1hd5528akf7mj8q7dg93aagrz6757vz37x6mfskgm8kmqacphx1v";
     espec         = "1k070c54f6kcdk3ciipq9y651cmdci7g67kqmb4r1gib2y1apzad";
     exml          = "1zl9wq3797m09gijb1wb545s4kif8q89ip5ym8hp5nlqjxnw8jmg";
     exometer      = "0fzr8c6ipc1zxqi00m407knqj2wlxhgcxdvkpbjrlnd04ja0gg1r";
@@ -163,7 +163,7 @@ let
     cuesport      = ghe "0.1"      "esl";
     ecoveralls    = ghe "0.1"      "nifoc";
     edown         = ghe "0.7"      "uwiger";
-    escalus       = ghe "2.6.2"    "esl";
+    escalus       = ghe "2.6.3"    "esl";
     espec         = ghe "1"        "lucaspiller";
     exml          = ghe "2.2.0"    "esl";
     exometer      = ghe "1.1"      "esl";
