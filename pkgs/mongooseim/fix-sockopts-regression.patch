@@ -1,0 +1,13 @@
+diff --git a/apps/ejabberd/src/ejabberd_listener.erl b/apps/ejabberd/src/ejabberd_listener.erl
+index d42d402..e4e95e3 100644
+--- a/apps/ejabberd/src/ejabberd_listener.erl
++++ b/apps/ejabberd/src/ejabberd_listener.erl
+@@ -182,7 +182,7 @@ listen_tcp(PortIPProto, Module, SockOpts, Port, IPS) ->
+                                         {nodelay, true},
+                                         {send_timeout, ?TCP_SEND_TIMEOUT},
+                                         {keepalive, true},
+-                                        {send_timeout_close, true}]),
++                                        {send_timeout_close, true} | SockOpts]),
+             case Res of
+                 {ok, ListenSocket} ->
+                     ListenSocket;

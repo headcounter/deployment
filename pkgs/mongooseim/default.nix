@@ -17,6 +17,7 @@ let
     patches = [
       ./reltool.patch ./journald.patch ./systemd.patch
       ./s2s-listener-certfile.patch ./strip-unneeded-deps.patch
+      ./fix-sockopts-regression.patch
     ];
 
     prePatch = ''
