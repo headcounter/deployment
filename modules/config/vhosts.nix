@@ -96,24 +96,23 @@ let
 
   getPrivkeyFilename = key: "ssl-${builtins.hashString "sha256" key}.key";
 
-  mkNetConfig = name: netcfg: let
-    cidr4 = "${netcfg.ipv4}/${toString netcfg.ipv4prefix}";
-    cidr6 = "${netcfg.ipv6}/${toString netcfg.ipv6prefix}";
+  mkNetConfig = name: netcfg: {
+    ${netcfg.device} = {
+      ip4 = singleton {
+        address = netcfg.ipv4;
+        prefixLength = netcfg.ipv4prefix;
+      };
+      ip6 = singleton {
+        address = netcfg.ipv6;
+        prefixLength = netcfg.ipv6prefix;
+      };
+    };
+  };
 
-    cmd = type: mode: if type == 4 then
-      "ip -4 addr ${mode} '${cidr4}' dev '${netcfg.device}'"
-    else
-      "ip -6 addr ${mode} '${cidr6}' dev '${netcfg.device}'";
-
-    cmdReadd = type: "(${cmd type "del"} && ${cmd type "add"})";
-
-  in optionalString (netcfg.ipv4 != null) ''
-    ${cmd 4 "add"} || ${cmd 4 "change"} || ${cmdReadd 4} || true
-  '' + optionalString (netcfg.ipv6 != null) ''
-    ${cmd 6 "add"} || ${cmd 6 "change"} || ${cmdReadd 6} || true
-  '';
-
-  netConfig = concatStrings (mapAttrsToList mkNetConfig cfg.vhosts);
+  netConfig = let
+    merge = zipAttrsWith (const zipper);
+    zipper = vals: if isList (head vals) then flatten vals else merge vals;
+  in merge (mapAttrsToList mkNetConfig cfg.vhosts);
 
   generatedKeys = let
     hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
@@ -161,41 +160,30 @@ in {
     '';
   };
 
-  config = mkIf (cfg.vhosts != {}) ({
-    systemd.services = {
-      "post-network-setup" = {
-        description = "Network virtual host setup";
-
-        after = [ "network-setup.service" ];
-        before = [ "network.target" ];
-        wantedBy = [ "network.target" ];
-
-        path = [ pkgs.iproute ];
-
-        serviceConfig.Type = "oneshot";
-        serviceConfig.RemainAfterExit = true;
-
-        script = netConfig;
+  config = mkIf (cfg.vhosts != {}) (mkMerge [
+    { networking.interfaces = netConfig; }
+    (mkIf cfg.useSnakeOil {
+      systemd.services = {
+        inject-keys = {
+          description = "Inject Snakeoil Keys";
+          wantedBy = [ "keys.target" ];
+          before = [ "keys.target" ];
+          unitConfig.DefaultDependencies = false;
+          serviceConfig.Type = "oneshot";
+          serviceConfig.RemainAfterExit = true;
+          script = ''
+            mkdir -p /run/keys -m 0750
+            chown root:keys /run/keys
+          '' + concatStrings (mapAttrsToList (name: value: ''
+            cp "${pkgs.writeText name value.text}" "/run/keys/${name}"
+            chmod 640 "/run/keys/${name}"
+            chown root:keys "/run/keys/${name}"
+          '') generatedKeys);
+        };
       };
-    } // optionalAttrs cfg.useSnakeOil {
-      inject-keys = {
-        description = "Inject Snakeoil Keys";
-        wantedBy = [ "keys.target" ];
-        before = [ "keys.target" ];
-        unitConfig.DefaultDependencies = false;
-        serviceConfig.Type = "oneshot";
-        serviceConfig.RemainAfterExit = true;
-        script = ''
-          mkdir -p /run/keys -m 0750
-          chown root:keys /run/keys
-        '' + concatStrings (mapAttrsToList (name: value: ''
-          cp "${pkgs.writeText name value.text}" "/run/keys/${name}"
-          chmod 640 "/run/keys/${name}"
-          chown root:keys "/run/keys/${name}"
-        '') generatedKeys);
-      };
-    };
-  } // optionalAttrs (options ? deployment) {
-    deployment.keys = generatedKeys;
-  });
+    })
+    (optionalAttrs (options ? deployment) {
+      deployment.keys = generatedKeys;
+    })
+  ]);
 }
