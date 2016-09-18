@@ -251,6 +251,7 @@ let
       };
       register.options.ip_access = [];
       register.options.access.atom = "register";
+      register.options.registration_watchers = [ "admin@${serverName}" ];
       websockets.enable = true;
     };
 
