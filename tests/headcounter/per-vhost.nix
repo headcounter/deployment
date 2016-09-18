@@ -46,7 +46,10 @@ in {
                        "$sr[1] instead of A!");
         }
       }
-      die if $failed;
+      if ($failed) {
+        open TOUCH_FAILED, ">>$out/nix-support/failed";
+        close TOUCH_FAILED;
+      }
     };
   '';
 }
