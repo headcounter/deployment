@@ -1,11 +1,11 @@
-{ pkgs, toplevelConfig, ... }:
+{ pkgs, hclib, toplevelConfig, ... }:
 
 { config, lib, ... }:
 
 with lib;
-with pkgs.headcounter.nixErlangTools;
 
 let
+  inherit (hclib) erlAtom erlString erlInt erlList;
   enumDoc = attrs: ''
     <variablelist>
       ${concatStrings (flip mapAttrsToList attrs (option: doc: ''
@@ -185,7 +185,7 @@ in {
 
     listeners = mkOption {
       type = types.listOf (types.submodule (import ./listeners.nix {
-        inherit pkgs;
+        inherit pkgs hclib;
       }));
       default = [
         { port = 5280;
@@ -249,7 +249,7 @@ in {
 
     modules = mkOption {
       type = types.submodule (import ./modules.nix {
-        inherit pkgs toplevelConfig;
+        inherit pkgs hclib toplevelConfig;
         defaults = {
           adhoc.enable = true;
           amp.enable = true;

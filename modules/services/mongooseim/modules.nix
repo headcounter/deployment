@@ -1,9 +1,8 @@
-{ pkgs, toplevelConfig, defaults, ... }:
+{ pkgs, hclib, toplevelConfig, defaults, ... }:
 
 { lib, config, ... }:
 
 with lib;
-with pkgs.headcounter.nixErlangTools;
 
 /*
   Missing modules from Ejabberd:
@@ -105,6 +104,6 @@ in {
   config.generatedConfig = let
     justModules = removeAttrs config [ "generatedConfig" "_module" ];
     enabled = filterAttrs (name: mod: mod.enable) justModules;
-    mkMod = name: cfg: "{mod_${name}, ${erlPropList cfg.options}}";
+    mkMod = name: cfg: "{mod_${name}, ${hclib.erlPropList cfg.options}}";
   in concatStringsSep ",\n  " (mapAttrsToList mkMod enabled);
 }

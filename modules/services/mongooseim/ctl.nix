@@ -1,17 +1,16 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, hclib, config, ... }:
 
 with lib;
-with pkgs.headcounter.nixErlangTools;
 
 let
   cfg = config.headcounter.programs.mongooseimctl;
   inherit (config.headcounter.services.mongooseim) package;
 
   ctlArgsFile = pkgs.writeText "ctl.args" ''
-    -setcookie ${shErlEsc erlAtom cfg.cookie}
+    -setcookie ${hclib.shErlEsc hclib.erlAtom cfg.cookie}
     -noinput
     -hidden
-    -pa ${shErlEsc id "${package.mainAppDir}/ebin"}
+    -pa ${hclib.shErlEsc id "${package.mainAppDir}/ebin"}
     -s ejabberd_ctl
   '';
 

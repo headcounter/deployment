@@ -7,8 +7,6 @@ let
     buildErlang = callPackage ./build-support/build-erlang {};
     writeEscript = callPackage ./build-support/write-escript.nix {};
 
-    nixErlangTools = callPackage ./build-support/liberlang.nix {};
-
     mongooseim = callPackage ./mongooseim {};
     mongooseimTests = callPackage ./mongooseim/tests.nix {};
     spectrum2 = callPackage ./spectrum2 {};

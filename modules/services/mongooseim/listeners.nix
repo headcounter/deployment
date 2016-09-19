@@ -1,9 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, hclib, ... }:
 
 { lib, config, ... }:
 
 with lib;
-with pkgs.headcounter.nixErlangTools;
 
 {
   options = {
@@ -33,7 +32,7 @@ with pkgs.headcounter.nixErlangTools;
     };
 
     options = mkOption {
-      type = erlType erlPropList;
+      type = hclib.erlType hclib.erlPropList;
       default = {};
       example = {
         access.atom = "trusted_users";
@@ -51,11 +50,11 @@ with pkgs.headcounter.nixErlangTools;
   };
 
   config.generatedConfig = let
-    addrTerm = parseErlIpAddr config.address;
-    addrSpec = singleton (erlInt config.port)
+    addrTerm = hclib.parseErlIpAddr config.address;
+    addrSpec = singleton (hclib.erlInt config.port)
             ++ optional (config.address != null) addrTerm
-            ++ optional (config.type != null) (erlAtom config.type);
+            ++ optional (config.type != null) (hclib.erlAtom config.type);
     addr = if length addrSpec == 1 then head addrSpec
            else "{${concatStringsSep ", " addrSpec}}";
-  in "{${addr}, ${erlAtom config.module}, ${config.options}}";
+  in "{${addr}, ${hclib.erlAtom config.module}, ${config.options}}";
 }

@@ -1,9 +1,9 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, hclib, ... }:
 
 with lib;
-with pkgs.headcounter.nixErlangTools;
 
 let
+  inherit (hclib) shErlEsc erlAtom erlString;
   cfg = config.headcounter.services.mongooseim;
 
   progName = "mongooseim";
@@ -113,7 +113,7 @@ in {
     settings = mkOption {
       default = {};
       type = types.submodule (import ./settings.nix {
-        inherit pkgs;
+        inherit pkgs hclib;
         toplevelConfig = config;
       });
       description = "Configuration settings.";

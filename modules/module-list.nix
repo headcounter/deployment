@@ -1,4 +1,5 @@
 [
+  ./core.nix
   ./config/vhosts.nix
   ./config/imperative-containers.nix
   ./services/dyndns

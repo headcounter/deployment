@@ -1,9 +1,9 @@
-{ stdenv, erlang, writeText, nixErlangTools }:
+{ stdenv, erlang, writeText }:
 
 name: emuArgs: textOrFile:
 
 with stdenv.lib;
-with nixErlangTools;
+with import ../../lib { inherit (stdenv) lib; };
 
 let
   mkFile = writeText "${name}.erl";
