@@ -23,6 +23,14 @@ let
     "-s run_common_test main test=full spec=default.spec"
   ]);
 
+  mkRosterTemplate = serverName: { pkgs, ... }: {
+    environment.etc."mongooseim/roster.template" = {
+      source = pkgs.runCommand "roster.template" {
+        input = "${pkgs.headcounter.mongooseimTests}/etc/roster.template";
+      } "sed -e 's!localhost!${serverName}!g' \"$input\" > \"$out\"";
+    };
+  };
+
   escalusConfig = pkgs.writeText "test.config" ''
     {ejabberd_node, '${nodeName1}'}.
     {ejabberd2_node, '${nodeName2}'}.
@@ -291,7 +299,7 @@ in {
 
   nodes = {
     server1 = { config, pkgs, ... }: {
-      imports = [ ../common.nix ];
+      imports = [ ../common.nix (mkRosterTemplate server1) ];
       virtualisation.memorySize = 512;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
@@ -302,7 +310,7 @@ in {
     };
 
     server2 = { config, pkgs, ... }: {
-      imports = [ ../common.nix ];
+      imports = [ ../common.nix (mkRosterTemplate server2) ];
       virtualisation.memorySize = 512;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
@@ -313,7 +321,7 @@ in {
     };
 
     client = {
-      imports = [ ../common.nix ];
+      imports = [ ../common.nix (mkRosterTemplate server1) ];
       headcounter.programs.mongooseimctl = {
         enable = true;
         inherit cookie;
@@ -343,6 +351,10 @@ in {
 
     $client->succeed('sed -i -e \'/wait_for_stanza/s/10000/&0/\' '.
                      'tests/s2s_SUITE.erl');
+
+    $client->succeed('sed -i -e \'/^ *TemplatePath *=/s!=.*!= "${
+        "/etc/mongooseim/roster.template"
+      }",!\' -e \'s,FileName *= *",&/tmp/,\' tests/ejabberdctl_SUITE.erl');
 
     $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
                      '-setcookie ${cookie} -sname mongooseim@client '.

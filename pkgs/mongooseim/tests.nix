@@ -17,7 +17,7 @@ buildErlang rec {
 
   postInstall = ''
     mkdir -p "$out/etc"
-    cp test.config *.spec "$out/etc/"
+    cp test.config roster.template *.spec "$out/etc/"
     cp -a tests "$out"
   '';
 }
