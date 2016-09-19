@@ -5,7 +5,7 @@ let
   inherit (lib) head tail any all range remove mapAttrsToList concatStringsSep;
   inherit (lib) isList isAttrs traceVal replaceStrings splitString last toInt;
   inherit (lib) init take drop genList const length foldl' toLower zipLists;
-  inherit (lib) findFirst mkOptionType mergeOneOption;
+  inherit (lib) filter findFirst mkOptionType mergeOneOption;
 
 in rec {
   erlAtom = val: let
@@ -64,17 +64,22 @@ in rec {
 
     v6Expanded = let
       splitted = let
+        sanityCheck = builtins.match ".*(PAD|:::).*" addr != null;
         splitter = val: let
           result = builtins.match "([^:]*):(.*)" val;
           iter = [ (head result) ] ++ splitter (last result);
         in if result == null then [ val ] else iter;
-        simple = splitter addr;
+        prepared = splitter (replaceStrings ["::"] [":PAD:"] addr);
+        tooManyPads = length (filter (x: x == "PAD") prepared) > 1;
+        simple = if tooManyPads || sanityCheck then throwInvalid else prepared;
         v4mapped = builtins.match v4Re (last simple);
         rewritten = init simple ++ [ (take 2 v4mapped) (drop 2 v4mapped) ];
       in if v4mapped != null then rewritten else simple;
       folder = acc: digit: let
-        pad = genList (const "0") (8 - (length splitted - length acc));
-      in if digit == "" then acc ++ pad else acc ++ [ digit ];
+        afterAcc = length splitted - length acc;
+        padLen = 8 - (length acc) - afterAcc + 1;
+        pad = genList (const "0") padLen;
+      in if digit == "PAD" then acc ++ pad else acc ++ [ digit ];
       result = foldl' folder [] splitted;
     in if length result != 8 then throwInvalid else result;
 
