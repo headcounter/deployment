@@ -3,7 +3,10 @@
 name: emuArgs: textOrFile:
 
 with stdenv.lib;
-with import ../../modules/services/mongooseim/erlexpr.nix;
+with import ../../modules/services/mongooseim/erlexpr.nix {
+  inherit erlang;
+  inherit (stdenv) lib;
+};
 
 let
   mkFile = writeText "${name}.erl";

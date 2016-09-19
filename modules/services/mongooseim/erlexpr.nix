@@ -1,5 +1,6 @@
-with import <nixpkgs> {};
-with pkgs.lib;
+{ erlang, lib }:
+
+with lib;
 
 rec {
   erlAtom = val: let

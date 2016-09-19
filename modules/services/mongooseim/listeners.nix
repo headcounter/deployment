@@ -3,7 +3,7 @@
 { lib, config, ... }:
 
 with lib;
-with import ./erlexpr.nix;
+with import ./erlexpr.nix { inherit (pkgs) erlang; inherit lib; };
 
 {
   options = {
