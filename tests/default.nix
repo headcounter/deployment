@@ -12,4 +12,5 @@ in {
   dyndns = callTest ./dyndns.nix {};
   mongooseim = callTest ./mongooseim.nix {};
   headcounter = callTest ./headcounter {};
+  hclib = pkgs.callPackage ./hclib.nix {};
 }
