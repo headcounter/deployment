@@ -58,7 +58,7 @@ in rec {
     tuplize = val: "{${concatStringsSep ", " val}}";
 
     v4DigitRe = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
-    v6DigitRe = "([0-9a-fA-F]{1,4})";
+    v6DigitRe = "([0-9a-fA-F]{,4})";
     v4Re = "${v4DigitRe}\\.${v4DigitRe}\\.${v4DigitRe}\\.${v4DigitRe}";
     v4Parse = builtins.match v4Re addr;
 
@@ -88,7 +88,8 @@ in rec {
         d2 = toDec (head (tail padded));
         d3 = toDec (last (init padded));
         d4 = toDec (last padded);
-      in toString (d1 * 4096 + d2 * 256 + d3 * 16 + d4);
+        converted = toString (d1 * 4096 + d2 * 256 + d3 * 16 + d4);
+      in if digit == "" then "0" else converted;
 
       digitizeV4 = d: toString (toInt (head d) * 256 + toInt (last d));
 
