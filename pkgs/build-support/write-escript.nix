@@ -1,12 +1,9 @@
-{ stdenv, erlang, writeText }:
+{ stdenv, erlang, writeText, nixErlangTools }:
 
 name: emuArgs: textOrFile:
 
 with stdenv.lib;
-with import ../../modules/services/mongooseim/erlexpr.nix {
-  inherit erlang;
-  inherit (stdenv) lib;
-};
+with nixErlangTools;
 
 let
   mkFile = writeText "${name}.erl";

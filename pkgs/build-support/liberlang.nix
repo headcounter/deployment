@@ -1,4 +1,4 @@
-{ erlang, lib }:
+{ runCommand, erlang, lib }:
 
 with lib;
 
@@ -48,8 +48,8 @@ rec {
     merge = loc: defs: valType (mergeOneOption loc defs);
   };
 
-  parseErlIpAddr = addr: import "${pkgs.runCommand "erlip.nix" {} ''
-    ${pkgs.erlang}/bin/erl -noshell -eval '
+  parseErlIpAddr = addr: import "${runCommand "erlip.nix" {} ''
+    ${erlang}/bin/erl -noshell -eval '
       {ok, Addr} = inet:parse_address(${erlString addr}),
       io:fwrite("\"~p\"", [Addr])
     ' -s erlang halt > "$out"

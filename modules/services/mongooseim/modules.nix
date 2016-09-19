@@ -3,7 +3,7 @@
 { lib, config, ... }:
 
 with lib;
-with import ./erlexpr.nix { inherit (pkgs) erlang; inherit lib; };
+with pkgs.headcounter.nixErlangTools;
 
 /*
   Missing modules from Ejabberd:

@@ -1,7 +1,7 @@
 { pkgs, lib, config, ... }:
 
 with lib;
-with import ./erlexpr.nix { inherit (pkgs) erlang; inherit lib; };
+with pkgs.headcounter.nixErlangTools;
 
 let
   cfg = config.headcounter.programs.mongooseimctl;
