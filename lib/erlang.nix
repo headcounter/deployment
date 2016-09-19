@@ -77,8 +77,10 @@ in rec {
       in if v4mapped != null then rewritten else simple;
       folder = acc: digit: let
         afterAcc = length splitted - length acc;
-        padLen = 8 - (length acc) - afterAcc + 1;
-        pad = genList (const "0") padLen;
+        accLen = length acc;
+        invalid = padLen < 1 && afterAcc > 2 && accLen > 1;
+        padLen = 8 - accLen - afterAcc + 1;
+        pad = genList (const "0") (if invalid then throwInvalid else padLen);
       in if digit == "PAD" then acc ++ pad else acc ++ [ digit ];
       result = foldl' folder [] splitted;
     in if length result != 8 then throwInvalid else result;
