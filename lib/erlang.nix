@@ -64,7 +64,11 @@ in rec {
 
     v6Expanded = let
       splitted = let
-        simple = splitString ":" addr;
+        splitter = val: let
+          result = builtins.match "([^:]*):(.*)" val;
+          iter = [ (head result) ] ++ splitter (last result);
+        in if result == null then [ val ] else iter;
+        simple = splitter addr;
         v4mapped = builtins.match v4Re (last simple);
         rewritten = init simple ++ [ (take 2 v4mapped) (drop 2 v4mapped) ];
       in if v4mapped != null then rewritten else simple;
