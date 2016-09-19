@@ -29,7 +29,7 @@ let
     {ejabberd_cookie, ${cookie}}.
     {ejabberd_domain, <<"${server1}">>}.
     {ejabberd_addr, <<"${server1}">>}.
-    {ejabberd_secondary_domain, <<"${server2}">>}.
+    {ejabberd_secondary_domain, <<"${server1}.bis">>}.
     {ejabberd_reloaded_domain, <<"sogndal">>}.
     {ejabberd_metrics_rest_port, 5280}.
     {ejabberd_string_format, bin}.
