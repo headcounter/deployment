@@ -352,9 +352,15 @@ in {
     $client->succeed('sed -i -e \'/wait_for_stanza/s/10000/&0/\' '.
                      'tests/s2s_SUITE.erl');
 
-    $client->succeed('sed -i -e \'/^ *TemplatePath *=/s!=.*!= "${
+    $client->succeed(
+      'sed -i -e \'/^ *TemplatePath *=/s!=.*!= "${
         "/etc/mongooseim/roster.template"
-      }",!\' -e \'s,FileName *= *",&/tmp/,\' tests/ejabberdctl_SUITE.erl');
+      }",!\' -e \'s,FileName *= *",&/tmp/,\' '.
+      ' -e \'s/@lo\\.\\*/@se.*/\' '.
+      ' -e \'s/@loc\\.\\*t2/@ser.*r2/\' -e \'s/@localho+/@serve+/\' '.
+      ' -e \'s/loc\\.\\*st/ser.*er/\'   -e \'s/\\.\\*host/.*rver/\' '.
+      'tests/ejabberdctl_SUITE.erl'
+    );
 
     $client->succeed('${pkgs.erlang}/bin/erl -noinput '.
                      '-setcookie ${cookie} -sname mongooseim@client '.
