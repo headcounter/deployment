@@ -358,7 +358,7 @@ in {
       }",!\' -e \'s,FileName *= *",&/tmp/,\' '.
       ' -e \'s/@lo\\.\\*/@se.*/\' '.
       ' -e \'s/@loc\\.\\*t2/@ser.*r2/\' -e \'s/@localho+/@serve+/\' '.
-      ' -e \'s/loc\\.\\*st/ser.*er/\'   -e \'s/\\.\\*host/.*rver/\' '.
+      ' -e \'s/loc\\.\\*st/ser.*r1/\'   -e \'s/\\.\\*host/.*ver1/\' '.
       'tests/ejabberdctl_SUITE.erl'
     );
 
