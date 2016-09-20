@@ -58,11 +58,8 @@ in {
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
-  fileSystems."/".options = concatStringsSep "," [
-    "autodefrag"
-    "space_cache"
-    "compress=lzo"
-    "noatime"
+  fileSystems."/".options = [
+    "autodefrag" "space_cache" "compress=lzo" "noatime"
   ];
 
   networking.nat = {

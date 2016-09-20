@@ -23,11 +23,8 @@ in {
     imports = [ ./hydra.nix ];
     deployment.hetzner.mainIPv4 = "188.40.96.202";
 
-    fileSystems."/".options = lib.concatStringsSep "," [
-      "autodefrag"
-      "space_cache"
-      "compress=lzo"
-      "noatime"
+    fileSystems."/".options = [
+      "autodefrag" "space_cache" "compress=lzo" "noatime"
     ];
 
     deployment.hetzner.partitions = ''
