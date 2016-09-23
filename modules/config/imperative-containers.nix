@@ -82,8 +82,7 @@ in {
       name = "ic-${name}";
       value = {
         privateNetwork = true;
-        # NixOS 15.06 only!
-        #autoStart = true;
+        autoStart = true;
         inherit (cfg) hostAddress localAddress;
         path = "/nix/var/nix/profiles/system";
       };
