@@ -23,8 +23,8 @@
 
     # FIXME: torservers.net needs to be handled differently here!
     mkZone = domain: text: ''
-      \$ORIGIN ${domain}.
-      \$TTL 60
+      $ORIGIN ${domain}.
+      $TTL 60
       ${mkSOA "postmaster.${domain}"}
       @ IN NS ${primaryDNS}.
       @ IN NS ${secondaryDNS}.
