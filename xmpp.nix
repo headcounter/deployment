@@ -204,7 +204,12 @@ in {
           access.atom = "public";
           server_info = let
             mkInfo = { modules ? { atom = "all"; }, field, value }: {
-              tuple = [ modules field (singleton value) ];
+              tuple = [
+                (if isList modules then map (m: { atom = m; }) modules
+                                   else modules)
+                { binary = field; }
+                (singleton { binary = value; })
+              ];
             };
           in [
             (mkInfo {
@@ -222,7 +227,7 @@ in {
               value = "xmpp:aszlig@aszlig.net";
             })
           ];
-          extra_domains = map (base: "${base}.headcounter.org") [
+          extra_domains = map (base: { binary = "${base}.headcounter.org"; }) [
             # TODO: Generate this based on available services!
             "conference"
           ];
