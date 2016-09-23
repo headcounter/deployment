@@ -133,6 +133,7 @@ let
       processLimit = mkOption {
         type = types.int;
         default = cfg.defaultProcessLimit;
+        apply = x: if x == 0 then 4294967295 else x;
         description = ''
           The maximum number of processes to spawn for this service, by default
           it's the value set by ${optDoc "defaultProcessLimit"}. If the value
