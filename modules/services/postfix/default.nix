@@ -259,9 +259,11 @@ in {
       # XXX: This is not the fully fleshed out default master.cf!
       default = {
         smtpd.type = "inet";
+        smtpd.address = 25;
 
         submission.type = "inet";
         submission.program = "smtpd";
+        submission.address = 587;
 
         defer.program = "bounce";
         defer.processLimit = 0;
