@@ -58,7 +58,15 @@ in {
     sshKey = "/run/keys/buildkey.priv";
     sshUser = buildUser;
     supportedFeatures = [ "kvm" "nixos-test" "big-parallel" ];
-  });
+  }) ++ [
+    { hostName = "falayalaralfali";
+      maxJobs = 8;
+      systems = [ "armv6l-linux" "armv7l-linux" ];
+      sshKey = "/run/keys/buildkey.priv";
+      sshUser = buildUser;
+      supportedFeatures = [ "kvm" "nixos-test" "big-parallel" ];
+    }
+  ];
 
   nix.extraOptions = ''
     gc-keep-outputs = true
