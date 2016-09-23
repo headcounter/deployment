@@ -12,6 +12,7 @@ in {
   ultron = { pkgs, lib, config, ... }: mkMachine {
     imports = [ ./machines/ultron ];
     deployment.hetzner.mainIPv4 = "5.9.105.142";
+    deployment.encryptedLinksTo = [ "dugee" "gussh" ];
 
     services.openssh.extraConfig = lib.mkAfter ''
       ListenAddress ${config.deployment.hetzner.mainIPv4}

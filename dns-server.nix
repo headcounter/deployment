@@ -1,4 +1,4 @@
-{ lib, nodes, ... }:
+{ config, lib, nodes, ... }:
 
 {
   deployment.hetzner.partitions = ''
@@ -6,6 +6,14 @@
     part swap --size=2000 --label=swap --fstype=swap --ondisk=vda
     part / --fstype=ext4 --label=root --grow --ondisk=vda
   '';
+
+  headcounter.services.dyndns.slave = {
+    enable = true;
+    useNSD = true;
+    master.host = let
+      m = config.networking.hostName;
+    in nodes.ultron.config.networking.p2pTunnels.ssh.${m}.localIPv4;
+  };
 
   services.nsd = let
     primaryDNS   = "ns1.headcounter.org";
@@ -83,6 +91,11 @@
         ns1 IN AAAA 2a01:4f8:d13:3009::2
         ns2 IN A    78.47.142.38
         ns2 IN AAAA 2a01:4f8:d13:5308::2
+
+        ${lib.concatMapStringsSep "\n" (name: ''
+        ${name} IN NS ${primaryDNS}.
+        ${name} IN NS ${secondaryDNS}.
+        '') [ "zrnzrk" "docsnyder" ]}
 
         ${mkXMPPRecords "@"}
       '';

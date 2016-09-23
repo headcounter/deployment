@@ -98,6 +98,16 @@ in {
     ];
   };
 
+  headcounter.services.dyndns.master = {
+    enable = true;
+    emailAddress = "postmaster@headcounter.org";
+    nameservers = [ "ns1.headcounter.org" "ns2.headcounter.org" ];
+    http.hosts = mkForce [ "127.0.0.1" ];
+    slave.hosts = let
+      mkSlaveListener = m: config.networking.p2pTunnels.ssh.${m}.localIPv4;
+    in mkForce (unique (map mkSlaveListener [ "dugee" "gussh" ]));
+  };
+
   services.postgresql = let
     inherit (nodes.taalo.config.networking.p2pTunnels.ssh) ultron;
   in {
@@ -139,6 +149,13 @@ in {
         proxy.balance = "hash"
         proxy.server = ("/hydra" => ((
           "host" => "${hydraIPv4}",
+          "port" => 3000
+        )))
+      # Mapping to Dynamic DNS Master
+      } else $HTTP["url"] =~ "^/dyndns(?:$|/)" {
+        proxy.balance = "hash"
+        proxy.server = ("/dyndns" => ((
+          "host" => "127.0.0.1",
           "port" => 3000
         )))
       # Mapping to parsifal container
