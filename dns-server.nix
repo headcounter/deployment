@@ -71,9 +71,12 @@
         @           IN  AAAA  ${vhosts.headcounter.ipv6}
 
         ; Hosts of the new deployment
-        taalo      IN A 144.76.61.117
-        benteflork IN A 144.76.202.147
-        ultron     IN A 5.9.105.142
+        taalo      IN A    188.40.96.202
+        taalo      IN AAAA 2a01:4f8:100:726f::
+        benteflork IN A    144.76.202.147
+        benteflork IN AAAA 2a01:4f8:200:8392::
+        ultron     IN A    5.9.105.142
+        ultron     IN AAAA 2a01:4f8:162:4187::
 
         ; DNS servers
         ns1 IN A    78.46.182.124
