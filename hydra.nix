@@ -53,7 +53,7 @@ in {
               else singleton node.config.nixpkgs.system;
     sshKey = "/run/keys/buildkey.priv";
     sshUser = buildUser;
-    supportedFeatures = [ "kvm" "nixos-test" ];
+    supportedFeatures = [ "kvm" "nixos-test" "big-parallel" ];
   });
 
   nix.extraOptions = ''
