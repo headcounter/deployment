@@ -28,6 +28,8 @@ in {
       "autodefrag" "space_cache" "compress=lzo" "noatime"
     ];
 
+    boot.kernelPackages = pkgs.linuxPackages_latest;
+
     deployment.hetzner.partitions = ''
       clearpart --all --initlabel --drives=sda,sdb
 
