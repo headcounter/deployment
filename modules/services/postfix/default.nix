@@ -95,7 +95,7 @@ let
           This deviates from the upstream Postfix master process configuration
           where there is only a flag whether the process is privileged or not.
 
-          Postfix only either runs the process as root or as the postfix users
+          Postfix either runs the process as root or as the postfix users
           whether the flag is set or not set, using capabilities allows us to
           have a more fine-grained control about what a particular service is
           allowed to regardless of the user account it's running as.
