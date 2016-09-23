@@ -6,16 +6,6 @@ with lib;
 
 let
   inherit (hclib) erlAtom erlString erlInt erlList;
-  enumDoc = attrs: ''
-    <variablelist>
-      ${concatStrings (flip mapAttrsToList attrs (option: doc: ''
-        <varlistentry>
-          <term><option>${option}</option></term>
-          <listitem><para>${doc}</para></listitem>
-        </varlistentry>
-      ''))}
-    </variablelist>
-  '';
 in {
   options = {
     overrides = mkOption {
@@ -28,7 +18,7 @@ in {
         will lose determinism in the deployment!</important>
 
         Valid overrides are:
-      '' + enumDoc {
+      '' + hclib.enumDoc {
         global = "Override global options (shared by all nodes in a cluster).";
         local = "Override local options (specific to this particular node).";
         acls = "Remove the Access Control Lists before new ones are added.";
@@ -42,7 +32,7 @@ in {
         merge = mergeOneOption;
       };
       default = 3;
-      description = "Verbosity of logging:" + enumDoc {
+      description = "Verbosity of logging:" + hclib.enumDoc {
         "0" = "No log at all";
         "1" = "Critical errors";
         "2" = "Normal errors";
@@ -84,7 +74,7 @@ in {
           Whether to enable/enforce STARTTLS + Dialback for S2S connections.
 
           Allowed values are:
-        '' + enumDoc {
+        '' + hclib.enumDoc {
           "false" = "No STARTTLS at all";
           "optional" = "Only if the endpoint supports it";
           "required" = "Don't allow unencrypted connections";
@@ -238,7 +228,7 @@ in {
         Method used to authenticate the users.
 
         Valid options are:
-      '' + enumDoc {
+      '' + hclib.enumDoc {
         internal = "Against internal Mnesia database";
         external = "Using external script";
         odbc = "Using Open Database Connectivity";

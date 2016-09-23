@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, hclib, ... }:
 
 let
   inherit (lib) mkOption types;
@@ -8,18 +8,6 @@ let
   postfix = pkgs.callPackage ./postpatch.nix { postfix = cfg.package; };
 
   optDoc = opt: "<option>headcounter.services.postfix.${opt}</option>";
-
-  # TODO: Make DRY, see modules/services/mongooseim/settings.nix
-  enumDoc = attrs: ''
-    <variablelist>
-      ${lib.concatStrings (lib.flip lib.mapAttrsToList attrs (option: doc: ''
-        <varlistentry>
-          <term><option>${option}</option></term>
-          <listitem><para>${doc}</para></listitem>
-        </varlistentry>
-      ''))}
-    </variablelist>
-  '';
 
   portType = lib.mkOptionType {
     name = "TCP port";
@@ -43,7 +31,7 @@ let
         description = ''
           The type of the service, one of the following:
 
-          ${enumDoc {
+          ${hclib.enumDoc {
             inet = "The service listens on a TCP/IP socket and is"
                  + " accessible via the network.";
             unix = "The service listens on a UNIX-domain socket and is"
