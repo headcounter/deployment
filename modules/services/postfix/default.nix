@@ -21,6 +21,12 @@ let
     </variablelist>
   '';
 
+  portType = lib.mkOptionType {
+    name = "TCP port";
+    check = p: lib.isInt p && p <= 65535 && p >= 0;
+    merge = lib.mergeOneOption;
+  };
+
   serviceOptions = { name, ... }: {
     options = {
       name = mkOption {
@@ -52,7 +58,7 @@ let
       };
 
       address = mkOption {
-        type = types.str;
+        type = types.either portType types.str;
         default = name;
         example = "[::1]:25";
         description = ''
