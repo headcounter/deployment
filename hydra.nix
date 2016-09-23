@@ -3,12 +3,16 @@
 with lib;
 
 let
-  hydraSrc = (import <nixpkgs> {}).fetchFromGitHub {
+  hydraSrc = overrideDerivation ((import <nixpkgs> {}).fetchFromGitHub {
     repo = "hydra";
     owner = "NixOS";
-    rev = "53c80d9526fb029b7adde47d0cfaa39a80926c48";
-    sha256 = "095zvi1pbcxr395ss44c399vmpp5z422lvm0iwjpkia19nr96zd5";
-  };
+    rev = "e7ce22555853abfc8d28fc15296a1c57a25e2c6e";
+    sha256 = "1mz7qk434rcvm52vzlj9pi8y8mv3n58sihlmm2gynyl4vj3z7ycg";
+  }) (drv: {
+    postFetch = (drv.postFetch or "") + ''
+      patch -p1 -d "$out" < "${./hydra-build.patch}"
+    '';
+  });
 
   hydraRelease = import "${hydraSrc}/release.nix" {
     inherit hydraSrc;
