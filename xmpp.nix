@@ -212,11 +212,6 @@ in {
               value = "mailto:abuse@headcounter.org";
             })
             (mkInfo {
-              modules = singleton "mod_muc";
-              field = "Web chatroom logs";
-              value = "https://headcounter.org/chatlogs/";
-            })
-            (mkInfo {
               modules = singleton "mod_disco";
               field = "feedback-addresses";
               value = "xmpp:main@conference.headcounter.org";
@@ -258,13 +253,6 @@ in {
           access_persistent.atom = "muc";
           access_admin.atom = "muc_admin";
           host = "conference.headcounter.org";
-        };
-
-        muc_log.enable = true;
-        muc_log.options = {
-          access_log.atom = "muc_wallops";
-          spam_prevention = true;
-          outdir = "/var/www/chatlogs"; # TODO!
         };
 
         ping.enable = true;
