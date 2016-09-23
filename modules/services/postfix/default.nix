@@ -191,10 +191,10 @@ let
     mkList = items: "\n" + lib.concatMapStringsSep "\n  " escape items;
     mkVal = value:
       if lib.isList value then mkList value
-      else if value == true then "yes"
+      else " " + (if value == true then "yes"
       else if value == false then "no"
-      else toString value;
-    mkEntry = name: value: "${escape name} = ${mkVal value}";
+      else toString value);
+    mkEntry = name: value: "${escape name} =${mkVal value}";
     final = lib.concatStringsSep "\n" (lib.mapAttrsToList mkEntry cfg.config);
   in pkgs.writeText "postfix.cf" final;
 
