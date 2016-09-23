@@ -19,6 +19,7 @@ in rec {
      else val;
 
   erlString = val: "\"${escape ["\""] (toString val)}\"";
+  erlBinary = val: "<<${erlString val}>>";
   erlInt = toString;
   erlBool = val: erlAtom (if val then "true" else "false");
   erlList = val: "[${concatStringsSep ", " (map toErl val)}]";
@@ -39,6 +40,7 @@ in rec {
       if attr ? __raw then attr.__raw
       else if attr ? atom then erlAtom attr.atom
       else if attr ? tuple then erlTuple attr.tuple
+      else if attr ? binary then erlBinary attr.binary
       else erlPropList attr;
     nix = term:
       if builtins.isInt term then toString term
