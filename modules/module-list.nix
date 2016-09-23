@@ -7,6 +7,7 @@
   ./services/lighttpd.nix
   ./services/mongooseim
   ./services/mongooseim/ctl.nix
+  ./services/nix-ssh-build.nix
   ./services/postfix
   ./services/webspace
 ]
