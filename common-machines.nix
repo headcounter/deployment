@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, lib, config, ... }:
 
 let
   vuizvuiRev = "408b7de48eb41828d70d247fb152c8e5bd45fb5e";
@@ -12,7 +12,7 @@ in {
 
   vuizvui.user.aszlig.programs.vim.enable = true;
 
-  deployment.targetEnv = "hetzner";
+  deployment.targetEnv = lib.mkOverride 900 "hetzner";
 
   environment.systemPackages = with pkgs; [
     atop htop iotop

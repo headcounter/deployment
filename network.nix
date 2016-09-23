@@ -1,8 +1,8 @@
 let
-  mkMachine = attrs: attrs // {
+  mkMachine = attrs: {
     imports = [ ./common-machines.nix ]
            ++ attrs.imports or [];
-  };
+  } // removeAttrs attrs [ "imports" ];
 in {
   network.description = "Headcounter Services";
   network.enableRollback = true;
@@ -68,7 +68,7 @@ in {
     '';
   };
 
-  unzervalt = { nodes, lib, ... }: {
+  unzervalt = { nodes, lib, ... }: mkMachine {
     deployment.targetEnv = "container";
     deployment.container.host = nodes.ultron.config;
     imports = [ ./common.nix ]
