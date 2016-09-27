@@ -248,6 +248,8 @@ let
     in toString (lib.singleton fullPath ++ map mkArg srvcfg.args);
     # TODO: Handle service type "pass".
     serviceConfig.StandardInput = "socket";
+    serviceConfig.User = cfg.user;
+    serviceConfig.Group = cfg.group;
     environment = {
       MAIL_CONFIG = cfgfile;
     } // lib.optionalAttrs srvcfg.verbose {
@@ -261,22 +263,40 @@ in {
   options.headcounter.services.postfix = {
     enable = lib.mkEnableOption "Postfix mail server";
 
-    user = mkOption {
+    user = mkOption rec {
       type = types.str;
       default = "postfix";
       description = ''
         The user name to use instead of the default.
-        If something else than the default (<literal>postfix</literal>) is
-        used, the user is not created.
+
+        If something else than the default (<literal>${default}</literal>) is
+        used, the group is not created.
       '';
     };
 
-    group = mkOption {
+    group = mkOption rec {
       type = types.str;
       default = "postfix";
       description = ''
         The group name to use instead of the default.
-        If something else than the default (<literal>postfix</literal>) is
+
+        If something else than the default (<literal>${default}</literal>) is
+        used, the group is not created.
+      '';
+    };
+
+    postdropGroup = mkOption rec {
+      type = types.str;
+      default = "postdrop";
+      description = ''
+        The (setgid) group that's used for placing mails submitted by
+        <citerefentry>
+          <refentrytitle>sendmail</refentrytitle>
+          <manvolnum>1</manvolnum>
+        </citerefentry>
+        into the queue.
+
+        If something else than the default (<literal>${default}</literal>) is
         used, the group is not created.
       '';
     };
@@ -376,15 +396,18 @@ in {
       systemd.sockets = mkPrefixedUnits mkSocket false cfg.services;
     })
     # TODO: Use special users for each single service
-    (lib.mkIf (cfg.enable && cfg.user != "postfix") {
+    (lib.mkIf (cfg.enable && cfg.user == "postfix") {
       users.users.postfix = {
         description = "Postfix mail server user";
         uid = config.ids.uids.postfix;
         inherit (cfg) group;
       };
     })
-    (lib.mkIf (cfg.enable && cfg.group != "postfix") {
+    (lib.mkIf (cfg.enable && cfg.group == "postfix") {
       users.groups.postfix.gid = config.ids.gids.postfix;
+    })
+    (lib.mkIf (cfg.enable && cfg.postdropGroup == "postdrop") {
+      users.groups.postdrop.gid = config.ids.gids.postdrop;
     })
   ];
 }
