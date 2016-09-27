@@ -243,7 +243,7 @@ let
     serviceConfig.ExecStart = let
       mkArg = arg: "'${lib.escape ["'" "\\"] arg}'";
       isFullPath = builtins.substring 0 1 srvcfg.program == "/";
-      postfixPath = "${postfix}/libexec/postfix/srvcfg.program";
+      postfixPath = "${postfix}/libexec/postfix/${srvcfg.program}";
       fullPath = if isFullPath then srvcfg.program else postfixPath;
     in toString (lib.singleton fullPath ++ map mkArg srvcfg.args);
     # TODO: Handle service type "pass".
