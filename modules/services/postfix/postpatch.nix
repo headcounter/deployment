@@ -2,13 +2,20 @@
 
 let
   postSed = writeText "postfix-single-config.sed" ''
+    # The mail_conf_suck() function is for reading the Postfix main.cf based on
+    # CONF_ENV_DIR. We want it to read a single file instead of assuming that
+    # everything will be in a specific directory.
     /void.*\<mail_conf_suck/ {
-      N
-      /{/!b
-      :ls
+      N # Eat the next line so we can check whether this is a declaration or the
+        # actual function.
+      /{/!b # It's a declaration, so branch out so we don't run into...
+      :ls # ... this loop.
       N
       /\n}$/ {
+        # At this point we have captured the whole function body, which we're
+        # going to delete...
         s/.*//
+        # ... and add our new version of the function.
         r ${writeText "new-mail-conf-suck.c" ''
           void mail_conf_suck(void) {
             char *config_file;
@@ -25,17 +32,33 @@ let
               msg_fatal("open %s: %m", var_config_file);
           }
         ''}
-        bo
+        bo # Branch out to misc replacements, because at this point it's pretty
+           # clear that we don't have a msg_*() function here.
       }
       bls
     }
+
+    # We need to mangle lines like these:
+    #
+    # msg_fatal("file %s/%s: parameter %s: unknown user name value: %s",
+    #           var_config_dir, MAIN_CONF_FILE,
+    #           VAR_DEFAULT_PRIVS, var_default_privs);
+    #
+    # ... and turn them into something like this:
+    #
+    # msg_fatal("file %s: parameter %s: unknown user name value: %s",
+    #           var_config_file,
+    #           VAR_DEFAULT_PRIVS, var_default_privs);
     /\<msg_[a-z0-9_]\+ *(/ {
-      /) *;/bi
-      :lm
+      /) *;/bi # If the function ends within the same line it starts, branch
+               # off to the actual mangling immediately...
+      :lm # ... otherwise loop until the end.
       N
       /) *;/ {
-        :i
+        :i # Label for single line functions
         /%s\/%s.*\<var_config_dir\>/ {
+          # We now have the full function in the pattern space, so we can do
+          # replacements accross multiple lines.
           s,%s/%s,%s,g
           s/\<var_config_dir\>,[^,)]*/var_config_file/g
         }
@@ -43,13 +66,37 @@ let
       }
       blm
     }
-    :o
+
+    :o # Miscellaneous replacements that only span single words/lines
+
+    # Lines like this one:
+    #
+    # path = concatenate(DEF_CONFIG_DIR, "/", "main.cf", (char *) 0);
+    #
+    # ... need to be turned into this:
+    #
+    # patch = mystrdup(var_config_file);
     s/concatenate(.*\<var_config_dir\>.*MAIN.*);/mystrdup(var_config_file);/g
-    s/\<var_config_dir\>/var_config_file/g
+
+    # Avoid reporting a single config file in plural form.
     s/using config files in/using config file/g
+
+    # Every other var_config_dir needs to be replaced as well, including its
+    # declaration. This might be too generic but we still have the compiler as
+    # a safety net.
+    s/\<var_config_dir\>/var_config_file/g
   '';
 
 in lib.overrideDerivation postfix (drv: {
+  # Run the sed expression over all files except for postconf.
+  #
+  # The reason we don't want to replace postconf stuff as well is because it
+  # tries to modify not only main.cf but also master.cf.
+  #
+  # We don't use master.cf and we also don't use postconf (our config files are
+  # immutable anyway), so we just make sure that it compiles by adding a
+  # declaration for var_config_dir to the postconf header file, because we have
+  # replaced var_config_dir with var_config_file in mail_params.h already.
   postPatch = (drv.postPatch or "") + ''
     find . -path ./src/postconf -prune -o \
       -type f -exec sed -i -f "${postSed}" {} +

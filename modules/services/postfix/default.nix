@@ -175,12 +175,23 @@ let
     };
   };
 
+  # Create systemd units with a common prefix so that we don't have name clashes
+  # between other units and the Postfix-related services.
+  #
+  # The first argument is a generator function which maps option definitions
+  # from serviceOptions to systemd unit options. The second argument is an
+  # attrset of all the defined serviceOptions.
+  #
+  # mkPrefixedUnits :: (OptionDefs -> UnitCfg)
+  #                 -> AttrSet ServiceName OptionDefs
+  #                 -> AttrSet PrefixedServiceName UnitCfg
   mkPrefixedUnits = generator: let
     mkUnit = name: attrs: let
       fullName = "postfix.${name}";
     in lib.nameValuePair fullName (generator attrs);
   in lib.mapAttrs' mkUnit;
 
+  # The generated Postfix main.cf file from the values defined in cfg.config.
   cfgfile = let
     escape = lib.replaceStrings ["$"] ["$$"];
     mkList = items: "\n" + lib.concatMapStringsSep "\n  " escape items;
@@ -193,6 +204,9 @@ let
     final = lib.concatStringsSep "\n" (lib.mapAttrsToList mkEntry cfg.config);
   in pkgs.writeText "postfix.cf" final;
 
+  # Generator for systemd socket units.
+  #
+  # mkSocket :: OptionDef -> SocketUnitCfg
   mkSocket = srvcfg: let
     socketPath = "${cfg.queueDir}/${srvcfg.address}";
     mode = if srvcfg.type == "fifo" then "ListenFIFO" else "ListenStream";
@@ -207,6 +221,9 @@ let
     };
   };
 
+  # Generator for systemd service units.
+  #
+  # mkSocket :: OptionDef -> ServiceUnitCfg
   mkService = srvcfg: {
     description = "Postfix Service '${srvcfg.name}'";
     serviceConfig.ExecStart = let
