@@ -198,21 +198,16 @@ let
   # Create systemd units with a common prefix so that we don't have name clashes
   # between other units and the Postfix-related services.
   #
-  # Description of arguments in order:
-  #
-  #  * A generator function which maps option definitions from serviceOptions to
-  #    systemd unit options.
-  #  * A boolean indicating whether this should be a template unit (with "@" at
-  #    the end of its name).
-  #  * An attrset of all the defined serviceOptions.
+  # The first argument is a generator function which maps option definitions
+  # from serviceOptions to systemd unit options. The second argument is an
+  # attrset of all the defined serviceOptions.
   #
   # mkPrefixedUnits :: (OptionDefs -> UnitCfg)
-  #                 -> Bool
   #                 -> AttrSet ServiceName OptionDefs
   #                 -> AttrSet PrefixedServiceName UnitCfg
-  mkPrefixedUnits = generator: isTemplate: let
+  mkPrefixedUnits = generator: let
     mkUnit = name: attrs: let
-      fullName = "postfix.${name}${lib.optionalString isTemplate "@"}";
+      fullName = "postfix.${name}";
     in lib.nameValuePair fullName (generator attrs);
   in lib.mapAttrs' mkUnit;
 
@@ -414,8 +409,8 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      systemd.services = mkPrefixedUnits mkService true cfg.services;
-      systemd.sockets = mkPrefixedUnits mkSocket false cfg.services;
+      systemd.services = mkPrefixedUnits mkService cfg.services;
+      systemd.sockets = mkPrefixedUnits mkSocket cfg.services;
     })
     # TODO: Use special users for each single service
     (lib.mkIf (cfg.enable && cfg.user == "postfix") {
