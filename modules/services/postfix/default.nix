@@ -233,10 +233,10 @@ let
     description = "Postfix Service '${srvcfg.name}'";
     serviceConfig.ExecStart = let
       mkArg = arg: "'${lib.escape ["'" "\\"] arg}'";
-      isFullPath = builtins.substring 0 1 srvcfg.program == "/" srvcfg.program;
+      isFullPath = builtins.substring 0 1 srvcfg.program == "/";
       postfixPath = "${postfix}/libexec/postfix/srvcfg.program";
       fullPath = if isFullPath then srvcfg.program else postfixPath;
-    in toString (lib.singleton srvcfg.program ++ map mkArg srvcfg.args);
+    in toString (lib.singleton fullPath ++ map mkArg srvcfg.args);
     environment = {
       MAIL_CONFIG = cfgfile;
     } // lib.optionalAttrs srvcfg.verbose {
