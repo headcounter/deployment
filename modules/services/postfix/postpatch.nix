@@ -1,4 +1,4 @@
-{ lib, writeText, postfix }:
+{ lib, writeText, postfix, systemd }:
 
 let
   postSed = writeText "postfix-single-config.sed" ''
@@ -88,19 +88,36 @@ let
   '';
 
 in lib.overrideDerivation postfix (drv: {
-  # Run the sed expression over all files except for postconf.
-  #
-  # The reason we don't want to replace postconf stuff as well is because it
-  # tries to modify not only main.cf but also master.cf.
-  #
-  # We don't use master.cf and we also don't use postconf (our config files are
-  # immutable anyway), so we just make sure that it compiles by adding a
-  # declaration for var_config_dir to the postconf header file, because we have
-  # replaced var_config_dir with var_config_file in mail_params.h already.
+  NIX_CFLAGS_COMPILE = lib.flatten [
+    (drv.NIX_CFLAGS_COMPILE or [])
+    "-I${systemd.dev or systemd}/include"
+  ];
+
   postPatch = (drv.postPatch or "") + ''
+    # Run the sed expression over all files except for postconf.
+    #
+    # The reason we don't want to replace postconf stuff as well is because it
+    # tries to modify not only main.cf but also master.cf.
+    #
+    # We don't use master.cf and we also don't use postconf (our config files
+    # are immutable anyway), so we just make sure that it compiles by adding a
+    # declaration for var_config_dir to the postconf header file, because we
+    # have replaced var_config_dir with var_config_file in mail_params.h
+    # already.
     find . -path ./src/postconf -prune -o \
       -type f -exec sed -i -f "${postSed}" {} +
-
     echo "char *var_config_dir;" >> src/postconf/postconf.h
+
+    # Prevent services from picking up MASTER_STATUS_FD, because it clashes with
+    # systemd-provided FDs.
+    sed -i -e '/MASTER_STATUS_FD/d' src/master/*_server.c
+
+    # Use the constant defined by SD_LISTEN_FDS_START as the MASTER_LISTEN_FD.
+    # In theory we could just use 3 here, but to make sure this doesn't change
+    # in newer systemd versions, let's use the constant from "sd-daemon.h".
+    sed -i -e '/^#define.*MASTER_LISTEN_FD/ {
+      c #include <systemd/sd-daemon.h> \
+        #define MASTER_LISTEN_FD SD_LISTEN_FDS_START
+    }' src/master/master_proto.h
   '';
 })
