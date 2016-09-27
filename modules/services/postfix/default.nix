@@ -188,11 +188,15 @@ let
 
     config.addresses = lib.mkDefault [ config.address ];
 
-    config.args = with lib; [ "-d" "-t" config.type "-l" ]
-     ++ optional (config.processLimit == unlimitedProcs) "-z"
-     ++ optionals (baseNameOf config.program != config.name) ["-n" config.name]
-     ++ optionals (length config.addresses > 1) ["-s" (length config.addresses)]
-     ++ optional config.verbose "-v";
+    config.args = let
+      common = [ "-d" "-t" config.type "-l" ];
+      noProcLimit = config.processLimit == unlimitedProcs;
+      needsName = baseNameOf config.program != config.name;
+      addrLen = lib.length config.addresses;
+    in common ++ lib.optional noProcLimit "-z"
+              ++ lib.optionals needsName ["-n" config.name]
+              ++ lib.optionals (addrLen > 1) ["-s" addrLen]
+              ++ lib.optional config.verbose "-v";
   };
 
   # Create systemd units with a common prefix so that we don't have name clashes
