@@ -188,8 +188,7 @@ let
 
     config.addresses = lib.mkDefault [ config.address ];
 
-    config.args = with lib; [ "-d" "-t" config.type ]
-     ++ optional (config.processLimit == 1) "-l"
+    config.args = with lib; [ "-d" "-t" config.type "-l" ]
      ++ optional (config.processLimit == unlimitedProcs) "-z"
      ++ optionals (baseNameOf config.program != config.name) ["-n" config.name]
      ++ optionals (length config.addresses > 1) ["-s" (length config.addresses)]
