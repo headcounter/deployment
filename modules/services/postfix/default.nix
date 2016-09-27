@@ -18,7 +18,7 @@ let
   # Maximum value for an unsigned int, designating "unlimited" processes.
   unlimitedProcs = 4294967295;
 
-  serviceOptions = { name, config, ... }: {
+  serviceOptions = { name, config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -57,6 +57,15 @@ let
           pair of the hostname to bind to and the port.
 
           Otherwise the value is a path relative to ${optDoc "queueDir"}.
+        '';
+      };
+
+      addresses = mkOption {
+        type = types.listOf options.address.type;
+        default = [];
+        example = [ "[::1]:25" "1.2.3.4:25" ];
+        description = ''
+          Same as <option>address</option> but for multiple listen addresses.
         '';
       };
 
@@ -177,6 +186,8 @@ let
       };
     };
 
+    config.addresses = lib.mkDefault [ config.address ];
+
     config.args = with lib; [ "-d" "-t" config.type ]
      ++ optional (config.processLimit == 1) "-l"
      ++ optional (config.processLimit == unlimitedProcs) "-z"
@@ -218,21 +229,32 @@ let
     final = lib.concatStringsSep "\n" (lib.mapAttrsToList mkEntry cfg.config);
   in pkgs.writeText "postfix.cf" final;
 
+  # Generate listener options for a socket according to the type of the
+  # service.
+  #
+  # The output is an attribute set that gets zipped with all the other
+  # listener options so that it's easy specify multiple listening addresses for
+  # a Postfix service.
+  #
+  # mkListenerOptions :: OptionDefs -> String -> SocketUnitCfg
+  mkListenerOptions = srvcfg: address: let
+    socketPath = "${cfg.queueDir}/${address}";
+    mode = if srvcfg.type == "fifo" then "ListenFIFO" else "ListenStream";
+  in {
+    ${mode} = if srvcfg.type == "inet" then srvcfg.address else socketPath;
+  };
+
   # Generator for systemd socket units.
   #
-  # mkSocket :: OptionDef -> SocketUnitCfg
+  # mkSocket :: OptionDefs -> SocketUnitCfg
   mkSocket = srvcfg: let
-    socketPath = "${cfg.queueDir}/${srvcfg.address}";
-    mode = if srvcfg.type == "fifo" then "ListenFIFO" else "ListenStream";
-    addr = if srvcfg.type == "inet" then srvcfg.address else socketPath;
   in {
     description = "Postfix Service Socket '${srvcfg.name}'";
     wantedBy = [ "sockets.target" ];
     socketConfig = {
-      ${mode} = addr;
       MaxConnections = srvcfg.processLimit;
       Accept = true;
-    };
+    } // lib.zipAttrs (map (mkListenerOptions srvcfg) srvcfg.addresses);
   };
 
   # Generator for systemd service units.
