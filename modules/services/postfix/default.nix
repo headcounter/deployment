@@ -237,6 +237,8 @@ let
       postfixPath = "${postfix}/libexec/postfix/srvcfg.program";
       fullPath = if isFullPath then srvcfg.program else postfixPath;
     in toString (lib.singleton fullPath ++ map mkArg srvcfg.args);
+    # TODO: Handle service type "pass".
+    serviceConfig.StandardInput = "socket";
     environment = {
       MAIL_CONFIG = cfgfile;
     } // lib.optionalAttrs srvcfg.verbose {
