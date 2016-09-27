@@ -246,10 +246,8 @@ let
   in {
     description = "Postfix Service Socket '${srvcfg.name}'";
     wantedBy = [ "sockets.target" ];
-    socketConfig = {
-      MaxConnections = srvcfg.processLimit;
-      Accept = true;
-    } // lib.zipAttrs (map (mkListenerOptions srvcfg) srvcfg.addresses);
+    socketConfig =
+      lib.zipAttrs (map (mkListenerOptions srvcfg) srvcfg.addresses);
   };
 
   # Generator for systemd service units.
