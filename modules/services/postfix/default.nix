@@ -247,8 +247,10 @@ let
   in {
     description = "Postfix Service Socket '${srvcfg.name}'";
     wantedBy = [ "sockets.target" ];
-    socketConfig =
-      lib.zipAttrs (map (mkListenerOptions srvcfg) srvcfg.addresses);
+    socketConfig = {
+      SocketUser = cfg.user;
+      SocketGroup = cfg.group;
+    } // lib.zipAttrs (map (mkListenerOptions srvcfg) srvcfg.addresses);
   };
 
   # Generator for systemd service units.
