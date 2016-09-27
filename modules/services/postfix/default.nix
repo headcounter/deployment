@@ -192,6 +192,7 @@ let
      ++ optional (config.processLimit == 1) "-l"
      ++ optional (config.processLimit == unlimitedProcs) "-z"
      ++ optionals (baseNameOf config.program != config.name) ["-n" config.name]
+     ++ optionals (length config.addresses > 1) ["-s" (length config.addresses)]
      ++ optional config.verbose "-v";
   };
 
