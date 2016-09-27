@@ -15,7 +15,10 @@ let
     merge = lib.mergeOneOption;
   };
 
-  serviceOptions = { name, ... }: {
+  # Maximum value for an unsigned int, designating "unlimited" processes.
+  unlimitedProcs = 4294967295;
+
+  serviceOptions = { name, config, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -127,7 +130,7 @@ let
       processLimit = mkOption {
         type = types.int;
         default = cfg.defaultProcessLimit;
-        apply = x: if x == 0 then 4294967295 else x;
+        apply = x: if x == 0 then unlimitedProcs else x;
         description = ''
           The maximum number of processes to spawn for this service, by default
           it's the value set by ${optDoc "defaultProcessLimit"}. If the value
@@ -173,6 +176,12 @@ let
         description = "Enable debugging output for this service.";
       };
     };
+
+    config.args = with lib; [ "-d" "-t" config.type ]
+     ++ optional (config.processLimit == 1) "-l"
+     ++ optional (config.processLimit == unlimitedProcs) "-z"
+     ++ optionals (baseNameOf config.program != config.name) ["-n" config.name]
+     ++ optional config.verbose "-v";
   };
 
   # Create systemd units with a common prefix so that we don't have name clashes
