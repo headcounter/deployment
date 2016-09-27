@@ -90,9 +90,9 @@ let
           where there is only a flag whether the process is privileged or not.
 
           Postfix either runs the process as root or as the postfix users
-          whether the flag is set or not set, using capabilities allows us to
+          depending on whether the flag is set or not. By using capabilities we
           have a more fine-grained control about what a particular service is
-          allowed to regardless of the user account it's running as.
+          allowed to regardless of the permissions of the user account.
         '';
       };
 
