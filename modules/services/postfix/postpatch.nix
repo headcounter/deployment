@@ -119,5 +119,8 @@ in lib.overrideDerivation postfix (drv: {
       c #include <systemd/sd-daemon.h> \
         #define MASTER_LISTEN_FD SD_LISTEN_FDS_START
     }' src/master/master_proto.h
+
+    # Don't try to read global config file during postmap.
+    sed -i -e '/mail_conf_read/,/mail_dict_init/d' src/postmap/postmap.c
   '';
 })
