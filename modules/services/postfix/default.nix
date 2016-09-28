@@ -237,7 +237,8 @@ let
   #
   # mkListenerOptions :: OptionDefs -> String -> SocketUnitCfg
   mkListenerOptions = srvcfg: address: let
-    socketPath = "${cfg.queueDir}/${address}";
+    privPub = if srvcfg.private then "private" else "public";
+    socketPath = "${cfg.queueDir}/${privPub}/${address}";
     mode = if srvcfg.type == "fifo" then "ListenFIFO" else "ListenStream";
   in {
     ${mode} = if srvcfg.type == "inet" then srvcfg.address else socketPath;
