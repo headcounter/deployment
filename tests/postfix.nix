@@ -1,14 +1,21 @@
 import ./make-test.nix {
   name = "postfix";
 
-  machine = {
-    imports = [ ../common.nix ];
-    headcounter.services.postfix.enable = true;
+  nodes = {
+    server = {
+      imports = [ ../common.nix ];
+      headcounter.services.postfix.enable = true;
+    };
+    client = { pkgs, ... }: {
+      imports = [ ../common.nix ];
+      environment.systemPackages = [ pkgs.swaks ];
+    };
   };
 
-  # TODO: Only a dummy test for now
   testScript = ''
     startAll;
-    $machine->waitForUnit("multi-user.target");
+
+    $server->waitForOpenPort(25);
+    $client->succeed('swaks --to root@server');
   '';
 }
