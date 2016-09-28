@@ -261,6 +261,8 @@ let
   # mkSocket :: OptionDef -> ServiceUnitCfg
   mkService = srvcfg: {
     description = "Postfix Service '${srvcfg.name}'";
+    wants = [ "postfix-setup.service" ];
+    after = [ "postfix-setup.service" ];
     serviceConfig.ExecStart = let
       mkArg = arg: "'${lib.escape ["'" "\\"] arg}'";
       isFullPath = builtins.substring 0 1 srvcfg.program == "/";
@@ -275,6 +277,23 @@ let
       MAIL_VERBOSE = 1;
     } // lib.optionalAttrs srvcfg.debug {
       MAIL_DEBUG = 1;
+    };
+  };
+
+  commonServices = {
+    postfix-setup = {
+      description = "Postfix Filesystem Setup";
+      script = ''
+        mkdir -m 0755 -p ${lib.escapeShellArg cfg.queueDir}
+        mkdir -m 0700 -p ${lib.escapeShellArg cfg.queueDir}/private
+        mkdir -m 0710 -p ${lib.escapeShellArg cfg.queueDir}/public
+      '';
+      unitConfig.RequiresMountsFor = [ cfg.queueDir ];
+      serviceConfig.AmbientCapabilities = [ "CAP_DAC_OVERRIDE" ];
+      serviceConfig.User = cfg.user;
+      serviceConfig.Group = cfg.group;
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
     };
   };
 
@@ -411,7 +430,8 @@ in {
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      systemd.services = mkPrefixedUnits mkService cfg.services;
+      systemd.services = commonServices
+                      // mkPrefixedUnits mkService cfg.services;
       systemd.sockets = mkPrefixedUnits mkSocket cfg.services;
     })
     # TODO: Use special users for each single service
