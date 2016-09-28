@@ -425,7 +425,17 @@ in {
     config = mkOption {
       type = with types;
         attrsOf (either str (either int (either bool (listOf str))));
-      default = {};
+      default = {
+        compatibility_level = 9999; # XXX!
+        # XXX: Dummy aliases, and also VERY ugly.
+        alias_maps = let
+          dummy = pkgs.runCommand "aliases.db" {} ''
+            touch empty
+            ${postfix}/bin/postmap hash:empty
+            mv empty.db "$out"
+          '';
+        in "hash:${lib.removeSuffix ".db" dummy}";
+      };
       description = ''
         Configuration options (<filename>main.cf</filename>) for Postfix.
       '';
