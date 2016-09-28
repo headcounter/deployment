@@ -246,8 +246,7 @@ let
   # Generator for systemd socket units.
   #
   # mkSocket :: OptionDefs -> SocketUnitCfg
-  mkSocket = srvcfg: let
-  in {
+  mkSocket = srvcfg: {
     description = "Postfix Service Socket '${srvcfg.name}'";
     wantedBy = [ "sockets.target" ];
     socketConfig = {
