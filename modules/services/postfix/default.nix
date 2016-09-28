@@ -341,43 +341,47 @@ in {
 
     services = mkOption {
       type = types.attrsOf (types.submodule serviceOptions);
-      # XXX: This is not the fully fleshed out default master.cf!
-      default = {
-        smtpd.type = "inet";
+      default = let
+        filterNull = lib.filterAttrs (lib.const (x: x != null));
+        wrap = overrides: wakeup: processLimit: program: filterNull {
+          inherit wakeup processLimit program;
+        } // overrides;
+
+        mk     = wrap {};
+        mkPub  = wrap { private = false; };
+        mkInet = wrap { private = false; type = "inet"; };
+      in lib.recursiveUpdate {
+        #                   wakeup maxproc command
+        smtpd      = mkInet null   null    "smtpd";
+        pickup     = mkPub  60     1       "pickup";
+        cleanup    = mkPub  null   0       "cleanup";
+        qmgr       = mkPub  300    1       "qmgr";
+        tlsmgr     = mk     1000   1       "tlsmgr";
+        rewrite    = mk     null   null    "trivial-rewrite";
+        bounce     = mk     null   0       "bounce";
+        defer      = mk     null   0       "bounce";
+        trace      = mk     null   0       "bounce";
+        verify     = mk     null   1       "verify";
+        flush      = mkPub  1000   0       "flush";
+        proxymap   = mk     null   null    "proxymap";
+        proxywrite = mk     null   1       "proxymap";
+        smtp       = mk     null   null    "smtp";
+        relay      = mk     null   null    "smtp";
+        showq      = mkPub  null   null    "showq";
+        error      = mk     null   null    "error";
+        retry      = mk     null   null    "error";
+        discard    = mk     null   null    "discard";
+        local      = mk     null   null    "local";
+        virtual    = mk     null   null    "virtual";
+        lmtp       = mk     null   null    "lmtp";
+        anvil      = mk     null   1       "anvil";
+        scache     = mk     null   1       "scache";
+      } {
         smtpd.address = 25;
-
-        submission.type = "inet";
-        submission.program = "smtpd";
-        submission.address = 587;
-
-        defer.program = "bounce";
-        defer.processLimit = 0;
-
-        trace.program = "bounce";
-        trace.processLimit = 0;
-
-        pickup.processLimit = 1;
-        cleanup.processLimit = 0;
-        qmgr.processLimit = 1;
-        tlsmgr.processLimit = 1;
-        rewrite.program = "trivial-rewrite";
-        bounce.processLimit = 0;
-        verify.processLimit = 1;
-        flush.processLimit = 0;
-        proxymap = {};
-        proxywrite.program = "proxymap";
-        smtp = {};
-        relay.program = "smtp";
-        relay.args = [ "-o" "smtp_fallback_relay" ];
-        showq = {};
-        error = {};
-        retry.program = "error";
-        discard = {};
-        local = {};
-        virtual = {};
-        lmtp = {};
-        anvil.processLimit = 1;
-        scache.processLimit = 1;
+        local.capabilities = [ "DAC_OVERRIDE" ];
+        virtual.capabilities = [ "DAC_OVERRIDE" ];
+        tlsmgr.wakeupOnUse = true;
+        flush.wakeupOnUse = true;
       };
       example = {
         submission = {
