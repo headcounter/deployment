@@ -274,9 +274,9 @@ let
     environment = {
       MAIL_CONFIG = cfgfile;
     } // lib.optionalAttrs srvcfg.verbose {
-      MAIL_VERBOSE = 1;
+      MAIL_VERBOSE = "1";
     } // lib.optionalAttrs srvcfg.debug {
-      MAIL_DEBUG = 1;
+      MAIL_DEBUG = "1";
     };
   };
 
