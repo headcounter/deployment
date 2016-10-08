@@ -122,5 +122,14 @@ in lib.overrideDerivation postfix (drv: {
 
     # Don't try to read global config file during postmap.
     sed -i -e '/mail_conf_read/,/mail_dict_init/d' src/postmap/postmap.c
+
+    # Make master_notify a no-op, because systemd is already handling child
+    # process limiting.
+    sed -i -e '/int *master_notify/ {
+      n # Skip function definition
+      /^{/!b # Make sure the definition starts with a { on its own line
+      :l; N; /\n}/!bl # Loop until end of function body
+      s/.*/{ return 0; }/ # Simply return success
+    }' src/master/master_proto.c
   '';
 })
