@@ -225,7 +225,7 @@ let
       else if value == false then "no"
       else toString value);
     mkEntry = name: value: "${escape name} =${mkVal value}";
-    final = lib.concatStringsSep "\n" (lib.mapAttrsToList mkEntry cfg.config);
+    final = lib.concatStringsSep "\n" (lib.mapAttrsToList mkEntry cfg.config) + "\n";
   in pkgs.writeText "postfix.cf" final;
 
   # Generate listener options for a socket according to the type of the
