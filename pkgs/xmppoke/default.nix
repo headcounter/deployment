@@ -224,7 +224,7 @@ in stdenv.mkDerivation {
 
     makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
       "$out/bin/xmppoke" \
-      --set LUA_PATH "'${pathString}'" \
-      --set LUA_CPATH "'${cPathString}'"
+      --set LUA_PATH "${pathString}" \
+      --set LUA_CPATH "${cPathString}"
   '';
 }
