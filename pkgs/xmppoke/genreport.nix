@@ -26,8 +26,9 @@ stdenv.mkDerivation {
     ) > getreport.php
     sed -i -e 's/${reget "type"}/$argv[1]/g' \
            -e 's/${reget "domain"}/$argv[2]/g' \
+           -e 's/\(<?\)\([^p=]\|$\)/\1php\2/g' \
            getreport.php
-    php -l getreport.php
+    php -l -f getreport.php
   '';
 
   installPhase = ''
