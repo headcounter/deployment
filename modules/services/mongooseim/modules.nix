@@ -87,7 +87,6 @@ let
     snmp = mkModule "SNMP support";
     stream_management = mkModule "Stream management (${xep "0198"})";
     vcard = mkModuleODBC "vcard-temp (${xep "0054"})";
-    websockets = mkModule "Websocket support";
   };
 
   modulesWithDefaults = mapAttrs (name: f: f name) modules;
