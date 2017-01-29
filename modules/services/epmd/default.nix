@@ -8,26 +8,15 @@ let
   epmdPatched = lib.overrideDerivation pkgs.erlang (o: {
     name = "epmd-${o.version}";
 
-    preConfigure = o.preConfigure + ''
-      export ERL_TOP="$(pwd)"
-      cd erts
-      autoreconf -vfi
-    '';
+    NIX_CFLAGS_COMPILE = "-I${pkgs.systemd.dev}/include";
+    NIX_LDFLAGS = "-L${pkgs.systemd.lib}/lib";
 
-    NIX_CFLAGS_COMPILE = "-I${pkgs.systemd}/include";
-    NIX_LDFLAGS = "-L${pkgs.systemd}/lib";
+    configureFlags = o.configureFlags ++ [ "--enable-systemd" ];
 
-    configureFlags = [
-      "--disable-option-checking"
-      "--enable-systemd"
-    ];
+    preBuild = "export ERL_TOP=\"$(pwd)\"";
+    buildFlags = [ "-C erts/epmd/src" ];
 
-    buildInputs = o.buildInputs ++ [ pkgs.autoconf pkgs.automake pkgs.libtool ];
-    buildFlags = [ "-C epmd/src" ];
-
-    installPhase = ''
-      install -vD "$ERL_TOP"/bin/*/epmd "$out/bin/epmd"
-    '';
+    installPhase = "install -vD bin/*/epmd \"$out/bin/epmd\"";
 
     postFixup = null;
   });
