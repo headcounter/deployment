@@ -109,8 +109,23 @@ let
       install -m 0644 -vD DBI.lua "$out/share/lua/${lua.luaversion}/DBI.lua"
       runHook postInstall
     '';
+
+    doInstallCheck = true;
+    installCheckPhase = ''
+      code="print('drivers:'..table.concat(require('DBI').Drivers(), ', '))"
+      drivers_available="$(echo "$code" | lua | sed -n -e 's/^drivers://p')"
+      if [ "$drivers_available" = '(None)' -o -z "$drivers_available" ]; then
+        echo "Unable to load any luaDBI drivers." >&2
+        exit 1
+      elif [ "$drivers_available" == ${escapeShellArg databaseEngine} ]; then
+        echo "Database engines available: $drivers_available" >&2
+      else
+        echo "Expected ${databaseEngine} but got $drivers_available" >&2
+        exit 1
+      fi
+    '';
   } // (if databaseEngine == "PostgreSQL" then {
-    buildFlags = [ "psql" ];
+    buildFlags = [ "COMMON_LDFLAGS=-L${postgresql.lib}/lib" "psql" ];
     buildInputs = [ lua postgresql ];
     postInstall = ''
       install -vD dbdpostgresql.so \
