@@ -1,4 +1,4 @@
-{ pkgs, lib, config, nodes, ... }:
+{ pkgs, lib, hclib, config, nodes, ... }:
 
 with lib;
 
@@ -106,6 +106,7 @@ in {
     slave.hosts = let
       mkSlaveListener = m: config.networking.p2pTunnels.ssh.${m}.localIPv4;
     in mkForce (unique (map mkSlaveListener [ "dugee" "gussh" ]));
+    credentials = hclib.credentials.dyndns-users;
   };
 
   services.postgresql = let

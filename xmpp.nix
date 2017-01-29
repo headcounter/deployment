@@ -1,4 +1,4 @@
-{ pkgs, lib, config, ... }:
+{ pkgs, lib, hclib, config, ... }:
 
 with lib;
 
@@ -56,6 +56,7 @@ in {
 
   config.headcounter.services.mongooseim = {
     enable = true;
+    cookie = hclib.credentials.xmpp.cookie or null;
     settings = {
       hosts = [
         "headcounter.org"
@@ -272,9 +273,7 @@ in {
 
       extraConfig = ''
         % administrative
-        {acl, admin, {user, "TODO", "aszlig.net"}}.
-        {acl, wallops, {user, "TODO", "aszlig.net"}}.
-        {acl, torservers_admin, {user, "TODO", "torservers.net"}}.
+        ${hclib.credentials.xmpp.adminACLs or ""}
 
         % Local users:
         {acl, local, {user_regexp, ""}}.
