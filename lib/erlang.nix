@@ -60,7 +60,7 @@ in rec {
     tuplize = val: "{${concatStringsSep ", " val}}";
 
     v4DigitRe = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
-    v6DigitRe = "([0-9a-fA-F]{,4})";
+    v6DigitRe = "([0-9a-fA-F]{0,4})";
     v4Re = "${v4DigitRe}\\.${v4DigitRe}\\.${v4DigitRe}\\.${v4DigitRe}";
     v4Parse = builtins.match v4Re addr;
 
