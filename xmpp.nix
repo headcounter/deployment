@@ -54,9 +54,12 @@ in {
   # XXX: Refactor me!
   config.users.extraUsers.mongoose.extraGroups = [ "keys" ];
 
-  config.headcounter.services.mongooseim = {
+  config.headcounter.services.mongooseim = let
+    hasCookie = hasAttrByPath ["credentials" "xmpp" "cookie"] hclib;
+  in (optionalAttrs hasCookie {
+    cookie = hclib.credentials.xmpp.cookie;
+  }) // {
     enable = true;
-    cookie = hclib.credentials.xmpp.cookie or null;
     settings = {
       hosts = [
         "headcounter.org"
