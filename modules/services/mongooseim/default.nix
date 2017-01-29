@@ -30,6 +30,7 @@ let
     -env ERL_MAX_PORTS 250000
     -env ERL_FULLSWEEP_AFTER 2
     -sasl sasl_error_logger false
+    -setup verify_directories false
     -embedded
     -noinput
     -smp
