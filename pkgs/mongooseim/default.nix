@@ -1,23 +1,22 @@
-{ stdenv, buildErlang, fetchFromGitHub, pam, zlib, openssl, expat
+{ stdenv, buildErlang, fetchFromGitHub, pam, zlib, expat
 , erlangPackages
 }:
 
 let
   self = buildErlang rec {
     name = "mongooseim";
-    version = "1.6.2";
+    version = "2.0.1";
 
     src = fetchFromGitHub {
       owner = "esl";
       repo = "MongooseIM";
       rev = version;
-      sha256 = "0g7wfn8bxnyy70dx57z9f98cwz8sjbmqaln03rf4jzhlfqpsyakc";
+      sha256 = "18j2chhvq1pm78ay3gb19yjqifdyzxgbjz8hycjp529sxji3fdzq";
     };
 
     patches = [
       ./reltool.patch ./journald.patch ./systemd.patch
       ./s2s-listener-certfile.patch ./strip-unneeded-deps.patch
-      ./fix-sockopts-regression.patch ./dhparams.patch
     ];
 
     prePatch = ''
@@ -27,18 +26,26 @@ let
 
     postPatch = ''
       rm -rf apps/{pgsql,mysql}
-      find apps \( -iname '*pgsql*' -o -iname '*mysql*' -o -iname '*riak*' \) \
+      find apps \( \
+        -iname '*pgsql*' -o \
+        -iname '*mysql*' -o \
+        -iname '*riak*'  -o \
+        -iname '*cassandra*' \) \
         -type f -delete
+      patchShebangs tools/configure
     '';
 
-    buildInputs = [ pam zlib openssl expat ];
+    postConfigure = "./tools/configure with-none";
+
+    buildInputs = [ pam zlib expat ];
     erlangDeps = with erlangPackages; [
-      alarms base16 cowboy cuesport ecoveralls exml exometer folsom fusco idna
-      lager mochijson2 mustache p1_cache_tab p1_stringprep pa proper recon redo
-      sd_notify usec
+      alarms base16 cache_tab cowboy cuesport ecoveralls exml exometer fast_tls
+      folsom fusco idna jiffy lager lasse mochijson2 mustache pa proper poolboy
+      recon redo sd_notify stringprep usec uuid
     ];
 
     postBuild = ''
+      make rel/vars.config
       rebar generate
     '';
 

@@ -1,41 +1,53 @@
 diff --git a/apps/ejabberd/src/ejabberd_app.erl b/apps/ejabberd/src/ejabberd_app.erl
-index 82c3e67..564f5e8 100644
+index 118cb4bb..eb2ba5e4 100644
 --- a/apps/ejabberd/src/ejabberd_app.erl
 +++ b/apps/ejabberd/src/ejabberd_app.erl
-@@ -59,7 +59,6 @@ start(normal, _Args) ->
+@@ -59,8 +59,6 @@ start(normal, _Args) ->
+     connect_nodes(),
      {ok, _} = Sup = ejabberd_sup:start_link(),
-     ejabberd_system_monitor:add_handler(),
      ejabberd_rdbms:start(),
 -    mongoose_riak:start(),
+-    mongoose_cassandra:start(),
+     mongoose_http_client:start(),
      ejabberd_auth:start(),
      cyrsasl:start(),
-     %% Profiling
 diff --git a/rebar.config b/rebar.config
-index 542c3f2..a88ff5e 100644
+index 125fc1a1..b881851f 100644
 --- a/rebar.config
 +++ b/rebar.config
-@@ -5,8 +5,6 @@
+@@ -5,7 +5,6 @@
  
  {sub_dirs, [
      "apps/ejabberd",
--    "apps/mysql",
 -    "apps/pgsql",
      "rel", "dev"]}.
  
  {deps,
-@@ -25,10 +23,6 @@
-   {fusco, ".*", {git, "git://github.com/esl/fusco.git", {branch, "master"}}},
-   {idna, ".*", {git, "git://github.com/benoitc/erlang-idna.git", {tag, "1.0.1"}}},
+@@ -15,7 +14,6 @@
+   {redo, ".*", {git, "git://github.com/JacobVorreuter/redo.git", "7c7eaef"}},
+   {exml, ".*", {git, "git://github.com/esl/exml.git", "2.4.1"}},
+   {lager, ".*", {git, "git://github.com/basho/lager.git", "3.2.4"}},
+-  {lager_syslog, ".*", {git, "git://github.com/basho/lager_syslog.git", "3.0.3"}},
+   {ranch, ".*", {git, "https://github.com/ninenines/ranch.git", "1.3.0"}},
+   {cowboy, ".*", {git, "git://github.com/ninenines/cowboy.git", "1.0.4"}},
+   {exometer, ".*", {git, "git://github.com/esl/exometer.git", {branch, "1.2.1-patched"}}},
+@@ -26,14 +24,9 @@
+   {idna, ".*", {git, "git://github.com/benoitc/erlang-idna.git", {tag, "1.1.0"}}},
+   {poolboy, ".*", {git, "git://github.com/devinus/poolboy.git", {tag, "1.5.1"}}},
+   {uuid, ".*", {git, "git://github.com/okeuday/uuid.git", {tag, "v1.5.2-rc1"}}},
+-  {p1_mysql, ".*", {git, "git://github.com/processone/p1_mysql.git", "954713913e3237be9a4493d8a5b5eba6cf6641e3"}},
+-  {p1_pgsql, ".*", {git, "git://github.com/processone/p1_pgsql.git", "08e89d1182ee17b56b5122c08ab30ab44905ab49"}},
+   {fast_tls, ".*", {git, "git://github.com/processone/fast_tls.git", {tag, "1.0.7"}}},
+   {lasse, ".*", {git, "git://github.com/inaka/lasse.git", "692eaec"}},
  
--  {seestar, ".*", {git, "git://github.com/iamaleksey/seestar.git", "83e8099b617fffe5af86d4c91d84ce3608accd25"}},
--  {protobuffs, ".*", {git, "git://github.com/esl/erlang_protobuffs.git", {branch, "OTP18"}}},
--  {riakc, ".*", {git, "https://github.com/esl/riak-erlang-client", {branch, "fix/dialyzer"}}},
+-  {riakc, ".*", {git, "https://github.com/basho/riak-erlang-client", "2.4.2"}},
+-  {cqerl, ".*", {git, "https://github.com/matehat/cqerl.git", "db339b2"}},
 -
-   {p1_utils, ".*", {git, "git://github.com/processone/p1_utils", "940f42ddfcdc0b7b2abf4d9ee292605a93699543"}},
-   {p1_cache_tab, ".*", {git, "git://github.com/processone/cache_tab", "7b89d6a"}},
-   {p1_stringprep, ".*", {git, "git://github.com/processone/stringprep.git", "9e9e0f8dbe6a70ef36e1d4436b458ca5a77fbcfb"}},
-@@ -42,8 +37,6 @@
-   {recon, "2.2.1", {git, "git://github.com/ferd/recon.git", {tag, "2.2.1"}}}
+   {cache_tab, ".*", {git, "git://github.com/processone/cache_tab", {tag, "1.0.4"}}},
+   {stringprep, ".*", {git, "git://github.com/processone/stringprep.git", {tag, "1.0.6"}}},
+ 
+@@ -48,8 +41,6 @@
+   {recon, ".*", {git, "git://github.com/ferd/recon.git", "2.3.2"}}
   ]}.
  
 -{pre_hooks, [{compile, "tools/compile_riak_pb.sh"}]}.
@@ -43,3 +55,16 @@ index 542c3f2..a88ff5e 100644
  {ct_extra_params, "-pa apps/ejabberd/ebin "
                    "-pa apps/stringprep/ebin "
                    "-sasl sasl_error_logger false"}.
+diff --git a/rel/reltool.config.script b/rel/reltool.config.script
+index 4066eceb..5bd56391 100644
+--- a/rel/reltool.config.script
++++ b/rel/reltool.config.script
+@@ -35,8 +35,6 @@ EnvApps = GetEnvApps(),
+ EnvAppsToInclude = [ list_to_atom(App) || App <- string:tokens(EnvApps, " \n\r") ],
+ AppsToRun = [compiler,
+              lager,
+-             syslog,
+-             lager_syslog,
+              kernel,
+              mnesia,
+              sasl,

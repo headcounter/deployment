@@ -7,13 +7,13 @@ buildErlang rec {
 
   sourceRoot = "${src.name}/test/ejabberd_tests";
 
-  patches = [ ./tests.patch ];
-
   postBuild = ''
     erlc -o ebin run_common_test.erl
   '';
 
-  erlangDeps = with erlangPackages; [ escalus exml katt mustache proper usec ];
+  erlangDeps = with erlangPackages; [
+    cowboy erlsh escalus exml jiffy katt mustache proper shotgun usec
+  ];
 
   postInstall = ''
     mkdir -p "$out/etc"

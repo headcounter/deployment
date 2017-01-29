@@ -1,8 +1,8 @@
 diff --git a/rel/reltool.config.script b/rel/reltool.config.script
-index edc57d8..930112c 100644
+index 4066eceb..23ae5b08 100644
 --- a/rel/reltool.config.script
 +++ b/rel/reltool.config.script
-@@ -58,7 +58,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+@@ -93,7 +93,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
  
  
  [{sys, [
@@ -11,7 +11,7 @@ index edc57d8..930112c 100644
          {incl_cond, exclude},
          {rel, "mongooseim", "", [mongooseim | AppsToRun]},
          {rel, "start_clean", "", [kernel,stdlib]},
-@@ -67,6 +67,8 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+@@ -102,6 +102,8 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
          {excl_archive_filters, [".*"]}, % do no archive built libs
          {excl_sys_filters, ["^bin/.*",
                              "^erts.*/bin/(dialyzer|typer)"]},
@@ -20,29 +20,29 @@ index edc57d8..930112c 100644
  
          {app, mongooseim, [{incl_cond, include}, {lib_dir, ".."}]}
         ] ++ IncludeApps},
-@@ -76,24 +78,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
+@@ -111,24 +113,7 @@ IncludeApps = lists:map(fun(App) -> {app, App, [{incl_cond, include}]} end, Apps
  
  {overlay_vars, "vars.config"},
  
--{overlay, [{mkdir, "log/sasl"},
--           {mkdir, "var"},
--           {mkdir, "var/log"},
+-{overlay, [
 -           {mkdir, "priv"},
+-           {copy, "files/sample_external_auth.py", "priv/sample_external_auth.py"},
+-
 -           {mkdir, "priv/ssl"},
+-           {copy, "../fake_cert.pem", "priv/ssl/fake_cert.pem"},
+-           {copy, "../fake_key.pem", "priv/ssl/fake_key.pem"},
+-           {copy, "../fake_server.pem", "priv/ssl/fake_server.pem"},
+-           {copy, "../fake_dh_server.pem", "priv/ssl/fake_dh_server.pem"},
 -
 -           {copy, "files/erl", "\{\{erts_vsn\}\}/bin/erl"},
 -           {copy, "files/nodetool", "\{\{erts_vsn\}\}/bin/nodetool"},
 -           {copy, "files/mongooseimctl", "bin/mongooseimctl"},
 -
 -           {template, "files/mongooseim", "bin/mongooseim"},
+-           {template, "files/mongooseimctl", "bin/mongooseimctl"},
 -           {template, "files/app.config", "etc/app.config"},
 -           {template, "files/vm.args", "etc/vm.args"},
--           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"},
--
--           {copy, "../fake_cert.pem", "priv/ssl/fake_cert.pem"},
--           {copy, "../fake_key.pem", "priv/ssl/fake_key.pem"},
--           {copy, "../fake_server.pem", "priv/ssl/fake_server.pem"},
--           {copy, "files/sample_external_auth.py", "priv/sample_external_auth.py"}
+-           {template, "files/ejabberd.cfg", "etc/ejabberd.cfg"}
 +{overlay, [{template, "files/app.config", "etc/app.config"},
 +           {template, "files/vm.args", "etc/vm.args"}
            ]}
