@@ -54,11 +54,7 @@ in {
   # XXX: Refactor me!
   config.users.extraUsers.mongoose.extraGroups = [ "keys" ];
 
-  config.headcounter.services.mongooseim = let
-    hasCookie = hasAttrByPath ["credentials" "xmpp" "cookie"] hclib;
-  in (optionalAttrs hasCookie {
-    cookie = hclib.credentials.xmpp.cookie;
-  }) // {
+  config.headcounter.services.mongooseim = {
     enable = true;
     settings = {
       hosts = [
@@ -276,7 +272,7 @@ in {
 
       extraConfig = ''
         % administrative
-        ${hclib.credentials.xmpp.adminACLs or ""}
+        ${hclib.getcred ["xmpp" "adminACLs"] ""}
 
         % Local users:
         {acl, local, {user_regexp, ""}}.
@@ -374,5 +370,7 @@ in {
         '') (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts))}
       '';
     };
+  } // optionalAttrs hclib.hasCredentials {
+    cookie = hclib.getcred ["xmpp" "cookie"] (throw "XMPP cookie not found");
   };
 }

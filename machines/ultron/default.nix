@@ -106,7 +106,7 @@ in {
     slave.hosts = let
       mkSlaveListener = m: config.networking.p2pTunnels.ssh.${m}.localIPv4;
     in mkForce (unique (map mkSlaveListener [ "dugee" "gussh" ]));
-    credentials = hclib.credentials.dyndns-users;
+    credentials = hclib.getcred "dyndns-users" {};
   };
 
   services.postgresql = let
