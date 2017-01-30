@@ -5,7 +5,7 @@
 with lib;
 
 let
-  inherit (hclib) erlAtom erlString erlInt erlList;
+  inherit (hclib) erlAtom erlString erlInt erlList erlTuple;
 in {
   options = {
     overrides = mkOption {
@@ -237,6 +237,60 @@ in {
       };
     };
 
+    odbc = {
+      type = mkOption {
+        type = types.nullOr (types.enum [ "mysql" "pgsql" ]);
+        default = null;
+        description = ''
+          Database type to use for all modules configured to use ODBC.
+        '';
+      };
+      host = mkOption {
+        type = types.str;
+        default = "localhost";
+        description = ''
+          Host name or IP address to use for connection to the DBMS.
+        '';
+      };
+      port = mkOption {
+        type = with types; nullOr (addCheck int (p: p <= 65535 && p >= 0));
+        default = null;
+        example = 5432;
+        description = ''
+          Port number to use for connecting to the DBMS or
+          <literal>null</literal> for the default port.
+        '';
+      };
+      database = mkOption {
+        type = types.str;
+        default = "mongooseim";
+        description = ''
+          Database name to use for connecting to the DBMS.
+        '';
+      };
+      username = mkOption {
+        type = types.str;
+        default = "mongooseim";
+        description = ''
+          User name for authenticating against the DBMS.
+        '';
+      };
+      password = mkOption {
+        type = types.str;
+        example = "verysecurepassword";
+        description = ''
+          User name for authenticating against the DBMS.
+        '';
+      };
+      poolSize = mkOption {
+        type = types.int;
+        default = 10;
+        description = ''
+          How many DB client workers should be started per each domain.
+        '';
+      };
+    };
+
     modules = mkOption {
       type = types.submodule (import ./modules.nix {
         inherit pkgs hclib toplevelConfig;
@@ -348,6 +402,19 @@ in {
 
     % authentication
     {auth_method, ${erlAtom config.authMethod}}.
+
+    ${optionalString (config.odbc.type != null) ''
+      % ODBC configuration for ${config.odbc.type}
+      {odbc_server, ${erlTuple ([
+        { atom = config.odbc.type; }
+        config.odbc.host
+      ] ++ (optional (config.odbc.port != null) config.odbc.port) ++ [
+        config.odbc.database
+        config.odbc.username
+        config.odbc.password
+      ])}}.
+      {odbc_pool_size, ${erlInt config.odbc.poolSize}}.
+    ''}
 
     % modules
     {modules, [

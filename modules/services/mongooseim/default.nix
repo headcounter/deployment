@@ -172,7 +172,14 @@ in {
         # sure to test it properly in the code-reload VM test.
         wantedBy = [ "multi-user.target" ];
         wants = [ "keys.target" ];
-        after = [ "network.target" "fs.target" "keys.target" ];
+
+        after = let
+          dbType = cfg.settings.odbc.type or null;
+          dbUnit = if dbType == "pgsql" then "postgresql.service"
+                   else if dbType == "mysql" then "mysql.service"
+                   else throw "Unsupported ODBC backend type ${dbType}.";
+          maybeDbUnit = optional (dbType != null) dbUnit;
+        in [ "network.target" "fs.target" "keys.target" ] ++ maybeDbUnit;
 
         reloadIfChanged = true;
 
