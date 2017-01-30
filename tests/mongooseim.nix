@@ -260,6 +260,13 @@ let
       register.options.ip_access = [];
       register.options.access.atom = "register";
       register.options.registration_watchers = [ "admin@${serverName}" ];
+      mam_meta.enable = true;
+      mam_meta.options.backend.atom = "odbc";
+    };
+
+    odbc = {
+      type = "pgsql";
+      password = "test";
     };
 
     extraConfig = ''
@@ -293,12 +300,41 @@ let
       {language, "en"}.
     '';
   };
+
+  storageConfig = {
+    services.postgresql.enable = true;
+
+    # Default pool sizes:
+    #
+    #   mod_mam_odbc_async_pool_writer:       32
+    #   mod_mam_muc_odbc_async_pool_writer:   32
+    #   per virtual host:                     10
+    #
+    # We have 3 virtual hosts, so we have 30 connections plus one MUC pool and
+    # two private message pools, which leads to 126 (32 * 3 + 10 * 3).
+    #
+    # Another 3 connections are reserved for the superuser so we need
+    # max_connections to be 129.
+    services.postgresql.extraConfig = "max_connections = 129";
+
+    services.postgresql.initialScript = pkgs.writeText "initial.sql" ''
+      CREATE ROLE mongooseim WITH LOGIN PASSWORD 'test';
+      CREATE DATABASE mongooseim;
+      \c mongooseim
+      \i ${pkgs.headcounter.mongooseim.mainAppDir}/priv/pg.sql
+      GRANT USAGE ON SCHEMA public TO mongooseim;
+      GRANT SELECT, INSERT, UPDATE, DELETE
+         ON ALL TABLES IN SCHEMA public TO mongooseim;
+      GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO mongooseim;
+    '';
+  };
+
 in {
   name = "mongooseim";
 
   nodes = {
     server1 = { config, pkgs, ... }: {
-      imports = [ ../common.nix (mkRosterTemplate server1) ];
+      imports = [ ../common.nix (mkRosterTemplate server1) storageConfig ];
       virtualisation.memorySize = 512;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
@@ -309,7 +345,7 @@ in {
     };
 
     server2 = { config, pkgs, ... }: {
-      imports = [ ../common.nix (mkRosterTemplate server2) ];
+      imports = [ ../common.nix (mkRosterTemplate server2) storageConfig ];
       virtualisation.memorySize = 512;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
