@@ -161,6 +161,7 @@ let
     mochijson3    = "18dvmxzsqmjav30d7l6x3dslmvc4x5skhvmscv5ppymj0y0pw3hz";
     mustache      = "0p4ay88s5hzkdl8k1v8pyzg725g764pgf0p5wxpgbkwp37q2gx5m";
     neotoma       = "0h4q5k8fb4l9iqkqsza8jpzg7pzprjx16pkfyz5fxbh02xig1r06";
+    p1_pgsql      = "1gbyrya07f3liqc8m1llxqkghb94653hrlcmsc0hx9dmdi4ryqs3";
     p1_utils      = "16fpsblnrvj8lg8g1h699m8smin4xs4qhmvl7m606fhlgjdhmxl8";
     pa            = "07i4rkwc5fw6jq9sxrvkrrddgrr0gbpm4bdn9c84yk36inhd4fy1";
     parse_trans   = "0shvlxga5nwiqbpz9ibgs9p6zjcsl0kp3628ygd66hg1dpxjmyry";
@@ -217,6 +218,7 @@ let
     mochijson3    = ghe "1.0"         "tophitpoker";
     mustache      = ghe "0.1.0"       "mojombo";
     neotoma       = ghe "1.7.2"       "seancribbs";
+    p1_pgsql      = ghe "1.1.1"       "processone";
     p1_utils      = ghe "1.0.5"       "processone";
     pa            = ghe "0.2.0"       "erszcz";
     parse_trans   = ghe "2.9"         "uwiger";

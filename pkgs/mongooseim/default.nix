@@ -1,8 +1,23 @@
-{ stdenv, buildErlang, fetchFromGitHub, pam, zlib, expat
+{ stdenv, buildErlang, fetchFromGitHub, pam, zlib, expat, writeText
 , erlangPackages
+
+, storageBackends ? [ "pgsql" ]
 }:
 
 let
+  inherit (stdenv.lib) concatLists concatMap concatMapStringsSep;
+
+  backendDeps = {
+    pgsql = [ "p1_pgsql" ];
+    mysql = [ "p1_mysql" ];
+    riak = [ "riakc" ];
+    cassandra = [ "cqerl" ];
+  };
+
+  getErlDeps = backend: backendDeps.${backend} or [];
+  enabledBackendDeps = concatMap getErlDeps storageBackends;
+  backendErlangDeps = map (dep: erlangPackages.${dep}) enabledBackendDeps;
+
   self = buildErlang rec {
     name = "mongooseim";
     version = "2.0.1";
@@ -16,7 +31,7 @@ let
 
     patches = [
       ./reltool.patch ./journald.patch ./systemd.patch
-      ./s2s-listener-certfile.patch ./strip-unneeded-deps.patch
+      ./s2s-listener-certfile.patch
     ];
 
     prePatch = ''
@@ -24,25 +39,63 @@ let
         apps/ejabberd/src/ejabberd.app.src
     '';
 
-    postPatch = ''
-      rm -rf apps/{pgsql,mysql}
-      find apps \( \
-        -iname '*pgsql*' -o \
-        -iname '*mysql*' -o \
-        -iname '*riak*'  -o \
-        -iname '*cassandra*' \) \
-        -type f -delete
+    postPatch = let
+      inherit (stdenv.lib) subtractLists filterAttrs attrValues escapeShellArg;
+      allBackends = [ "pgsql" "mysql" "riak" "cassandra" ];
+      removedBackends = subtractLists storageBackends allBackends;
+      mkFindRemoveArgs = concatMapStringsSep " -o " (rem: "-iname '*${rem}*'");
+      filterBackend = backend: stdenv.lib.elem backend removedBackends;
+      maybeRemoveSed = backend: let
+        sedArg = "-e '/mongoose_${backend}:start/d'";
+      in stdenv.lib.optionalString (filterBackend backend) sedArg;
+      removedBackendDepAttrs = filterAttrs (n: v: filterBackend n) backendDeps;
+      removedBackendDeps = concatLists (attrValues removedBackendDepAttrs);
+      removedRebarDeps = [ "lager_syslog" ] ++ removedBackendDeps;
+    in ''
+      # Remove source files that have backends that should be removed in its
+      # name.
+      find apps \( ${mkFindRemoveArgs removedBackends} \) -type f -delete
+
+      # Remove a bunch of rebar dependencies we don't need.
+			escript "${writeText "remove-unneded-rebar-deps.escript" ''
+        # Dummy comment, skipped by escript!
+        main(Args) ->
+          {ok, Orig} = file:consult("rebar.config"),
+          {deps, OrigDeps} = lists:keyfind(deps, 1, Orig),
+          DepsToRemove = lists:map(fun erlang:list_to_atom/1, Args),
+          NewDeps = [Dep || {Name, _, _} = Dep <- OrigDeps,
+                     not lists:member(Name, DepsToRemove)],
+          ReplacedDeps = lists:keyreplace(deps, 1, Orig, {deps, NewDeps}),
+          New = case lists:member(riakc, DepsToRemove) of
+            true -> lists:keydelete(pre_hooks, 1, ReplacedDeps);
+            false -> ReplacedDeps
+          end,
+          Data = lists:map(fun(T) -> io_lib:format("~tp.~n", [T]) end, New),
+          file:write_file("rebar.config", Data).
+      ''}" ${concatMapStringsSep " " escapeShellArg removedRebarDeps}
+
+      # Remove occurences of mongoose_$backend:start() during app startup.
+      sed -i ${concatMapStringsSep " " maybeRemoveSed ["riak" "cassandra"]} \
+        apps/ejabberd/src/ejabberd_app.erl
+
+      # Remove lager_syslog stuff, because we're doing logging via journald.
+      sed -i -e '/^AppsToRun *= *\[/,/\]/{ /^ *\(lager_\)\?syslog *, *$/d }' \
+        rel/reltool.config.script
+
       patchShebangs tools/configure
     '';
 
-    postConfigure = "./tools/configure with-none";
+    postConfigure = let
+      anyArgs = concatMapStringsSep " " (bend: "with-${bend}") storageBackends;
+      backendArgs = if storageBackends != [] then anyArgs else "with-none";
+    in "./tools/configure ${backendArgs}";
 
     buildInputs = [ pam zlib expat ];
     erlangDeps = with erlangPackages; [
       alarms base16 cache_tab cowboy cuesport ecoveralls exml exometer fast_tls
       folsom fusco idna jiffy lager lasse mochijson2 mustache pa proper poolboy
       recon redo sd_notify stringprep usec uuid
-    ];
+    ] ++ backendErlangDeps;
 
     postBuild = ''
       make rel/vars.config
