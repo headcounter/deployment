@@ -242,7 +242,6 @@ in {
           host = "vjud.headcounter.org";
         };
 
-        offline.enable = true;
         offline.options = {
           access.atom = "public";
           access_max_user_messages.atom = "max_user_offline_messages";

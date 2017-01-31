@@ -70,8 +70,10 @@ let
     adhoc = mkModule "Ad-Hoc Commands (${xep "0050"})";
     admin_extra = mkModule "Administrative functions and commands";
     amp = mkModule "Advanced Message Processing (${xep "0079"})";
+    blocking = mkModule "Blocking Command (${xep "0191"})";
     bosh = mkModule "XMPP over Bosh service (HTTP Binding)";
     carboncopy = mkModule "Carbon Copies (${xep "0280"})";
+    csi = mkModule "Client State Indication (${xep "0352"})";
     disco = mkModule "Service Discovery (${xep "0030"})";
     last = mkModuleODBC "Last Activity (${xep "0012"})";
     mam_meta = mkModule "Message Archive Management (${xep "0313"})";
@@ -81,6 +83,7 @@ let
     ping = mkModule "XMPP Ping and periodic keepalives (${xep "0199"})";
     privacy = mkModuleODBC "Blocking Communication (${xep "0016"})";
     private = mkModuleODBC "Private XML Storage (${xep "0049"})";
+    pubsub = mkModule "Publish-Subscribe (${xep "0060"})";
     register = mkModule "In-Band Registration (${xep "0077"})";
     roster = mkModuleODBC "Roster management (XMPP IM)";
     sic = mkModule "Server IP Check (${xep "0279"})";

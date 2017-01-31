@@ -297,7 +297,9 @@ in {
         defaults = {
           adhoc.enable = true;
           amp.enable = true;
+          blocking.enable = true;
           carboncopy.enable = true;
+          csi.enable = true;
           disco.enable = true;
           last.enable = true;
           muc.enable = true;
@@ -307,8 +309,10 @@ in {
           muc_log.enable = true;
           muc_log.options.outdir = "/tmp/muclogs";
           muc_log.options.access_log.atom = "muc";
+          offline.enable = true;
           privacy.enable = true;
           private.enable = true;
+          pubsub.enable = true;
           register.enable = true;
           register.options.welcome_message = ""; # TODO?
           register.options.ip_access = [
