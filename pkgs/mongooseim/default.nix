@@ -32,6 +32,7 @@ let
     patches = [
       ./reltool.patch ./journald.patch ./systemd.patch
       ./s2s-listener-certfile.patch
+      ./pgsql-disable-escape-string-warning.patch
     ];
 
     prePatch = ''

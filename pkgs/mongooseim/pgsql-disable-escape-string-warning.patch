@@ -1,0 +1,13 @@
+diff --git a/apps/ejabberd/src/ejabberd_odbc.erl b/apps/ejabberd/src/ejabberd_odbc.erl
+index 7e3de74c..c6becf62 100644
+--- a/apps/ejabberd/src/ejabberd_odbc.erl
++++ b/apps/ejabberd/src/ejabberd_odbc.erl
+@@ -660,6 +660,8 @@ pgsql_connect(Server, Port, DB, Username, Password) ->
+         {ok, Ref} ->
+             {ok, [<<"SET">>]} =
+             pgsql:squery(Ref, "SET standard_conforming_strings=off;", ?QUERY_TIMEOUT),
++            {ok, [<<"SET">>]} =
++            pgsql:squery(Ref, "SET escape_string_warning=off;", ?QUERY_TIMEOUT),
+             {ok, Ref};
+         Err -> Err
+     end.
