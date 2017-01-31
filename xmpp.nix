@@ -86,6 +86,7 @@ in {
             max_stanza_size = 65536;
             shaper = "c2s_shaper";
             ciphers = clientCiphers;
+            protocol_options = [ "no_sslv2" "no_sslv3" ];
           } // (if isLegacy then {
             tls.flag = true;
           } else {
@@ -110,6 +111,7 @@ in {
             max_stanza_size = 131072;
             shaper = "s2s_shaper";
             ciphers = serverCiphers;
+            protocol_options = [ "no_sslv2" "no_sslv3" ];
           } // optionalAttrs (domain.ssl.privateKey != null) {
             certfile = domain.ssl.privateKey.path;
           };
