@@ -357,6 +357,7 @@ in {
 
     client = {
       imports = [ ../common.nix (mkRosterTemplate server1) ];
+      virtualisation.memorySize = 1024;
       headcounter.programs.mongooseimctl = {
         enable = true;
         inherit cookie;
