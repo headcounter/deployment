@@ -233,9 +233,9 @@ let
         module = "ejabberd_cowboy";
         options.num_acceptors = 10;
         options.max_connections = 1024;
-        options.cert = toString pubKeyFile;
-        options.key = toString privKeyFile;
-        options.key_pass = "";
+        options.ssl.certfile = toString pubKeyFile;
+        options.ssl.keyfile = toString privKeyFile;
+        options.ssl.password = "";
         options.modules = [
           { tuple = [
               server1
