@@ -33,27 +33,36 @@ let
 
   escalusConfig = pkgs.writeText "test.config" ''
     {ejabberd_node, '${nodeName1}'}.
-    {ejabberd2_node, '${nodeName2}'}.
     {ejabberd_cookie, ${cookie}}.
-    {ejabberd_domain, <<"${server1}">>}.
-    {ejabberd_addr, <<"${server1}">>}.
-    {ejabberd_secondary_domain, <<"${server1}.bis">>}.
-    {ejabberd_reloaded_domain, <<"sogndal">>}.
-    {ejabberd_metrics_rest_port, 5280}.
     {ejabberd_string_format, bin}.
 
-    {escalus_user_db, xmpp}.
-    {escalus_xmpp_server, escalus_mongooseim}.
+    {hosts, [
+      {mim, [
+        {node, '${nodeName1}'},
+        {domain, <<"${server1}">>},
+        {cluster, mim},
+        {secondary_domain, <<"${server1}.bis">>},
+        {reloaded_domain, <<"sogndal">>},
+        {metrics_rest_port, 5280}
+      ]},
+      {mim2, [
+        {node, '${nodeName2}'},
+        {domain, <<"${server2}">>},
+        {cluster, mim}
+      ]}
+    ]}.
 
     {escalus_server, <<"${server1}">>}.
     {escalus_server2, <<"${server2}">>}.
+    {escalus_user_db, {module, escalus_ejabberd}}.
+    {escalus_xmpp_server, escalus_mongooseim}.
 
     {escalus_users, [
       {alice, [
         {username, <<"alicE">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
-        {password, <<"makota">>}
+        {password, <<"matygrysa">>}
       ]},
       {bob, [
         {username, <<"bOb">>},
@@ -61,12 +70,18 @@ let
         {host, <<"${server1}">>},
         {password, <<"makrolika">>}
       ]},
+      {bob_altpass, [
+        {username, <<"bOb">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"niemakrolika">>}
+      ]},
       {carol, [
         {username, <<"carol">>},
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"jinglebells">>},
-        {transport, bosh},
+        {transport, escalus_bosh},
         {path, <<"/http-bind">>},
         {port, 5280}
       ]},
@@ -75,7 +90,7 @@ let
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"jinglebells_s">>},
-        {transport, bosh},
+        {transport, escalus_bosh},
         {ssl, true},
         {path, <<"/http-bind">>},
         {port, 5285}
@@ -97,7 +112,7 @@ let
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"witcher">>},
-        {transport, ws},
+        {transport, escalus_ws},
         {port, 5280},
         {wspath, <<"/ws-xmpp">>}
       ]},
@@ -106,7 +121,7 @@ let
         {server, <<"${server1}">>},
         {host, <<"${server1}">>},
         {password, <<"witcher_s">>},
-        {transport, ws},
+        {transport, escalus_ws},
         {ssl, true},
         {port, 5285},
         {wspath, <<"/ws-xmpp">>}
@@ -118,16 +133,6 @@ let
         {password, <<"bringdowntheserver">>},
         {compression, <<"zlib">>},
         {port, 5223}
-      ]},
-      {oldie, [
-        {username, <<"oldie">>},
-        {server, <<"${server1}">>},
-        {host, <<"${server1}">>},
-        {password, <<"legacy">>},
-        {transport, ws},
-        {port, 5280},
-        {wspath, <<"/ws-xmpp">>},
-        {wslegacy, true}
       ]},
       {admin, [
         {username, <<"admin">>},
@@ -169,6 +174,13 @@ let
         {host, <<"${server2}">>},
         {password, <<"distributionftw">>},
         {port, 5222}
+      ]},
+      {clusterbuddy, [
+        {username, <<"clusterbuddy">>},
+        {server, <<"${server1}">>},
+        {host, <<"${server1}">>},
+        {password, <<"wasssssssup">>},
+        {port, 5232}
       ]}
     ]}.
 
@@ -179,10 +191,6 @@ let
         {host, <<"${server1}">>},
         {auth_method, <<"SASL-ANON">>}
       ]}
-    ]}.
-
-    {mam, [
-      {skipped_configurations, [ca]}
     ]}.
   '';
 
