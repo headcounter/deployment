@@ -52,7 +52,77 @@ let
       type = types.unspecified;
       default = attrByPath [ name "options" ] {} defaults;
       description = ''
-        Options for module ... TODO
+        Options for the ${name} module which are directly converted to Erlang
+        expressions from the given Nix expression.
+
+        <table tocentry="0">
+          <title>Nix to Erlang type mapping</title>
+          <tgroup cols="4">
+            <thead>
+              <row>
+                <entry>Nix type</entry>
+                <entry>Erlang type</entry>
+                <entry>Nix example</entry>
+                <entry>Erlang result</entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry>int</entry>
+                <entry>int</entry>
+                <entry><literal>666</literal></entry>
+                <entry><literal>666</literal></entry>
+              </row>
+              <row>
+                <entry>string</entry>
+                <entry>string</entry>
+                <entry><literal>&quot;hello world&quot;</literal></entry>
+                <entry><literal>&quot;hello world&quot;</literal></entry>
+              </row>
+              <row>
+                <entry>boolean</entry>
+                <entry>boolean (atom)</entry>
+                <entry><literal>true</literal></entry>
+                <entry><literal>true</literal></entry>
+              </row>
+              <row>
+                <entry>list</entry>
+                <entry>list</entry>
+                <entry><literal>[ 1 2 3 ]</literal></entry>
+                <entry><literal>[1, 2, 3]</literal></entry>
+              </row>
+              <row>
+                <entry>attribute set</entry>
+                <entry>property list</entry>
+                <entry><literal>{ foo = 123; bar = 456; }</literal></entry>
+                <entry><literal>[{foo, 123}, {bar, 456}]</literal></entry>
+              </row>
+              <row>
+                <entry>attribute set consisting only of a
+                       <literal>atom</literal> attribute name</entry>
+                <entry>atom</entry>
+                <entry><literal>{ atom = &quot;foo&quot;; }</literal></entry>
+                <entry><literal>foo</literal></entry>
+              </row>
+              <row>
+                <entry>attribute set consisting only of a
+                       <literal>tuple</literal> attribute name</entry>
+                <entry>tuple</entry>
+                <entry><literal>{ tuple = [1 2 3]; }</literal></entry>
+                <entry><literal>{1, 2, 3}</literal></entry>
+              </row>
+              <row>
+                <entry>attribute set consisting only of a
+                       <literal>binary</literal> attribute name</entry>
+                <entry>binary</entry>
+                <entry><literal>{ binary = &quot;foo&quot; }</literal></entry>
+                <entry><literal>${
+                  "&lt;&lt;&quot;foo&quot;&gt;&gt;"
+                }</literal></entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </table>
       '';
     };
   };
