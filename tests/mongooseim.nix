@@ -226,7 +226,19 @@ let
             ];
           }
           { tuple = ["_" "/http-bind" { atom = "mod_bosh"; }]; }
-          { tuple = ["_" "/ws-xmpp"   { atom = "mod_websockets"; }]; }
+          { tuple = [
+              "_"
+              "/ws-xmpp"
+              { atom = "mod_websockets"; }
+              { ejabberd_service = {
+                  access.atom = "all";
+                  shaper_rule.atom = "fast";
+                  ip = [127 0 0 1];
+                  password = "secret";
+                };
+              }
+            ];
+          }
         ];
       }
       { port = 5285;
