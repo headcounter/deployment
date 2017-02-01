@@ -296,7 +296,6 @@ in {
         inherit pkgs hclib toplevelConfig;
         defaults = {
           adhoc.enable = true;
-          amp.enable = true;
           blocking.enable = true;
           carboncopy.enable = true;
           csi.enable = true;
