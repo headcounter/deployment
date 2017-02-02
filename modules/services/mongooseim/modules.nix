@@ -45,7 +45,9 @@ let
       type = types.bool;
       default = attrByPath [ name "enable" ] false defaults;
       example = !default;
-      description = "Whether to enable the module for ${desc}.";
+      description = ''
+        Whether to enable the ${optionalString odbc "ODBC"} module for ${desc}.
+      '';
     };
 
     options = mkOption {
