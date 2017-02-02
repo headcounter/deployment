@@ -159,7 +159,6 @@ let
     register = mkModule "In-Band Registration (${xep "0077"})";
     roster = mkModuleODBC "Roster management (XMPP IM)";
     sic = mkModule "Server IP Check (${xep "0279"})";
-    snmp = mkModule "SNMP support";
     stream_management = mkModule "Stream management (${xep "0198"})";
     vcard = mkModuleODBC "vcard-temp (${xep "0054"})";
   };
