@@ -40,14 +40,19 @@ with lib;
 */
 
 let
-  mkModuleEx = { desc, deps ? [], odbc ? false }: name: {
+  mkModuleEx = { desc, deps ? [], xep ? null, odbc ? false }: name: {
     enable = mkOption rec {
       type = types.bool;
       default = attrByPath [ name "enable" ] false defaults;
       example = !default;
       description = ''
         Whether to enable the ${optionalString odbc "ODBC"} module for ${desc}.
-      '';
+      '' + optionalString (xep != null) (let
+        padded = fixedWidthString 4 "0" (toString xep);
+        url = "http://xmpp.org/extensions/xep-${padded}.html";
+      in ''
+        This module implements <link xlink:href="${url}">XEP-${padded}</link>.
+      '');
     };
 
     options = mkOption {
@@ -129,38 +134,38 @@ let
     };
   };
 
-  mkModule = desc: mkModuleEx { inherit desc; };
-  mkModuleDeps = deps: desc: mkModuleEx { inherit deps desc; };
+  mkModule = desc: xep: mkModuleEx { inherit desc xep; };
+  mkModuleDeps = deps: desc: xep: mkModuleEx { inherit deps desc xep; };
   mkModuleDep = dep: mkModuleDeps (singleton dep);
-  mkModuleODBC = desc: mkModuleEx { inherit desc; odbc = true; };
+  mkModuleODBC = desc: xep: mkModuleEx { inherit desc xep; odbc = true; };
 
-  xep = number: let
+  mkXepLink = number: let
     url = "http://xmpp.org/extensions/xep-${number}.html";
   in "<link xlink:href=\"${url}\">XEP-${number}</link>";
 
   modules = {
-    adhoc = mkModule "Ad-Hoc Commands (${xep "0050"})";
-    admin_extra = mkModule "Administrative functions and commands";
-    amp = mkModule "Advanced Message Processing (${xep "0079"})";
-    blocking = mkModule "Blocking Command (${xep "0191"})";
-    bosh = mkModule "XMPP over Bosh service (HTTP Binding)";
-    carboncopy = mkModule "Carbon Copies (${xep "0280"})";
-    csi = mkModule "Client State Indication (${xep "0352"})";
-    disco = mkModule "Service Discovery (${xep "0030"})";
-    last = mkModuleODBC "Last Activity (${xep "0012"})";
-    mam_meta = mkModule "Message Archive Management (${xep "0313"})";
-    muc = mkModule "Multi-User Chat (${xep "0045"})";
-    muc_log = mkModuleDep "mod_muc" "Multi-User Chat room logging";
-    offline = mkModule "Offline message storage (${xep "0160"})";
-    ping = mkModule "XMPP Ping and periodic keepalives (${xep "0199"})";
-    privacy = mkModuleODBC "Blocking Communication (${xep "0016"})";
-    private = mkModuleODBC "Private XML Storage (${xep "0049"})";
-    pubsub = mkModule "Publish-Subscribe (${xep "0060"})";
-    register = mkModule "In-Band Registration (${xep "0077"})";
-    roster = mkModuleODBC "Roster management (XMPP IM)";
-    sic = mkModule "Server IP Check (${xep "0279"})";
-    stream_management = mkModule "Stream management (${xep "0198"})";
-    vcard = mkModuleODBC "vcard-temp (${xep "0054"})";
+    adhoc = mkModule "Ad-Hoc Commands" 50;
+    admin_extra = mkModule "Administrative functions and commands" null;
+    amp = mkModule "Advanced Message Processing" 79;
+    blocking = mkModule "Blocking Command" 191;
+    bosh = mkModule "XMPP over Bosh service (HTTP Binding)" null;
+    carboncopy = mkModule "Carbon Copies" 280;
+    csi = mkModule "Client State Indication" 352;
+    disco = mkModule "Service Discovery" 30;
+    last = mkModuleODBC "Last Activity" 12;
+    mam_meta = mkModule "Message Archive Management" 313;
+    muc = mkModule "Multi-User Chat" 45;
+    muc_log = mkModuleDep "mod_muc" "Multi-User Chat room logging" null;
+    offline = mkModule "Offline message storage" 160;
+    ping = mkModule "XMPP Ping and periodic keepalives" 199;
+    privacy = mkModuleODBC "Blocking Communication" 16;
+    private = mkModuleODBC "Private XML Storage" 49;
+    pubsub = mkModule "Publish-Subscribe" 60;
+    register = mkModule "In-Band Registration" 77;
+    roster = mkModuleODBC "Roster management (XMPP IM)" null;
+    sic = mkModule "Server IP Check" 279;
+    stream_management = mkModule "Stream management" 198;
+    vcard = mkModuleODBC "vcard-temp" 54;
   };
 
   modulesWithDefaults = mapAttrs (name: f: f name) modules;
