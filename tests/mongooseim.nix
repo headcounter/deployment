@@ -272,6 +272,7 @@ let
     ];
 
     modules = {
+      amp.enable = true;
       bosh.enable = true;
       offline.options.access_max_user_messages = {
         atom = "max_user_offline_messages";
