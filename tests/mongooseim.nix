@@ -233,7 +233,6 @@ let
               { ejabberd_service = {
                   access.atom = "all";
                   shaper_rule.atom = "fast";
-                  ip = [127 0 0 1];
                   password = "secret";
                 };
               }
