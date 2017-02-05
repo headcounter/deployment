@@ -9,9 +9,7 @@ let
   progName = "mongooseim";
   gcRoot = "/nix/var/nix/gcroots/running-mongooseim";
 
-  cfgFile = if cfg.configFile != null
-            then cfg.configFile
-            else cfg.settings.generatedConfigFile;
+  cfgFile = cfg.configFile;
 
   inherit (config.headcounter.programs.mongooseimctl) ctlTool;
 
@@ -129,6 +127,7 @@ in {
     }
     (mkIf cfg.enable {
       headcounter.services.mongooseim = {
+        configFile = mkDefault cfg.settings.generatedConfigFile;
         cookie = mkDefault (let
           randCookie = pkgs.runCommand "erlang-cookie.nix" {
             preferLocalBuild = true;
