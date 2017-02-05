@@ -1,4 +1,4 @@
-import ./make-test.nix ({ pkgs, lib, ... }:
+import ../make-test.nix ({ pkgs, lib, ... }:
 
 
 let
@@ -195,7 +195,7 @@ let
   '';
 
   mkConfig = serverName: let
-    certs = import ../ssl/snakeoil.nix serverName;
+    certs = import ../../ssl/snakeoil.nix serverName;
     privKeyFile = pkgs.writeText "priv.pem" certs.privateKey;
     pubKeyFile = pkgs.writeText "pub.pem" certs.publicKey;
   in {
@@ -381,7 +381,7 @@ let
   checkListeners = node: let
     inherit (node.config.headcounter) services;
     inherit (services.mongooseim) configFile;
-    hclib = import ../lib { inherit lib; };
+    hclib = import ../../lib { inherit lib; };
     isLocalEpmd = services.epmd.addresses == lib.singleton "127.0.0.1";
     PortAndAddr = "{127, 0, 0, 1, KernelPort}";
     kernelPortOrAddrInfo = if isLocalEpmd then "KernelPort" else PortAndAddr;
@@ -437,7 +437,7 @@ in {
 
   nodes = {
     server1 = { config, pkgs, ... }: {
-      imports = [ ../common.nix (mkRosterTemplate server1) storageConfig ];
+      imports = [ ../../common.nix (mkRosterTemplate server1) storageConfig ];
       virtualisation.memorySize = 2048;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
@@ -448,7 +448,7 @@ in {
     };
 
     server2 = { config, pkgs, ... }: {
-      imports = [ ../common.nix (mkRosterTemplate server2) storageConfig ];
+      imports = [ ../../common.nix (mkRosterTemplate server2) storageConfig ];
       virtualisation.memorySize = 2048;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
@@ -459,7 +459,7 @@ in {
     };
 
     client = {
-      imports = [ ../common.nix (mkRosterTemplate server1) ];
+      imports = [ ../../common.nix (mkRosterTemplate server1) ];
       virtualisation.memorySize = 1024;
       headcounter.programs.mongooseimctl = {
         enable = true;

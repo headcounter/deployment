@@ -10,7 +10,7 @@ let
 in {
   code-reload = callTest ./code-reload {};
   dyndns = callTest ./dyndns.nix {};
-  mongooseim = callTest ./mongooseim.nix {};
+  mongooseim = callTest ./mongooseim {};
   headcounter = callTest ./headcounter {};
   postfix = callTest ./postfix.nix {};
   hclib = pkgs.callPackage ./hclib.nix {};
