@@ -8,18 +8,32 @@ let
 
   ctlArgsFile = pkgs.writeText "ctl.args" ''
     -setcookie ${hclib.shErlEsc hclib.erlAtom cfg.cookie}
-    -noinput
-    -hidden
     -pa ${hclib.shErlEsc id "${package.mainAppDir}/ebin"}
-    -s ejabberd_ctl
   '';
 
   mongooseimctl = pkgs.writeScriptBin "mongooseimctl" ''
     #!${pkgs.stdenv.shell}
-    exec ${pkgs.erlang}/bin/erl \
-      -args_file "${ctlArgsFile}" \
-      -sname "ctl$$@${cfg.ctlHost}" \
-      -extra "${cfg.destNodeName}" "$@"
+    if [ "$1" = debug ]; then
+      shift
+      # If TERM is unset or "dumb" -remsh doesn't connect to the remote node.
+      [ -z "$TERM" -o "$TERM" = dumb ] && export TERM=vt100
+      exec ${pkgs.erlang}/bin/erl \
+        -args_file ${lib.escapeShellArg ctlArgsFile} \
+        -sname "ctl$$@"${lib.escapeShellArg cfg.ctlHost} \
+        -hidden -remsh ${lib.escapeShellArg cfg.destNodeName} "$@"
+    fi
+    ${pkgs.erlang}/bin/erl \
+      -args_file ${lib.escapeShellArg ctlArgsFile} \
+      -sname "ctl$$@"${lib.escapeShellArg cfg.ctlHost} \
+      -noinput -hidden -s ejabberd_ctl \
+      -extra ${lib.escapeShellArg cfg.destNodeName} "$@"
+    retcode=$?
+    if [ $retcode -eq 2 -o $retcode -eq 3 ]; then
+      echo
+      echo "Use \`mongooseimctl debug' to enter an interactive Erlang shell" \
+           "of a running MongooseIM node."
+      exit $retcode
+    fi
   '';
 
 in {
