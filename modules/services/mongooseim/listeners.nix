@@ -32,7 +32,7 @@ with lib;
     };
 
     options = mkOption {
-      type = hclib.erlType hclib.erlPropList;
+      type = hclib.types.erlPropList;
       default = {};
       example = {
         access.atom = "trusted_users";

@@ -51,6 +51,12 @@ in rec {
                   "Erlang expression!");
   in (if isAttrs val then nonNix else nix) val;
 
+  types.erlPropList = mkOptionType {
+    name = "an Erlang property list";
+    check = lib.types.attrs.check;
+    merge = loc: defs: erlPropList (lib.types.attrs.merge loc defs);
+  };
+
   erlType = valType: mkOptionType {
     name = "an Erlang expression";
     merge = loc: defs: valType (mergeOneOption loc defs);
