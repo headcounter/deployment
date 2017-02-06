@@ -210,58 +210,33 @@ let
         options.max_stanza_size = 65536;
       }
       { port = 5280;
-        module = "ejabberd_cowboy";
-        options.num_acceptors = 10;
-        options.max_connections = 1024;
-        options.modules = [
-          { tuple = [
-              server1
-              "/api"
-              { atom = "mongoose_api"; }
-              { handlers = [
-                  { atom = "mongoose_api_metrics"; }
-                  { atom = "mongoose_api_users"; }
-                ];
-              }
-            ];
+        http.enable = true;
+        http.modules = [
+          { path = "/http-bind";
+            handler = "mod_bosh";
           }
-          { tuple = ["_" "/http-bind" { atom = "mod_bosh"; }]; }
-          { tuple = [
-              "_"
-              "/ws-xmpp"
-              { atom = "mod_websockets"; }
-              { ejabberd_service = {
-                  access.atom = "all";
-                  shaper_rule.atom = "fast";
-                  password = "secret";
-                };
-              }
-            ];
+          { path = "/ws-xmpp";
+            handler = "mod_websockets";
           }
         ];
+        options.num_acceptors = 10;
+        options.max_connections = 1024;
       }
       { port = 5285;
-        module = "ejabberd_cowboy";
+        http.enable = true;
+        http.modules = [
+          { path = "/http-bind";
+            handler = "mod_bosh";
+          }
+          { path = "/ws-xmpp";
+            handler = "mod_websockets";
+          }
+        ];
         options.num_acceptors = 10;
         options.max_connections = 1024;
         options.ssl.certfile = toString pubKeyFile;
         options.ssl.keyfile = toString privKeyFile;
         options.ssl.password = "";
-        options.modules = [
-          { tuple = [
-              server1
-              "/api"
-              { atom = "mongoose_api"; }
-              { handlers = [
-                  { atom = "mongoose_api_metrics"; }
-                  { atom = "mongoose_api_users"; }
-                ];
-              }
-            ];
-          }
-          { tuple = ["_" "/http-bind" { atom = "mod_bosh"; }]; }
-          { tuple = ["_" "/ws-xmpp"   { atom = "mod_websockets"; }]; }
-        ];
       }
       { port = 5269;
         module = "ejabberd_s2s_in";

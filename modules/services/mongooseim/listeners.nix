@@ -2,9 +2,90 @@
 
 { lib, config, ... }:
 
-with lib;
+let
+  inherit (lib) mkOption types;
 
-{
+  cowboyDoc = "https://ninenines.eu/docs/en/cowboy/1.0/guide";
+
+  httpModule.options = {
+    host = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "example.org";
+      description = ''
+        The virtual host name to serve requests for the associated
+        <option>handler</option>.
+
+        If the value is <literal>null</literal> any host is accepted.
+
+        This allows to use the <link
+        xlink:href="${cowboyDoc}/routing/#match_syntax">host match syntax of
+        the Cowboy web server</link>.
+      '';
+    };
+
+    path = mkOption {
+      type = types.str;
+      default = "/";
+      example = "/api/rooms/:id/users/[:user]";
+      description = let
+      in ''
+        The path part of the URL to map to the associated
+        <option>handler</option>.
+
+        This allows to use the <link
+        xlink:href="${cowboyDoc}/routing/#match_syntax">path match syntax of
+        the Cowboy web server</link>.
+      '';
+    };
+
+    handler = mkOption {
+      type = types.str;
+      example = "mod_bosh";
+      description = ''
+        The handler module to use for serving requests, which is any Cowboy
+        module, not only the ones that come with MongooseIM.
+
+        Handlers that come with the MongooseIM source tree:
+
+        <simplelist type="inline">
+        ${lib.concatMapStrings (handler: ''
+          <member><literal>${handler}</literal></member>
+        '') [
+          /* Retrieved using the following command on the source tree:
+
+             grep 'cowboy\|^routes' apps/ejabberd/src/*.erl | sed -r \
+               -e '/\/((ejabberd|mod)_cowboy|mongoose_api(_common)?)\.erl:/d' \
+               -e '/^[^:]*: *%/d' -e 's/^.*\/([^\/]+)\.erl:.*$/"\1"/' | sort -u
+          */
+          "mod_bosh"
+          "mod_revproxy"
+          "mod_websockets"
+          "mongoose_api_admin"
+          "mongoose_api_client"
+          "mongoose_api_metrics"
+          "mongoose_api_users"
+          "mongoose_client_api"
+          "mongoose_client_api_messages"
+          "mongoose_client_api_rooms"
+          "mongoose_client_api_rooms_messages"
+          "mongoose_client_api_rooms_users"
+        ]}
+        </simplelist>
+      '';
+    };
+
+    options = mkOption {
+      type = hclib.types.erlPropList;
+      default = {};
+      example.mongoose_client_api_sse.flag = true;
+      description = ''
+        Additional options to provide to the <option>handler</option>.
+      '';
+    };
+  };
+
+in {
   options = {
     port = mkOption {
       type = types.int;
@@ -41,6 +122,37 @@ with lib;
       description = "Options for the corresponding <option>module</option>.";
     };
 
+    http = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Whether this listener module should use
+          <literal>ejabberd_cowboy</literal> for HTTP(S).
+        '';
+      };
+
+      modules = mkOption {
+        type = types.listOf (types.submodule httpModule);
+        default = [];
+        example = [
+          { host = "localhost";
+            path = "/api";
+            handler = "mongoose_api_admin";
+          }
+          { path = "/api";
+            handler = "lasse_handler";
+            options.mongoose_client_api_sse.flag = true;
+          }
+        ];
+        description = ''
+          A list of HTTP(S) modules (using <literal>ejabberd_cowboy</literal>)
+          to enable for this listener.
+        '';
+      };
+    };
+
     generatedConfig = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -49,12 +161,27 @@ with lib;
     };
   };
 
-  config.generatedConfig = let
-    addrTerm = hclib.parseErlIpAddr config.address;
-    addrSpec = singleton (hclib.erlInt config.port)
-            ++ optional (config.address != null) addrTerm
-            ++ optional (config.type != null) (hclib.erlAtom config.type);
-    addr = if length addrSpec == 1 then head addrSpec
-           else "{${concatStringsSep ", " addrSpec}}";
-  in "{${addr}, ${hclib.erlAtom config.module}, ${config.options}}";
+  config = lib.mkMerge [
+    (lib.mkIf config.http.enable {
+      module = "ejabberd_cowboy";
+      options.modules = map (module: {
+        tuple = [
+          (if module.host == null then "_" else module.host)
+          module.path
+          { atom = module.handler; }
+          { __raw = module.options; }
+        ];
+      }) config.http.modules;
+    })
+    { generatedConfig = let
+        inherit (hclib) parseErlIpAddr erlInt erlAtom;
+        addrTerm = parseErlIpAddr config.address;
+        addrSpec = lib.singleton (erlInt config.port)
+                ++ lib.optional (config.address != null) addrTerm
+                ++ lib.optional (config.type != null) (erlAtom config.type);
+        addr = if lib.length addrSpec == 1 then lib.head addrSpec
+               else "{${lib.concatStringsSep ", " addrSpec}}";
+      in "{${addr}, ${erlAtom config.module}, ${config.options}}";
+    }
+  ];
 }
