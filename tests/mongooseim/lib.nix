@@ -61,7 +61,7 @@
         lists:member(listen, Status)
     end,
     Recurse = fun
-        (_, Pid, 5) -> Pid;
+        (_, Pid, 3) -> Pid;
         (Self, Pid, Inc) ->
             Info = erlang:process_info(Pid),
             Links = proplists:get_value(links, Info, []),
