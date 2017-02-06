@@ -47,7 +47,8 @@ in rec {
       else if builtins.isBool term then erlBool term
       else if builtins.isString term then erlString term
       else if isList term then erlList term
-      else throw "Can't transform ${traceVal term} into an Erlang expression!";
+      else throw ("Can't transform value (${lib.showVal term}) into an " +
+                  "Erlang expression!");
   in (if isAttrs val then nonNix else nix) val;
 
   erlType = valType: mkOptionType {
