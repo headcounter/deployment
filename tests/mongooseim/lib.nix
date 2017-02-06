@@ -53,7 +53,7 @@
     {AllowedHostPort, AllowedPorts} = Split,
     IsAllowed = fun(Sock) ->
         {ok, {Host, Port}} = inet:sockname(Sock),
-        lists:member({Host, Port}, AllowedHostPort) or
+        lists:member({Port, Host}, AllowedHostPort) or
             lists:member(Port, AllowedPorts)
     end,
     IsListening = fun(Port) ->
