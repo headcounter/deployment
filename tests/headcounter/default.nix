@@ -67,9 +67,11 @@ let
 
   testedVHosts = [ "headcounter" "aszlig" "noicq" "no_icq" "torservers" ];
 
-  mkVHostTest = vhost: let
-    runner = import ../make-test.nix;
-  in runner ({ pkgs, lib, ... }@attrs: {
+  mkVHostTest = vhost: import ../make-test.nix ({ pkgs, lib, ... }@attrs: let
+    inherit (import ../mongooseim/lib.nix {
+      inherit pkgs lib;
+    }) runInCtl checkListeners;
+  in {
     name = "headcounter-vhost-${vhost}";
     nodes = nodes attrs;
     testScript = { nodes, ... }@testAttrs: with lib; let
@@ -83,6 +85,8 @@ let
       $ultron->waitForUnit("mongooseim.service");
       $client->waitForUnit("network.target");
       $client->waitForUnit("postgresql.service");
+
+      ${runInCtl "ultron" (checkListeners nodes.ultron)}
 
       ${vhAttrs.testScript}
     '';
