@@ -217,6 +217,11 @@ let
           }
           { path = "/ws-xmpp";
             handler = "mod_websockets";
+            options.ejabberd_service = {
+              access.atom = "all";
+              shaper_rule.atom = "fast";
+              password = "secret";
+            };
           }
         ];
         options.num_acceptors = 10;
