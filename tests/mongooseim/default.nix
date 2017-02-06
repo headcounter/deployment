@@ -238,6 +238,45 @@ let
         options.ssl.keyfile = toString privKeyFile;
         options.ssl.password = "";
       }
+      { port = 8088;
+        http.enable = true;
+        http.modules = lib.singleton {
+          path = "/api";
+          handler = "mongoose_api_admin";
+        };
+        options.num_acceptors = 10;
+        options.max_connections = 1024;
+        options.ssl.certfile = toString pubKeyFile;
+        options.ssl.keyfile = toString privKeyFile;
+        options.ssl.password = "";
+      }
+      { port = 8089;
+        http.enable = true;
+        http.modules = [
+          { path = "/api/sse";
+            handler = "lasse_handler";
+            options.mongoose_client_api_sse.flag = true;
+          }
+          { path = "/api/messages/[:with]";
+            handler = "mongoose_client_api_messages";
+          }
+          { path = "/api/rooms/[:id]";
+            handler = "mongoose_client_api_rooms";
+          }
+          { path = "/api/rooms/:id/users/[:user]";
+            handler = "mongoose_client_api_rooms_users";
+          }
+          { path = "/api/rooms/[:id]/messages";
+            handler = "mongoose_client_api_rooms_messages";
+          }
+        ];
+        options.num_acceptors = 10;
+        options.max_connections = 1024;
+        options.compress = true;
+        options.ssl.certfile = toString pubKeyFile;
+        options.ssl.keyfile = toString privKeyFile;
+        options.ssl.password = "";
+      }
       { port = 5269;
         module = "ejabberd_s2s_in";
         options.shaper.atom = "s2s_shaper";
