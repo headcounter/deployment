@@ -251,9 +251,6 @@ let
         };
         options.num_acceptors = 10;
         options.max_connections = 1024;
-        options.ssl.certfile = toString pubKeyFile;
-        options.ssl.keyfile = toString privKeyFile;
-        options.ssl.password = "";
       }
       { port = 8089;
         http.enable = true;
