@@ -17,6 +17,7 @@ let
       headcounter.vhostDefaultDevice = "eth1";
 
       virtualisation.vlans = [ 1 ];
+      virtualisation.memorySize = 2048;
     };
 
     client = { nodes, pkgs, config, lib, ... }: with lib; let
