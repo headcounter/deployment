@@ -292,6 +292,7 @@ let
     modules = {
       amp.enable = true;
       bosh.enable = true;
+      commands.enable = true;
       offline.options.access_max_user_messages = {
         atom = "max_user_offline_messages";
       };
@@ -300,6 +301,8 @@ let
       register.options.registration_watchers = [ "admin@${serverName}" ];
       mam_meta.enable = true;
       mam_meta.options.backend.atom = "odbc";
+      muc_commands.enable = true;
+      muc_light_commands.enable = true;
     };
 
     odbc = {

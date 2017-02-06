@@ -151,10 +151,13 @@ let
     bosh = mkModule "XMPP over Bosh service (HTTP Binding)" null;
     carboncopy = mkModule "Carbon Copies" 280;
     csi = mkModule "Client State Indication" 352;
+    commands = mkModule "General purpose commands" null;
     disco = mkModule "Service Discovery" 30;
     last = mkModuleODBC "Last Activity" 12;
     mam_meta = mkModule "Message Archive Management" 313;
     muc = mkModule "Multi-User Chat" 45;
+    muc_commands = mkModule "Commands for Multi-User Chat" null;
+    muc_light_commands = mkModule "Commands for MUC light" null;
     muc_log = mkModuleDep "mod_muc" "Multi-User Chat room logging" null;
     offline = mkModule "Offline message storage" 160;
     ping = mkModule "XMPP Ping and periodic keepalives" 199;
