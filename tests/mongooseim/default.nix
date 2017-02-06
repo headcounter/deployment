@@ -360,6 +360,7 @@ in {
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
         enable = true;
+        nodeIp = null;
         inherit cookie;
         settings = mkConfig server1;
       };
@@ -371,6 +372,7 @@ in {
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
       headcounter.services.mongooseim = {
         enable = true;
+        nodeIp = null;
         inherit cookie;
         settings = mkConfig server2;
       };

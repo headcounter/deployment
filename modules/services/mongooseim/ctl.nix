@@ -6,8 +6,12 @@ let
   cfg = config.headcounter.programs.mongooseimctl;
   inherit (config.headcounter.services.mongooseim) package;
 
+  mimlib = import ./lib.nix { inherit config hclib lib; };
+
   ctlArgsFile = pkgs.writeText "ctl.args" ''
     -setcookie ${hclib.shErlEsc hclib.erlAtom cfg.cookie}
+    ${mimlib.loopbackArg}
+    ${mimlib.inetArg}
     -pa ${hclib.shErlEsc id "${package.mainAppDir}/ebin"}
   '';
 

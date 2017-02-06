@@ -11,7 +11,11 @@ let
 
   cfgFile = cfg.configFile;
 
+  mimlib = import ./lib.nix { inherit config hclib lib; };
+
   inherit (config.headcounter.programs.mongooseimctl) ctlTool;
+
+  nodeHostname = head (builtins.match "[^@]+@([^@]+)" cfg.nodeName);
 
   serverArgsFile = pkgs.writeText "server.args" ''
     +K true
@@ -25,6 +29,8 @@ let
     -boot_var RELTOOL_EXT_LIB ${shErlEsc id "${cfg.package}/lib"}
     -config ${shErlEsc id "${cfg.package}/etc/app.config"}
     -ejabberd config ${shErlEsc erlString cfgFile}
+    ${mimlib.loopbackArg}
+    ${mimlib.inetArg}
     -env ERL_MAX_PORTS 250000
     -env ERL_FULLSWEEP_AFTER 2
     -sasl sasl_error_logger false
@@ -68,6 +74,18 @@ in {
       default = "mongooseim@${config.networking.hostName}";
       type = types.str;
       description = "Erlang OTP node name";
+    };
+
+    nodeIp = mkOption {
+      type = types.nullOr types.str;
+      default = "127.0.0.1";
+      description = ''
+        IP address of the node specified in <option>nodeName</option>.
+
+        This is circumventing the <filename>/etc/hosts</filename> file inside
+        the Erlang VM. If you don't want this you can set this to
+        <literal>null</literal>.
+      '';
     };
 
     cookie = mkOption {
@@ -125,6 +143,9 @@ in {
         package = mkDefault pkgs.headcounter.mongooseim;
       };
     }
+    (mkIf (cfg.enable && cfg.nodeIp != null) {
+      headcounter.erlang-inet.hosts.${nodeHostname} = cfg.nodeIp;
+    })
     (mkIf cfg.enable {
       headcounter.services.mongooseim = {
         configFile = mkDefault cfg.settings.generatedConfigFile;
@@ -142,7 +163,7 @@ in {
 
       headcounter.programs.mongooseimctl = {
         enable = true;
-        ctlHost = head (builtins.match "[^@]+@([^@]+)" cfg.nodeName);
+        ctlHost = nodeHostname;
         destNodeName = cfg.nodeName;
         inherit (cfg) cookie;
       };
