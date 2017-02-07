@@ -36,8 +36,8 @@ let
       echo
       echo "Use \`mongooseimctl debug' to enter an interactive Erlang shell" \
            "of a running MongooseIM node."
-      exit $retcode
     fi
+    exit $retcode
   '';
 
 in {
