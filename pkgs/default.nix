@@ -8,7 +8,7 @@ let
     writeEscript = callPackage ./build-support/write-escript.nix {};
 
     mongooseim = callPackage ./mongooseim {};
-    mongooseimTests = callPackage ./mongooseim/tests.nix {};
+    mongooseimTests = callPackage ./mongooseim/tests {};
     spectrum2 = callPackage ./spectrum2 {};
 
     haxe = callPackage ./haxe {};
