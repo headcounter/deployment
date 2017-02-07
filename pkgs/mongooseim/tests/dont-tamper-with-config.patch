@@ -1,0 +1,22 @@
+diff --git a/tests/component_SUITE.erl b/tests/component_SUITE.erl
+index d6b9b5ea..1c29338b 100644
+--- a/tests/component_SUITE.erl
++++ b/tests/component_SUITE.erl
+@@ -37,15 +37,11 @@
+ 
+ all() ->
+     [{group, xep0114_tcp},
+-     {group, xep0114_ws},
+-     {group, subdomain},
+-     {group, distributed}].
++     {group, xep0114_ws}].
+ 
+ groups() ->
+     [{xep0114_tcp, [], xep0114_tests()},
+-     {xep0114_ws, [], xep0114_tests()},
+-     {subdomain, [], [register_subdomain]},
+-     {distributed, [], [register_in_cluster, register_same_on_both]}].
++     {xep0114_ws, [], xep0114_tests()}].
+ 
+ suite() ->
+     escalus:suite().
