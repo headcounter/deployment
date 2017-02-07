@@ -1,0 +1,47 @@
+diff --git a/tests/distributed_helper.erl b/tests/distributed_helper.erl
+index 1f25af16..b13c674b 100644
+--- a/tests/distributed_helper.erl
++++ b/tests/distributed_helper.erl
+@@ -33,8 +33,9 @@ remove_node_from_cluster(Node, _Config) ->
+     verify_result(Node, remove),
+     ok.
+ 
+-ctl_path(Node, Config) ->
+-    script_path(Node, Config, "mongooseimctl").
++ctl_path(Node, _) ->
++    rpc:call(Node, os, find_executable, ["mongooseimctl",
++                                         "/run/current-system/sw/bin"]).
+ 
+ script_path(Node, Config, Script) ->
+     filename:join([get_cwd(Node, Config), "bin", Script]).
+diff --git a/tests/ejabberd_node_utils.erl b/tests/ejabberd_node_utils.erl
+index 3cb2c3d3..5d185876 100644
+--- a/tests/ejabberd_node_utils.erl
++++ b/tests/ejabberd_node_utils.erl
+@@ -44,8 +44,9 @@ config_template_path(Node, Config) ->
+ config_vars_path(Node, Config, File) ->
+     filename:join([cwd(Node, Config), "..", "..", "rel", File]).
+ 
+-ctl_path(Node, Config) ->
+-    filename:join([cwd(Node, Config), "bin", "mongooseimctl"]).
++ctl_path(Node, _) ->
++    call_fun(Node, os, find_executable, ["mongooseimctl",
++                                         "/run/current-system/sw/bin"]).
+ 
+ -type ct_config() :: list({Key :: term(), Value :: term()}).
+ 
+diff --git a/tests/reload_helper.erl b/tests/reload_helper.erl
+index 9a709d05..4b92f72a 100644
+--- a/tests/reload_helper.erl
++++ b/tests/reload_helper.erl
+@@ -78,7 +78,9 @@ node_cfg(N, backup, C)   -> flat([node_cwd(N, C), "etc", "ejabberd.cfg.bak"]);
+ node_cfg(N, template, C) -> flat([node_cwd(N, C), "..", "..", "rel", "files", "ejabberd.cfg"]);
+ node_cfg(N, vars, C)     -> flat([node_cwd(N, C), "..", "..", "rel", "vars.config"]).
+ 
+-node_ctl(N, C) -> flat([node_cwd(N, C), "bin", "mongooseimctl"]).
++node_ctl(N, _) ->
++    rpc:call(N, os, find_executable, ["mongooseimctl",
++                                      "/run/current-system/sw/bin"]).
+ 
+ flat(PathComponents) -> filename:join(PathComponents).
+ 

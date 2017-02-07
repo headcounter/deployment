@@ -7,6 +7,8 @@ buildErlang rec {
 
   sourceRoot = "${src.name}/test/ejabberd_tests";
 
+  patches = [ ./ctl-path.patch ];
+
   postBuild = ''
     erlc -o ebin run_common_test.erl
   '';
