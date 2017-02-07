@@ -420,10 +420,14 @@ in {
     $client->succeed('cp "${mongooseimTests}/etc/default.spec" .');
     $client->succeed('cp "${escalusConfig}" test.config');
 
-    $client->succeed('sed -i '.
-                     '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
-                     '-e \'s/localhost/${server1}/g\' '.
-                     'tests/*.erl');
+    $client->succeed(
+      'find tests -mindepth 1 -maxdepth 1 '.
+      '-path tests/mod_http_notification_SUITE.erl -o '.
+      '-name \'*.erl\' -exec sed -i '.
+      '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
+      '-e \'s/localhost/${server1}/g\' '.
+      '{} +'
+    );
 
     my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
     chomp $clientip;
@@ -432,6 +436,9 @@ in {
 
     $client->succeed('sed -i -e \'/wait_for_stanza/s/10000/&0/\' '.
                      'tests/s2s_SUITE.erl');
+
+    $client->succeed('sed -i -e \'s/localhost/client/g\' '.
+                     'tests/mod_http_notification_SUITE.erl');
 
     $client->succeed(
       'sed -i -e \'/^ *TemplatePath *=/s!=.*!= "${
