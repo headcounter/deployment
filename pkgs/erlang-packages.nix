@@ -26,6 +26,10 @@ let
   });
 
   overrides = {
+    escalus.postPatch = ''
+      sed -i -e 's/^\(-define(WAIT_FOR_STANZA_TIMEOUT, *\)[0-9]\+/\110000/' \
+        src/escalus_client.erl
+    '';
     exml.buildInputs = [ pkgs.expat ];
     exometer.EXOMETER_PACKAGES = "(minimal)";
     exometer.postPatch = ''
