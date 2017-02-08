@@ -220,20 +220,37 @@ in {
       '';
     };
 
-    authMethod = mkOption {
-      type = types.enum [ "internal" "external" "odbc" "pam" "ldap" ];
-      default = "internal";
-      example = "ldap";
-      description = ''
-        Method used to authenticate the users.
+    auth = {
+      method = mkOption {
+        type = types.enum [ "internal" "external" "odbc" "pam" "ldap" ];
+        default = "internal";
+        example = "ldap";
+        description = ''
+          Method used to authenticate the users.
 
-        Valid options are:
-      '' + hclib.enumDoc {
-        internal = "Against internal Mnesia database";
-        external = "Using external script";
-        odbc = "Using Open Database Connectivity";
-        pam = "Using Pluggable Authentication Modules";
-        ldap = "Using Lightweight Directory Access Protocol";
+          Valid options are:
+        '' + hclib.enumDoc {
+          internal = "Against internal Mnesia database";
+          external = "Using external script";
+          odbc = "Using Open Database Connectivity";
+          pam = "Using Pluggable Authentication Modules";
+          ldap = "Using Lightweight Directory Access Protocol";
+        };
+      };
+
+      options = mkOption {
+        type = hclib.types.erlPropList;
+        default.password_format.atom = "plain";
+        default.scram_iterations = 4096;
+        example = {
+          password_format.atom = "scram";
+          scram_iterations = 32768;
+          extauth_program = "/my/custom/auth/script.py";
+        };
+        description = ''
+          Options used for authentication, such as password format and
+          security.
+        '';
       };
     };
 
@@ -404,7 +421,8 @@ in {
     {sm_backend, ${config.sessionBackend}}.
 
     % authentication
-    {auth_method, ${erlAtom config.authMethod}}.
+    {auth_method, ${erlAtom config.auth.method}}.
+    {auth_opts, ${config.auth.options}}.
 
     ${optionalString (config.odbc.type != null) ''
       % ODBC configuration for ${config.odbc.type}
