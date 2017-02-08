@@ -1,0 +1,13 @@
+diff --git a/tests/s2s_SUITE.erl b/tests/s2s_SUITE.erl
+index 77d3ea46..e0ee7733 100644
+--- a/tests/s2s_SUITE.erl
++++ b/tests/s2s_SUITE.erl
+@@ -75,7 +75,7 @@ suite() ->
+ 
+ require_s2s_nodes() ->
+     [{require, mim_node, {hosts, mim, node}},
+-     {require, fed_node, {hosts, fed, node}}].
++     {require, fed_node, {hosts, mim2, node}}].
+ 
+ %%%===================================================================
+ %%% Init & teardown
