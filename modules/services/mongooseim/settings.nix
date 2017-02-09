@@ -5,7 +5,7 @@
 with lib;
 
 let
-  inherit (hclib) erlAtom erlString erlInt erlList erlTuple;
+  inherit (hclib) erlAtom erlString erlInt erlList erlTuple parseErlIpAddr;
 in {
   options = {
     overrides = mkOption {
@@ -141,8 +141,8 @@ in {
           type = types.attrsOf types.optionSet;
           default = {};
           example = {
-            "example-host1.net".ipAddress = "{1,2,3,4}";
-            "example-host2.net".ipAddress = "{5,6,7,8}";
+            "example-host1.net".ipAddress = "1.2.3.4";
+            "example-host2.net".ipAddress = "5.6.7.8";
             "example-host2.net".port = 666;
           };
           description = ''
@@ -153,17 +153,17 @@ in {
           options = {
             ipAddress = mkOption {
               type = types.str;
-              # XXX: Split v4/v6 and transform accordingly into an Erlang term.
-              example = "{127,0,0,1}";
+              example = "127.0.0.1";
+              apply = parseErlIpAddr;
               description = ''
-                An erlang expression specifying the IPv4 or IPv6 address to use
-                for connecting to the host.
+                An IPv4 or IPv6 address to use for connecting to the host.
               '';
             };
 
             port = mkOption {
               type = types.int;
               default = 5269;
+              apply = erlInt;
               description = ''
                 Port to use for connecting with the host.
               '';
@@ -389,8 +389,7 @@ in {
         concatStringsSep ", " (map erlAtom outgoing.addressFamilies)
       }], ${toString outgoing.connectTimeout}}.
       ${concatStrings (mapAttrsToList (host: static: ''
-        {{s2s_addr, ${erlString host}}, {${static.ipAddress}, ${erlInt
-          static.port}}}.
+        {{s2s_addr, ${erlString host}}, {${static.ipAddress}, ${static.port}}}.
       '') outgoing.staticHosts)}
     '';
 
