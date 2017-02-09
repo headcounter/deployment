@@ -66,6 +66,9 @@ in {
         #"anonymous.headcounter.org"
       ];
 
+      auth.options.password_format.atom = "scram";
+      auth.options.scram_iterations = 65536;
+
       s2s.filterDefaultPolicy = "allow";
       s2s.useStartTLS = "required";
       s2s.outgoing.port = 5269;
