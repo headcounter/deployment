@@ -204,6 +204,7 @@ let
     s2s.outgoing.staticHosts = lib.mapAttrs (lib.const (eval: {
       ipAddress = eval.config.networking.primaryIPAddress;
     })) nodes;
+    s2s.certfile = toString privKeyFile;
 
     listeners = [ # FIXME: Unique port/module and maybe loaOf?
       { port = 5222;
