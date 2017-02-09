@@ -1,0 +1,47 @@
+diff --git a/apps/ejabberd/src/ejabberd_s2s_in.erl b/apps/ejabberd/src/ejabberd_s2s_in.erl
+index 5e47bdf2..4b0bd925 100644
+--- a/apps/ejabberd/src/ejabberd_s2s_in.erl
++++ b/apps/ejabberd/src/ejabberd_s2s_in.erl
+@@ -170,6 +170,7 @@ init([{SockMod, Socket}, Opts]) ->
+               end,
+     TLSOpts2 = lists:filter(fun({protocol_options, _}) -> true;
+                                ({dhfile, _}) -> true;
++                               ({ciphers, _}) -> true;
+                                (_) -> false
+                             end, Opts),
+     TLSOpts = lists:append(TLSOpts1, TLSOpts2),
+diff --git a/apps/ejabberd/src/ejabberd_socket.erl b/apps/ejabberd/src/ejabberd_socket.erl
+index 65a97b86..f84b2731 100644
+--- a/apps/ejabberd/src/ejabberd_socket.erl
++++ b/apps/ejabberd/src/ejabberd_socket.erl
+@@ -158,16 +158,28 @@ connect(Addr, Port, Opts, Timeout) ->
+     end.
+ 
+ 
++-spec tcp_to_tls(inet:socket(), list()) -> fast_tls:tls_socket().
++tcp_to_tls(InetSock, TLSOpts) ->
++    SanitizedTLSOpts = case lists:keyfind(protocol_options, 1, TLSOpts) of
++        false -> TLSOpts;
++        {_, ProtoOpts} ->
++            NewProtoOpts = {protocol_options, string:join(ProtoOpts, "|")},
++            lists:keyreplace(protocol_options, 1, TLSOpts, NewProtoOpts)
++    end,
++    {ok, TLSSocket} = fast_tls:tcp_to_tls(InetSock, SanitizedTLSOpts),
++    TLSSocket.
++
++
+ -spec starttls(socket_state(), list()) -> socket_state().
+ starttls(SocketData, TLSOpts) ->
+-    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
++    TLSSocket = tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
+     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
+     SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
+ 
+ 
+ -spec starttls(socket_state(), _, _) -> socket_state().
+ starttls(SocketData, TLSOpts, Data) ->
+-    {ok, TLSSocket} = fast_tls:tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
++    TLSSocket = tcp_to_tls(SocketData#socket_state.socket, TLSOpts),
+     ejabberd_receiver:starttls(SocketData#socket_state.receiver, TLSSocket),
+     send(SocketData, Data),
+     SocketData#socket_state{socket = TLSSocket, sockmod = fast_tls}.
