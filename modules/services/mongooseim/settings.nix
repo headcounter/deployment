@@ -238,6 +238,26 @@ in {
         };
       };
 
+      mechanisms = mkOption {
+        type = types.nullOr (types.listOf (types.enum [
+          "plain" "digest" "scram" "anonymous" "oauth"
+        ]));
+        default = null;
+        description = ''
+          SASL mechanism to use for authentication.
+
+          The default (<literal>null</literal>) will enable all mechanisms.
+
+          Valid options are:
+        '' + hclib.enumDoc {
+          plain = "Use plaintext passwords";
+          digest = "DIGEST-MD5 based auth";
+          scran = "SCRAM authentication";
+          anonymous = "No authentication using a random user name";
+          oauth = "Authentication using an OAuth token";
+        };
+      };
+
       options = mkOption {
         type = hclib.types.erlPropList;
         default.password_format.atom = "plain";
@@ -419,6 +439,11 @@ in {
     % authentication
     {auth_method, ${erlAtom config.auth.method}}.
     {auth_opts, ${config.auth.options}}.
+    ${optionalString (config.auth.mechanisms != null) ''
+      {sasl_mechanisms, ${erlList (map (mech: {
+        atom = "cyrsasl_${mech}";
+      }) config.auth.mechanisms)}}.
+    ''}
 
     ${optionalString (config.odbc.type != null) ''
       % ODBC configuration for ${config.odbc.type}
