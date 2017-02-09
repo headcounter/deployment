@@ -381,32 +381,34 @@ let
 
   inherit (import ./lib.nix { inherit pkgs lib; }) runInCtl checkListeners;
 
+  commonServer = { pkgs, lib, ... }: {
+    imports = [ ../../common.nix storageConfig ];
+
+    virtualisation.memorySize = 2048;
+
+    headcounter.services.epmd.addresses = [ "0.0.0.0" ];
+    headcounter.services.mongooseim = {
+      enable = true;
+      nodeIp = null;
+      inherit cookie;
+      package = pkgs.headcounter.mongooseim.overrideDerivation (lib.const {
+        DEVNODE = true;
+      });
+    };
+  };
+
 in {
   name = "mongooseim";
 
   nodes = {
     server1 = { config, nodes, pkgs, ... }: {
-      imports = [ ../../common.nix (mkRosterTemplate server1) storageConfig ];
-      virtualisation.memorySize = 2048;
-      headcounter.services.epmd.addresses = [ "0.0.0.0" ];
-      headcounter.services.mongooseim = {
-        enable = true;
-        nodeIp = null;
-        inherit cookie;
-        settings = mkConfig server1 nodes;
-      };
+      imports = [ (mkRosterTemplate server1) commonServer ];
+      headcounter.services.mongooseim.settings = mkConfig server1 nodes;
     };
 
     server2 = { config, nodes, pkgs, ... }: {
-      imports = [ ../../common.nix (mkRosterTemplate server2) storageConfig ];
-      virtualisation.memorySize = 2048;
-      headcounter.services.epmd.addresses = [ "0.0.0.0" ];
-      headcounter.services.mongooseim = {
-        enable = true;
-        nodeIp = null;
-        inherit cookie;
-        settings = mkConfig server2 nodes;
-      };
+      imports = [ (mkRosterTemplate server2) commonServer ];
+      headcounter.services.mongooseim.settings = mkConfig server2 nodes;
     };
 
     client = {
