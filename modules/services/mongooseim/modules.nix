@@ -149,6 +149,7 @@ let
     amp = mkModule "Advanced Message Processing" 79;
     blocking = mkModule "Blocking Command" 191;
     bosh = mkModule "XMPP over Bosh service (HTTP Binding)" null;
+    caps = mkModule "Request and cache Entity Capabilities" 115;
     carboncopy = mkModule "Carbon Copies" 280;
     csi = mkModule "Client State Indication" 352;
     commands = mkModule "General purpose commands" null;
