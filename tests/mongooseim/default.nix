@@ -429,8 +429,7 @@ in {
       '{} +'
     );
 
-    my $clientip = $server2->succeed('getent hosts client | cut -d" " -f1');
-    chomp $clientip;
+    my $clientip = '${nodes.client.config.networking.primaryIPAddress}';
     $client->succeed("sed -i -e 's/127\\.0\\.0\\.1/$clientip/' ".
                      "tests/sic_SUITE.erl");
 
