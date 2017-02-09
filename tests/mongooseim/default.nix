@@ -288,6 +288,14 @@ let
         options.shaper.atom = "s2s_shaper";
         options.max_stanza_size = 131072;
       }
+      { port = 8888;
+        module = "ejabberd_service";
+        options = {
+          access.atom = "all";
+          shaper_rule.atom = "fast";
+          password = "secret";
+        };
+      }
     ];
 
     modules = {
