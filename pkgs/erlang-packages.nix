@@ -29,6 +29,8 @@ let
     escalus.postPatch = ''
       sed -i -e 's/^\(-define(WAIT_FOR_STANZA_TIMEOUT, *\)[0-9]\+/\110000/' \
         src/escalus_client.erl
+      sed -i -e 's/^\(-define(TIMEOUT, *\)[0-9]\+/\110000/' \
+        src/escalus_connection.erl
     '';
     exml.buildInputs = [ pkgs.expat ];
     exometer.EXOMETER_PACKAGES = "(minimal)";
