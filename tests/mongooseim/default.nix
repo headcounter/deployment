@@ -312,6 +312,7 @@ let
       mam_meta.options.backend.atom = "odbc";
       muc_commands.enable = true;
       muc_light_commands.enable = true;
+      muc_log.enable = true;
     };
 
     odbc = {

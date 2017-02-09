@@ -322,9 +322,6 @@ in {
           muc.options.host = "muc.${toplevelConfig.networking.hostName}";
           muc.options.access.atom = "muc";
           muc.options.access_create.atom = "muc_create";
-          muc_log.enable = true;
-          muc_log.options.outdir = "/tmp/muclogs";
-          muc_log.options.access_log.atom = "muc";
           offline.enable = true;
           privacy.enable = true;
           private.enable = true;
