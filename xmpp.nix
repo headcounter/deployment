@@ -155,13 +155,6 @@ in {
 
         shared_roster.enable = true;
 
-        pubsub.enable = true;
-        pubsub.options = {
-          access_createnode.atom = "pubsub_createnode";
-          last_item_cache = false;
-          plugins = [ "flat" "hometree" "pep" ];
-        };
-
         time.enable = true;
         time.options.access.atom = public;
 
@@ -197,6 +190,15 @@ in {
           access.atom = "public";
           versioning = true;
           store_current_id = false;
+        };
+
+        pubsub.enable = true;
+        pubsub.options = {
+          access_create.atom = "pubsub_createnode";
+          max_items_node = 100;
+          plugins = map (plugin: { binary = plugin; }) [
+            "flat" "hometree" "pep"
+          ];
         };
 
         privacy.enable = true;
