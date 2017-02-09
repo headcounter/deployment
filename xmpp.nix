@@ -141,7 +141,6 @@ in {
         mod_announce.enable = true;
         mod_announce.options.access.atom = "announce";
 
-        caps.enable = true;
         configure.enable = true;
 
         irc.enable = true;
@@ -205,6 +204,8 @@ in {
         privacy.options.access.atom = "public";
 
         admin_extra.enable = true;
+
+        caps.enable = true;
 
         disco.enable = true;
         disco.options = {
