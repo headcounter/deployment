@@ -194,13 +194,16 @@ let
     ]}.
   '';
 
-  mkConfig = serverName: let
+  mkConfig = serverName: nodes: let
     certs = import ../../ssl/snakeoil.nix serverName;
     privKeyFile = pkgs.writeText "priv.pem" certs.privateKey;
     pubKeyFile = pkgs.writeText "pub.pem" certs.publicKey;
   in {
     hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
     s2s.filterDefaultPolicy = "allow";
+    s2s.outgoing.staticHosts = lib.mapAttrs (lib.const (eval: {
+      ipAddress = eval.config.networking.primaryIPAddress;
+    })) nodes;
 
     listeners = [ # FIXME: Unique port/module and maybe loaOf?
       { port = 5222;
@@ -373,7 +376,7 @@ in {
   name = "mongooseim";
 
   nodes = {
-    server1 = { config, pkgs, ... }: {
+    server1 = { config, nodes, pkgs, ... }: {
       imports = [ ../../common.nix (mkRosterTemplate server1) storageConfig ];
       virtualisation.memorySize = 2048;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
@@ -381,11 +384,11 @@ in {
         enable = true;
         nodeIp = null;
         inherit cookie;
-        settings = mkConfig server1;
+        settings = mkConfig server1 nodes;
       };
     };
 
-    server2 = { config, pkgs, ... }: {
+    server2 = { config, nodes, pkgs, ... }: {
       imports = [ ../../common.nix (mkRosterTemplate server2) storageConfig ];
       virtualisation.memorySize = 2048;
       headcounter.services.epmd.addresses = [ "0.0.0.0" ];
@@ -393,7 +396,7 @@ in {
         enable = true;
         nodeIp = null;
         inherit cookie;
-        settings = mkConfig server2;
+        settings = mkConfig server2 nodes;
       };
     };
 
