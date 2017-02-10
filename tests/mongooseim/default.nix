@@ -194,163 +194,165 @@ let
     ]}.
   '';
 
-  mkConfig = serverName: nodes: let
+  mkConfig = serverName: let
     certs = import ../../ssl/snakeoil.nix serverName;
     privKeyFile = pkgs.writeText "priv.pem" certs.privateKey;
     pubKeyFile = pkgs.writeText "pub.pem" certs.publicKey;
-  in {
-    hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
-    s2s.filterDefaultPolicy = "allow";
-    s2s.outgoing.staticHosts = lib.mapAttrs (lib.const (eval: {
-      ipAddress = eval.config.networking.primaryIPAddress;
-    })) nodes;
-    s2s.certfile = toString privKeyFile;
+  in { nodes, ... }: {
+    headcounter.services.mongooseim.settings = {
+      hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
+      s2s.filterDefaultPolicy = "allow";
+      s2s.outgoing.staticHosts = lib.mapAttrs (lib.const (eval: {
+        ipAddress = eval.config.networking.primaryIPAddress;
+      })) nodes;
+      s2s.certfile = toString privKeyFile;
 
-    listeners = [ # FIXME: Unique port/module and maybe loaOf?
-      { port = 5222;
-        module = "ejabberd_c2s";
-        options.access.atom = "c2s";
-        options.shaper.atom = "c2s_shaper";
-        options.max_stanza_size = 65536;
-      }
-      { port = 5280;
-        http.enable = true;
-        http.modules = [
-          { path = "/http-bind";
-            handler = "mod_bosh";
-          }
-          { path = "/ws-xmpp";
-            handler = "mod_websockets";
-            options.ejabberd_service = {
-              access.atom = "all";
-              shaper_rule.atom = "fast";
-              password = "secret";
-            };
-          }
-        ];
-        options.num_acceptors = 10;
-        options.max_connections = 1024;
-      }
-      { port = 5285;
-        http.enable = true;
-        http.modules = [
-          { path = "/http-bind";
-            handler = "mod_bosh";
-          }
-          { path = "/ws-xmpp";
-            handler = "mod_websockets";
-          }
-        ];
-        options.num_acceptors = 10;
-        options.max_connections = 1024;
-        options.ssl.certfile = toString pubKeyFile;
-        options.ssl.keyfile = toString privKeyFile;
-        options.ssl.password = "";
-      }
-      { port = 8088;
-        http.enable = true;
-        http.modules = lib.singleton {
-          path = "/api";
-          handler = "mongoose_api_admin";
-        };
-        options.num_acceptors = 10;
-        options.max_connections = 1024;
-      }
-      { port = 8089;
-        http.enable = true;
-        http.modules = [
-          { path = "/api/sse";
-            handler = "lasse_handler";
-            options.mongoose_client_api_sse.flag = true;
-          }
-          { path = "/api/messages/[:with]";
-            handler = "mongoose_client_api_messages";
-          }
-          { path = "/api/rooms/[:id]";
-            handler = "mongoose_client_api_rooms";
-          }
-          { path = "/api/rooms/:id/users/[:user]";
-            handler = "mongoose_client_api_rooms_users";
-          }
-          { path = "/api/rooms/[:id]/messages";
-            handler = "mongoose_client_api_rooms_messages";
-          }
-        ];
-        options.num_acceptors = 10;
-        options.max_connections = 1024;
-        options.compress = true;
-        options.ssl.certfile = toString pubKeyFile;
-        options.ssl.keyfile = toString privKeyFile;
-        options.ssl.password = "";
-      }
-      { port = 5269;
-        module = "ejabberd_s2s_in";
-        options.shaper.atom = "s2s_shaper";
-        options.max_stanza_size = 131072;
-      }
-      { port = 8888;
-        module = "ejabberd_service";
-        options = {
-          access.atom = "all";
-          shaper_rule.atom = "fast";
-          password = "secret";
-        };
-      }
-    ];
+      listeners = [ # FIXME: Unique port/module and maybe loaOf?
+        { port = 5222;
+          module = "ejabberd_c2s";
+          options.access.atom = "c2s";
+          options.shaper.atom = "c2s_shaper";
+          options.max_stanza_size = 65536;
+        }
+        { port = 5280;
+          http.enable = true;
+          http.modules = [
+            { path = "/http-bind";
+              handler = "mod_bosh";
+            }
+            { path = "/ws-xmpp";
+              handler = "mod_websockets";
+              options.ejabberd_service = {
+                access.atom = "all";
+                shaper_rule.atom = "fast";
+                password = "secret";
+              };
+            }
+          ];
+          options.num_acceptors = 10;
+          options.max_connections = 1024;
+        }
+        { port = 5285;
+          http.enable = true;
+          http.modules = [
+            { path = "/http-bind";
+              handler = "mod_bosh";
+            }
+            { path = "/ws-xmpp";
+              handler = "mod_websockets";
+            }
+          ];
+          options.num_acceptors = 10;
+          options.max_connections = 1024;
+          options.ssl.certfile = toString pubKeyFile;
+          options.ssl.keyfile = toString privKeyFile;
+          options.ssl.password = "";
+        }
+        { port = 8088;
+          http.enable = true;
+          http.modules = lib.singleton {
+            path = "/api";
+            handler = "mongoose_api_admin";
+          };
+          options.num_acceptors = 10;
+          options.max_connections = 1024;
+        }
+        { port = 8089;
+          http.enable = true;
+          http.modules = [
+            { path = "/api/sse";
+              handler = "lasse_handler";
+              options.mongoose_client_api_sse.flag = true;
+            }
+            { path = "/api/messages/[:with]";
+              handler = "mongoose_client_api_messages";
+            }
+            { path = "/api/rooms/[:id]";
+              handler = "mongoose_client_api_rooms";
+            }
+            { path = "/api/rooms/:id/users/[:user]";
+              handler = "mongoose_client_api_rooms_users";
+            }
+            { path = "/api/rooms/[:id]/messages";
+              handler = "mongoose_client_api_rooms_messages";
+            }
+          ];
+          options.num_acceptors = 10;
+          options.max_connections = 1024;
+          options.compress = true;
+          options.ssl.certfile = toString pubKeyFile;
+          options.ssl.keyfile = toString privKeyFile;
+          options.ssl.password = "";
+        }
+        { port = 5269;
+          module = "ejabberd_s2s_in";
+          options.shaper.atom = "s2s_shaper";
+          options.max_stanza_size = 131072;
+        }
+        { port = 8888;
+          module = "ejabberd_service";
+          options = {
+            access.atom = "all";
+            shaper_rule.atom = "fast";
+            password = "secret";
+          };
+        }
+      ];
 
-    modules = {
-      amp.enable = true;
-      bosh.enable = true;
-      commands.enable = true;
-      csi.enable = false;
-      muc.enable = false;
-      muc_commands.enable = true;
-      muc_light_commands.enable = true;
-      offline.options.access_max_user_messages = {
-        atom = "max_user_offline_messages";
+      modules = {
+        amp.enable = true;
+        bosh.enable = true;
+        commands.enable = true;
+        csi.enable = false;
+        muc.enable = false;
+        muc_commands.enable = true;
+        muc_light_commands.enable = true;
+        offline.options.access_max_user_messages = {
+          atom = "max_user_offline_messages";
+        };
+        pubsub.enable = false;
+        register.options.access.atom = "register";
+        register.options.ip_access = [];
+        register.options.registration_watchers = [ "admin@${serverName}" ];
+        register.options.welcome_message.tuple = [ "" ];
       };
-      pubsub.enable = false;
-      register.options.access.atom = "register";
-      register.options.ip_access = [];
-      register.options.registration_watchers = [ "admin@${serverName}" ];
-      register.options.welcome_message.tuple = [ "" ];
+
+      odbc = {
+        type = "pgsql";
+        password = "test";
+      };
+
+      extraConfig = ''
+        {host_config, "anonymous.${serverName}", [
+          {auth_method, [anonymous]},
+          {allow_multiple_connections, true},
+          {anonymous_protocol, both}
+        ]}.
+
+        {shaper, normal, {maxrate, 1000}}.
+        {shaper, fast, {maxrate, 50000}}.
+        {max_fsm_queue, 1000}.
+
+        {acl, local, {user_regexp, ""}}.
+
+        {access, max_user_sessions, [{10, all}]}.
+        {access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
+        {access, local, [{allow, local}]}.
+        {access, c2s, [{deny, blocked},
+                       {allow, all}]}.
+        {access, c2s_shaper, [{none, admin},
+                              {normal, all}]}.
+        {access, s2s_shaper, [{fast, all}]}.
+        {access, muc_admin, [{allow, admin}]}.
+        {access, muc_create, [{allow, all}]}.
+        {access, muc, [{allow, all}]}.
+
+        {access, register, [{allow, all}]}.
+        {registration_timeout, infinity}.
+
+        {language, "en"}.
+      '';
     };
-
-    odbc = {
-      type = "pgsql";
-      password = "test";
-    };
-
-    extraConfig = ''
-      {host_config, "anonymous.${serverName}", [
-        {auth_method, [anonymous]},
-        {allow_multiple_connections, true},
-        {anonymous_protocol, both}
-      ]}.
-
-      {shaper, normal, {maxrate, 1000}}.
-      {shaper, fast, {maxrate, 50000}}.
-      {max_fsm_queue, 1000}.
-
-      {acl, local, {user_regexp, ""}}.
-
-      {access, max_user_sessions, [{10, all}]}.
-      {access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
-      {access, local, [{allow, local}]}.
-      {access, c2s, [{deny, blocked},
-                     {allow, all}]}.
-      {access, c2s_shaper, [{none, admin},
-                            {normal, all}]}.
-      {access, s2s_shaper, [{fast, all}]}.
-      {access, muc_admin, [{allow, admin}]}.
-      {access, muc_create, [{allow, all}]}.
-      {access, muc, [{allow, all}]}.
-
-      {access, register, [{allow, all}]}.
-      {registration_timeout, infinity}.
-
-      {language, "en"}.
-    '';
   };
 
   storageConfig = {
@@ -404,13 +406,11 @@ in {
 
   nodes = {
     server1 = { config, nodes, pkgs, ... }: {
-      imports = [ (mkRosterTemplate server1) commonServer ];
-      headcounter.services.mongooseim.settings = mkConfig server1 nodes;
+      imports = [ (mkRosterTemplate server1) commonServer (mkConfig server1) ];
     };
 
     server2 = { config, nodes, pkgs, ... }: {
-      imports = [ (mkRosterTemplate server2) commonServer ];
-      headcounter.services.mongooseim.settings = mkConfig server2 nodes;
+      imports = [ (mkRosterTemplate server2) commonServer (mkConfig server2) ];
     };
 
     client = {
