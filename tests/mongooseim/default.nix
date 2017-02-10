@@ -300,16 +300,12 @@ let
       ];
 
       modules = {
-        amp.enable = true;
         bosh.enable = true;
         commands.enable = true;
         csi.enable = false;
         muc.enable = false;
         muc_commands.enable = true;
         muc_light_commands.enable = true;
-        offline.options.access_max_user_messages = {
-          atom = "max_user_offline_messages";
-        };
         pubsub.enable = false;
         register.options.access.atom = "register";
         register.options.ip_access = [];
@@ -407,10 +403,21 @@ in {
   nodes = {
     server1 = { config, nodes, pkgs, ... }: {
       imports = [ (mkRosterTemplate server1) commonServer (mkConfig server1) ];
+      headcounter.services.mongooseim.settings.modules = {
+        amp.enable = true;
+        offline.enable = true;
+        offline.options.access_max_user_messages = {
+          atom = "max_user_offline_messages";
+        };
+      };
     };
 
     server2 = { config, nodes, pkgs, ... }: {
       imports = [ (mkRosterTemplate server2) commonServer (mkConfig server2) ];
+      headcounter.services.mongooseim.settings.modules = {
+        amp.enable = false;
+        offline.enable = false;
+      };
     };
 
     client = {
