@@ -198,6 +198,8 @@ let
     certs = import ../../ssl/snakeoil.nix serverName;
     privKeyFile = pkgs.writeText "priv.pem" certs.privateKey;
     pubKeyFile = pkgs.writeText "pub.pem" certs.publicKey;
+    combinedData = "${certs.publicKey}\n${certs.privateKey}";
+    combinedKeyFile = pkgs.writeText "pub-priv.pem" combinedData;
   in { nodes, ... }: {
     headcounter.services.mongooseim.settings = {
       hosts = [ serverName "${serverName}.bis" "anonymous.${serverName}" ];
@@ -207,7 +209,7 @@ let
       })) nodes // {
         "michał".ipAddress = nodes.server2.config.networking.primaryIPAddress;
       };
-      s2s.certfile = toString privKeyFile;
+      s2s.certfile = toString combinedKeyFile;
       s2s.useStartTLS = "optional";
 
       listeners = [ # FIXME: Unique port/module and maybe loaOf?
