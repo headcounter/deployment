@@ -302,17 +302,18 @@ let
       amp.enable = true;
       bosh.enable = true;
       commands.enable = true;
+      csi.enable = false;
+      muc.enable = false;
+      muc_commands.enable = true;
+      muc_light_commands.enable = true;
       offline.options.access_max_user_messages = {
         atom = "max_user_offline_messages";
       };
-      register.options.ip_access = [];
+      pubsub.enable = false;
       register.options.access.atom = "register";
+      register.options.ip_access = [];
       register.options.registration_watchers = [ "admin@${serverName}" ];
-      mam_meta.enable = true;
-      mam_meta.options.backend.atom = "odbc";
-      muc_commands.enable = true;
-      muc_light_commands.enable = true;
-      muc_log.enable = true;
+      register.options.welcome_message.tuple = [ "" ];
     };
 
     odbc = {
