@@ -208,6 +208,7 @@ let
         "michał".ipAddress = nodes.server2.config.networking.primaryIPAddress;
       };
       s2s.certfile = toString privKeyFile;
+      s2s.useStartTLS = "optional";
 
       listeners = [ # FIXME: Unique port/module and maybe loaOf?
         { port = 5222;
