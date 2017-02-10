@@ -205,19 +205,28 @@ in {
       '';
     };
 
-    sessionBackend = mkOption {
-      type = types.str;
-      # XXX: erlexpr!
-      default = "{mnesia, []}";
-      example = ''
-        {redis, [
-          {pool_size, 3},
-          {worker_config, [{host, "localhost"}, {port, 6379}]}
-        ]}
-      '';
-      description = ''
-        Erlang term specifying the preferred session backend.
-      '';
+    sessionManagement = {
+      backend = mkOption {
+        type = types.enum [ "mnesia" "redis" ];
+        default = "mnesia";
+        example = "redis";
+        description = ''
+          Session management backend to use.
+        '';
+      };
+
+      options = mkOption {
+        type = hclib.types.erlPropList;
+        default = {};
+        example.pool_size = 3;
+        example.worker_config = {
+          host = "localhost";
+          port = 6379;
+        };
+        description = ''
+          Options for the session management <option>backend</option>.
+        '';
+      };
     };
 
     auth = {
@@ -434,7 +443,9 @@ in {
     ${s2sOptions}
 
     % session backend
-    {sm_backend, ${config.sessionBackend}}.
+    {sm_backend, {${
+      erlAtom config.sessionManagement.backend
+    }, ${config.sessionManagement.options}}}.
 
     % authentication
     {auth_method, ${erlAtom config.auth.method}}.
