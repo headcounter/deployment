@@ -18,7 +18,7 @@ in rec {
      then "'${escape ["'"] val}'"
      else val;
 
-  erlString = val: "\"${escape ["\""] (toString val)}\"";
+  erlString = val: "\"${import ./escape-string.nix (toString val)}\"";
   erlBinary = val: "<<${erlString val}>>";
   erlInt = toString;
   erlBool = val: erlAtom (if val then "true" else "false");
