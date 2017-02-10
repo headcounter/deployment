@@ -204,7 +204,9 @@ let
       s2s.filterDefaultPolicy = "allow";
       s2s.outgoing.staticHosts = lib.mapAttrs (lib.const (eval: {
         ipAddress = eval.config.networking.primaryIPAddress;
-      })) nodes;
+      })) nodes // {
+        "michał".ipAddress = nodes.server2.config.networking.primaryIPAddress;
+      };
       s2s.certfile = toString privKeyFile;
 
       listeners = [ # FIXME: Unique port/module and maybe loaOf?
