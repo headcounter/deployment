@@ -461,9 +461,6 @@ in {
     $client->succeed("sed -i -e 's/127\\.0\\.0\\.1/$clientip/' ".
                      "tests/sic_SUITE.erl");
 
-    $client->succeed('sed -i -e \'/wait_for_stanza/s/10000/&0/\' '.
-                     'tests/s2s_SUITE.erl');
-
     $client->succeed('sed -i -e \'s/localhost/client/g\' '.
                      'tests/mod_http_notification_SUITE.erl');
 

@@ -14,6 +14,10 @@ buildErlang rec {
   postPatch = ''
     # Remove tests for metrics_api
     sed -i -e '/^ *{ *suites *,[^,]*, *metrics_api_SUITE *} *\. *$/d' *.spec
+
+    # Increase timeouts for a few escalus wait_for_stanza calls:
+    sed -i -e '/wait_for_stanza/s/10000/&0/' tests/s2s_SUITE.erl
+    sed -i -e '/wait_for_stanza/s/5000/&0/' tests/amp_SUITE.erl
   '';
 
   postBuild = ''
