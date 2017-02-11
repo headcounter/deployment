@@ -345,7 +345,7 @@ let
                               {normal, all}]}.
         {access, s2s_shaper, [{fast, all}]}.
         {access, muc_admin, [{allow, admin}]}.
-        {access, muc_create, [{allow, all}]}.
+        {access, muc_create, [{allow, local}]}.
         {access, muc, [{allow, all}]}.
 
         {access, register, [{allow, all}]}.
