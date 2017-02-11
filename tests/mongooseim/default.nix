@@ -448,21 +448,21 @@ in {
     $client->succeed('cp "${mongooseimTests}/etc/default.spec" .');
     $client->succeed('cp "${escalusConfig}" test.config');
 
-    $client->succeed(
-      'find tests -mindepth 1 -maxdepth 1 '.
-      '-path tests/mod_http_notification_SUITE.erl -o '.
-      '-name \'*.erl\' -exec sed -i '.
-      '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
-      '-e \'s/localhost/${server1}/g\' '.
-      '{} +'
-    );
+    $client->succeed('sed -i -e \'s/localhost/client/g\' '.
+                     'tests/mod_http_notification_SUITE.erl');
+
+    $client->succeed('sed -i -e \'s,http://localhost,http://client,g\' '.
+                     'tests/muc_SUITE.erl');
+
+    $client->succeed('sed -i '.
+                     '-e \'s/mongooseim@localhost/${nodeName1}/g\' '.
+                     '-e \'s/localhost/${server1}/g\' '.
+                     'tests/*.erl');
 
     my $clientip = '${nodes.client.config.networking.primaryIPAddress}';
     $client->succeed("sed -i -e 's/127\\.0\\.0\\.1/$clientip/' ".
                      "tests/sic_SUITE.erl");
 
-    $client->succeed('sed -i -e \'s/localhost/client/g\' '.
-                     'tests/mod_http_notification_SUITE.erl');
 
     $client->succeed(
       'sed -i -e \'/^ *TemplatePath *=/s!=.*!= "${
