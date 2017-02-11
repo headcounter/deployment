@@ -1,4 +1,4 @@
-{ buildErlang, fetchFromGitHub, erlangPackages, mongooseim }:
+{ lib, buildErlang, fetchFromGitHub, erlangPackages, mongooseim }:
 
 buildErlang rec {
   name = "ejabberd_tests";
@@ -12,8 +12,15 @@ buildErlang rec {
   ];
 
   postPatch = ''
-    # Remove tests for metrics_api
-    sed -i -e '/^ *{ *suites *,[^,]*, *metrics_api_SUITE *} *\. *$/d' *.spec
+    # Remove tests that require changing cluster settings or modifying
+    # configuration files.
+    ${lib.concatMapStrings (suite: ''
+      sed -i -e '/^ *{ *suites *,[^,]*, *'${
+        lib.escapeShellArg "${suite}_SUITE"
+      }' *} *\. *$/d' *.spec
+    '') [
+      "cluster_commands" "conf-reload" "connect" "metrics_api" "users_api"
+    ]}
 
     # Increase timeouts for a few escalus wait_for_stanza calls:
     sed -i -e '/wait_for_stanza/s/10000/&0/' tests/s2s_SUITE.erl
