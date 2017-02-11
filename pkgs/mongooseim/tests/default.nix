@@ -11,6 +11,11 @@ buildErlang rec {
     ./ctl-path.patch ./dont-tamper-with-config.patch ./no-fed-node.patch
   ];
 
+  postPatch = ''
+    # Remove tests for metrics_api
+    sed -i -e '/^ *{ *suites *,[^,]*, *metrics_api_SUITE *} *\. *$/d' *.spec
+  '';
+
   postBuild = ''
     erlc -o ebin run_common_test.erl
   '';
