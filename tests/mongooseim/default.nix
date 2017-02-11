@@ -522,9 +522,8 @@ in {
       my $skip = $stats[2] + $stats[3];
       $client->log("$stats[0] out of $total tests succeeded ($skip skipped)");
 
-      if ($rval != 0 || $stats[0] < $total) {
-        $client->log("$stats[1] tests failed (test runner ".
-                     "exited with exit code $rval)");
+      if ($stats[1] > 0 || $stats[0] < $total) {
+        $client->log("$stats[1] tests failed.");
         open TOUCH_FAILED, ">>$out/nix-support/failed";
         close TOUCH_FAILED;
       }
