@@ -1,20 +1,56 @@
-{ fqdn, ... }:
+vhost:
 
-let
-  inherit (import ../../../ssl/snakeoil.nix fqdn) rootCAFile;
-  pokeOpts = "--cafile=${rootCAFile} --delay=0";
+{
+  name = "vhost-${vhost}-xmppoke";
 
-  resultSql = "SELECT sr.total_score, sr.grade, tr.type"
-            + "  FROM srv_results sr, test_results tr"
-            + "  WHERE sr.test_id = tr.test_id";
-  getResult = "echo '${resultSql}' | psql -t -Pformat=unaligned -F: xmppoke";
+  nodes.client = { pkgs, lib, ... }: let
+    patchedPoke = lib.overrideDerivation pkgs.headcounter.xmppoke (o: {
+      postPatch = (o.postPatch or "") + ''
+        sed -ri -e 's/(db_host *= *)[^,]*/\1nil/' \
+                -e '/Connecting to database/d' \
+                poke.lua
+      '';
+    });
+  in {
+    services.postgresql = {
+      enable = true;
+      package = pkgs.postgresql;
+      initialScript = pkgs.writeText "init.sql" ''
+        CREATE ROLE xmppoke WITH LOGIN;
+        CREATE DATABASE xmppoke OWNER xmppoke;
+        \c xmppoke
+        BEGIN;
+        \i ${patchedPoke}/share/xmppoke/schema.pg.sql
+        COMMIT;
+      '';
+      authentication = ''
+        local all xmppoke trust
+      '';
+    };
 
-in {
-  testScript = ''
+    environment.systemPackages = [
+      patchedPoke pkgs.headcounter.xmppokeReport
+    ];
+  };
+
+  testScript = { nodes, ... }: let
+    inherit (nodes.ultron.config.headcounter.vhosts.${vhost}) fqdn;
+    inherit (import ../../../ssl/snakeoil.nix fqdn) rootCAFile;
+    pokeOpts = "--cafile=${rootCAFile} --delay=0";
+
+    resultSql = "SELECT sr.total_score, sr.grade, tr.type"
+              + "  FROM srv_results sr, test_results tr"
+              + "  WHERE sr.test_id = tr.test_id";
+    getResult = "echo '${resultSql}' | psql -t -Pformat=unaligned -F: xmppoke";
+  in ''
+    $client->waitForUnit("network.target");
+
     $client->nest("check availability", sub {
       $client->succeed("ping -c1 ${fqdn} >&2");
       $client->succeed("nc -z ${fqdn} 5222");
     });
+
+    $client->waitForUnit("postgresql.service");
 
     subtest "xmppoke", sub {
       $client->succeed("xmppoke ${pokeOpts} --mode=client '${fqdn}' >&2");
