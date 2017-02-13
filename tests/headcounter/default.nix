@@ -74,7 +74,7 @@ let
     nodes = nodes attrs;
     testScript = { nodes, ... }@testAttrs: with lib; let
       inherit (nodes.ultron.config.headcounter) vhosts;
-      perVhost = import ./per-vhost.nix (getAttr vhost vhosts);
+      perVhost = import ./per-vhost/xmppoke.nix (getAttr vhost vhosts);
       vhAttrs = if isFunction perVhost then perVhost testAttrs else perVhost;
     in ''
       my $out = $ENV{'out'};
