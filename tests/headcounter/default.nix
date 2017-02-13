@@ -9,7 +9,7 @@ let
     });
   in {
     ultron = { config, lib, ... }: with lib; {
-      imports = [ ../../common.nix ../../xmpp.nix ../../domains.nix ];
+      imports = [ ../../xmpp.nix ../../domains.nix ];
 
       headcounter.useSnakeOil = true;
       users.extraUsers.mongoose.extraGroups = [ "keys" ];
@@ -23,8 +23,6 @@ let
     client = { nodes, pkgs, config, lib, ... }: with lib; let
       inherit (nodes.ultron.config.headcounter) vhosts;
     in {
-      imports = [ ../../common.nix ];
-
       networking.extraHosts = let
         mkHostEntry = _: vhost: lib.optionalString (vhost.fqdn != null) ''
           ${vhost.ipv4} ${vhost.fqdn}

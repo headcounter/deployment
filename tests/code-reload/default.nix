@@ -47,7 +47,6 @@ let
 
   nodes = {
     server = {
-      imports = [ ../../common.nix ];
       networking.extraHosts = "127.0.0.1 server";
       headcounter.services.mongooseim = {
         enable = true;
@@ -65,7 +64,6 @@ let
     };
 
     client = { pkgs, ... }: {
-      imports = [ ../../common.nix ];
       networking.extraHosts = "127.0.0.1 client";
       environment.systemPackages = [ pkgs.erlang ];
       systemd.services.testclient = {
@@ -104,7 +102,8 @@ let
 
     newNodes = nodes // {
       server = {
-        imports = [ nodes.server ] ++ configurations;
+        # XXX: Shouldn't need to include common.nix again!
+        imports = [ ../../common.nix nodes.server ] ++ configurations;
       };
     };
   in (buildVirtualNetwork newNodes).server.config.system.build.toplevel;

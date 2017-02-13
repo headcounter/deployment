@@ -387,7 +387,7 @@ let
   inherit (import ./lib.nix { inherit pkgs lib; }) runInCtl checkListeners;
 
   commonServer = { pkgs, lib, ... }: {
-    imports = [ ../../common.nix storageConfig ];
+    imports = [ storageConfig ];
 
     virtualisation.memorySize = 2048;
 
@@ -426,7 +426,7 @@ in {
     };
 
     client = {
-      imports = [ ../../common.nix (mkRosterTemplate server1) ];
+      imports = [ (mkRosterTemplate server1) ];
       virtualisation.memorySize = 1024;
       headcounter.programs.mongooseimctl = {
         enable = true;

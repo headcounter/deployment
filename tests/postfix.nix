@@ -3,11 +3,9 @@ import ./make-test.nix {
 
   nodes = {
     server = {
-      imports = [ ../common.nix ];
       headcounter.services.postfix.enable = true;
     };
     client = { pkgs, ... }: {
-      imports = [ ../common.nix ];
       environment.systemPackages = [ pkgs.swaks ];
     };
   };

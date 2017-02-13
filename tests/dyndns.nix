@@ -55,7 +55,6 @@ in import ./make-test.nix ({ lib, ... }: {
   nodes = {
     nameserver1 = {
       imports = [
-        ../common.nix
         (mkNetConfig 1 0 1)
         (mkSlaveConfig "192.168.0.2")
       ];
@@ -63,14 +62,13 @@ in import ./make-test.nix ({ lib, ... }: {
 
     nameserver2 = {
       imports = [
-        ../common.nix
         (mkNetConfig 1 1 1)
         (mkSlaveConfig "192.168.1.2")
       ];
     };
 
     webserver = {
-      imports = [ ../common.nix (mkNetConfig 1 0 2) (mkNetConfig 2 1 2) ];
+      imports = [ (mkNetConfig 1 0 2) (mkNetConfig 2 1 2) ];
 
       headcounter.services.dyndns.master = {
         enable = true;
@@ -88,7 +86,7 @@ in import ./make-test.nix ({ lib, ... }: {
     };
 
     client = { lib, ... }: {
-      imports = [ ../common.nix (mkNetConfig 1 0 10) (mkNetConfig 2 1 10) ];
+      imports = [ (mkNetConfig 1 0 10) (mkNetConfig 2 1 10) ];
       networking.nameservers = lib.mkForce [
         "192.168.0.1" "fc00::1"
         "192.168.1.1" "fc01::1"
