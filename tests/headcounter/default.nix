@@ -39,7 +39,9 @@ let
     '';
   };
 
-  makeHeadcounterTest = expr: import ../make-test.nix ({ lib, ... }: let
+  makeHeadcounterTest = maybeExpr: import ../make-test.nix ({ lib, ... }: let
+    isDirect = builtins.isFunction maybeExpr || builtins.isAttrs maybeExpr;
+    expr = if isDirect then maybeExpr else import maybeExpr;
     attrs = if builtins.isFunction expr then expr passthru else expr;
   in {
     name = "headcounter-${attrs.name}";
@@ -71,5 +73,5 @@ in {
     xmppoke = makeHeadcounterTest (import ./per-vhost/xmppoke.nix vhost);
   });
 
-  listeners = makeHeadcounterTest (import ./listeners.nix);
+  listeners = makeHeadcounterTest ./listeners.nix;
 }
