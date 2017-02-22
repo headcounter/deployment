@@ -71,6 +71,7 @@ let
 in {
   vhosts = lib.genAttrs testedVHosts (vhost: {
     xmppoke = makeHeadcounterTest (import ./per-vhost/xmppoke.nix vhost);
+    escalus = makeHeadcounterTest (import ./per-vhost/escalus vhost);
   });
 
   listeners = makeHeadcounterTest ./listeners.nix;
