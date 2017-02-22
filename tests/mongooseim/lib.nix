@@ -84,4 +84,64 @@
               erlang:error(unacceptable)
     end.
   '';
+
+  # Returns a shell script fragment for use in testScript during VM tests, which
+  # runs an Erlang Common Test runner that is passed as a list of command line
+  # arguments (which should not be escaped already) and it makes sure the VM
+  # test derivation doesn't fail.
+  #
+  # The reason why we don't want it to fail is because we are creating
+  # $out/nix-support/failed, which causes Hydra to mark the job as failed but we
+  # still get an output (which in this case is the HTML report of the CT run).
+  #
+  # After the runner command has executed the report is expected to be in
+  # /tmp/ct_report (/tmp is the pwd, so a relative "ct_report" should suffice).
+  runCommonTests = runnerCmdline: let
+    runner = lib.concatMapStringsSep " "lib.escapeShellArg runnerCmdline;
+  in ''
+    my $testCmd = 'mkdir -p ct_report && ${lib.escape ["'"] runner} >&2';
+
+    $client->nest("running test suite: $testCmd", sub {
+      my $rval = ($client->execute_($testCmd))[0];
+      my $out = $ENV{'out'};
+
+      my $rawugly = $client->succeed(
+        'find ct_report -name \'*@*\' -print | '.
+        'xargs -I{} sh -c \'mv "{}" "$(echo "{}" | '.
+        'tr @ _)" && basename "{}"\' '
+      );
+      chomp $rawugly;
+      my @uglynames = split "\n", $rawugly;
+      foreach my $ugly (@uglynames) {
+        $client->succeed('find ct_report -type f -exec '.
+                         "sed -i -e 's|$ugly|".($ugly =~ s/\@/_/gr)."|' {} +");
+      }
+
+      $client->succeed('tar cf /tmp/xchg/ct_report.tar ct_report && sync');
+      system("tar xf vm-state-client/xchg/ct_report.tar -C '$out'");
+
+      open HYDRA_PRODUCTS, ">>$out/nix-support/hydra-build-products";
+      print HYDRA_PRODUCTS "report ct-tests $out/ct_report\n";
+      close HYDRA_PRODUCTS;
+
+      my @summaries = <$out/ct_report/ct_run.*/*.logs/run.*/suite.summary>;
+      my @stats;
+      foreach my $stat (@summaries) {
+        open STAT, $stat;
+        my @row = split(/\D+/, <STAT>);
+        $stats[$_] += $row[$_ + 1] for (0 .. ($#row - 1));
+        close STAT
+      }
+
+      my $total = $stats[0] + $stats[1];
+      my $skip = $stats[2] + $stats[3];
+      $client->log("$stats[0] out of $total tests succeeded ($skip skipped)");
+
+      if ($stats[1] > 0 || $stats[0] < $total) {
+        $client->log("$stats[1] tests failed.");
+        open TOUCH_FAILED, ">>$out/nix-support/failed";
+        close TOUCH_FAILED;
+      }
+    });
+  '';
 }
