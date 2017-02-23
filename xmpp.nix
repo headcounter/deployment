@@ -285,26 +285,14 @@ in {
         ultrafast = 500000;
       };
 
-      extraConfig = (hclib.getcred ["xmpp" "adminACLs"] {}) // {
-        acl.multi = [
-          { extuple = [
-              { atom = "local"; }
-              { tuple = [ { atom = "user_regexp"; } "" ]; }
-            ];
-          }
-          { extuple = [
-              { atom = "anonymous"; }
-              { tuple = [ { atom = "server"; } "anonymous.headcounter.org" ]; }
-            ];
-          }
-          { extuple = [
-              # Don't allow names that are too short.
-              { atom = "weirdnames"; }
-              { tuple = [ { atom = "user_regexp"; } "^..?$" ]; }
-            ];
-          }
-        ];
+      acl = {
+        patterns.local.user.regex = "";
+        patterns.anonymous.server = "anonymous.headcounter.org";
+        # Don't allow names that are too short.
+        patterns.weirdnames.user.regex = "^..?$";
+      };
 
+      extraConfig = (hclib.getcred ["xmpp" "adminACLs"] {}) // {
         access.multi = [
           { extuple = [
               { atom = "pubsub_createnode"; } [

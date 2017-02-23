@@ -298,6 +298,33 @@ in {
       };
     };
 
+    acl = {
+      patterns = mkOption {
+        type = types.attrsOf (types.submodule (import ./acl.nix));
+        default = {};
+        # XXX: Fix this properly after we have switched to NixOS 17.03 because
+        # we actually want this to be either a list of ACL submodules or simply
+        # an ACL submodule that gets merged with other lists rather than being
+        # transformed here.
+        apply = mapAttrs (const (val: if isList val then val else [ val ]));
+        example.local.user.regex = "";
+        example.shortnames.user.regex = "^..$";
+        example.alice.user = "alice";
+        example.alice.server = "example.org";
+        description = ''
+          An attribute set of names to pattern options.
+
+          A pattern option is any combination of the <option>user</option>,
+          <option>server</option> and <option>resource</option> options or
+          alternatively the <option>all</option> option which matches on
+          everything and overrides the former suboptions.
+
+          The names are arbitrary names which then can be referenced in
+          <option>rules</option>.
+        '';
+      };
+    };
+
     odbc = {
       type = mkOption {
         type = types.nullOr (types.enum [ "mysql" "pgsql" ]);
@@ -455,6 +482,13 @@ in {
 
     auth_method.atom = config.auth.method;
     auth_opts.__raw = config.auth.options; # FIXME: Don't use __raw!
+
+    acl.multi = let
+      mkMatch = name: pattern: {
+        extuple = [ { atom = name; } pattern.match ];
+      };
+      patterns = mapAttrsToList (name: map (mkMatch name)) config.acl.patterns;
+    in concatLists patterns;
 
     modules.__raw = "[\n  ${config.modules.generatedConfig}\n]"; # FIXME: Same!
   } // optionalAttrs (config.routeSubdomains != null) {

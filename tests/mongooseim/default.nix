@@ -329,6 +329,8 @@ let
         fast = 50000;
       };
 
+      acl.patterns.local.user.regex = "";
+
       extraConfig = {
         host_config.extuple = [
           "anonymous.${serverName}"
@@ -339,11 +341,6 @@ let
         ];
 
         max_fsm_queue = 1000;
-
-        acl.extuple = [
-          { atom = "local"; }
-          { tuple = [ { atom = "user_regexp"; } "" ]; }
-        ];
 
         access.multi = [
           { extuple = [
