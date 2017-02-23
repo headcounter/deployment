@@ -25,18 +25,23 @@ in rec {
   erlList = val: "[${concatStringsSep ", " (map toErl val)}]";
   erlTuple = val: "{${concatStringsSep ", " (map toErl val)}}";
 
-  erlPropList = val: let
+  erlPropListTerms = val: let
     mkExTuple = name: extension: erlTuple ([{ atom = name; }] ++ extension);
     mkFreeKey = key: value: "{${toErl key}, ${toErl value}}";
+    mkMulti = name: value:
+      if isAttrs value && value ? ${name} then mkTuple name value.${name}
+      else if isAttrs value then mkTuple name value
+      else singleton "{${erlAtom name}, ${toErl value}}";
     mkTuple = name: value:
-      if value ? flag
-      then (if value.flag then erlAtom name else null)
-      else if value ? extuple then mkExTuple name value.extuple
+      if value ? flag then optional value.flag (erlAtom name)
+      else if value ? multi then lib.concatMap (mkMulti name) value.multi
+      else if value ? extuple then singleton (mkExTuple name value.extuple)
       else if value ? freekey && value ? value
-           then mkFreeKey value.freekey value.value
-      else "{${erlAtom name}, ${toErl value}}";
-    tuples = remove null (mapAttrsToList mkTuple val);
-  in "[${concatStringsSep ", " tuples}]";
+           then singleton (mkFreeKey value.freekey value.value)
+      else singleton "{${erlAtom name}, ${toErl value}}";
+  in lib.concatLists (mapAttrsToList mkTuple val);
+
+  erlPropList = val: "[${concatStringsSep ", " (erlPropListTerms val)}]";
 
   toErl = val: let
     nonNix = attr:
