@@ -1,11 +1,11 @@
 lib:
 
 let
-  inherit (lib) stringToCharacters lowerChars upperChars numbers escape;
-  inherit (lib) head tail any all range remove mapAttrsToList concatStringsSep;
-  inherit (lib) isList isAttrs traceVal replaceStrings splitString last toInt;
-  inherit (lib) init take drop genList const length foldl' toLower zipLists;
-  inherit (lib) filter findFirst mkOptionType mergeOneOption;
+  inherit (lib) stringToCharacters lowerChars upperChars numbers escape toInt;
+  inherit (lib) head tail any all range mapAttrsToList concatStringsSep filter;
+  inherit (lib) isList isAttrs replaceStrings toLower last optional singleton;
+  inherit (lib) init take drop genList const length foldl' zipLists findFirst;
+  inherit (lib) mkOptionType mergeOneOption;
 
 in rec {
   erlAtom = val: let
@@ -27,10 +27,13 @@ in rec {
 
   erlPropList = val: let
     mkExTuple = name: extension: erlTuple ([{ atom = name; }] ++ extension);
+    mkFreeKey = key: value: "{${toErl key}, ${toErl value}}";
     mkTuple = name: value:
       if value ? flag
       then (if value.flag then erlAtom name else null)
       else if value ? extuple then mkExTuple name value.extuple
+      else if value ? freekey && value ? value
+           then mkFreeKey value.freekey value.value
       else "{${erlAtom name}, ${toErl value}}";
     tuples = remove null (mapAttrsToList mkTuple val);
   in "[${concatStringsSep ", " tuples}]";
