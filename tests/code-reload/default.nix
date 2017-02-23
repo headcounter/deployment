@@ -53,12 +53,29 @@ let
         settings = {
           hosts = [ "server" ];
           modules.register.options.ip_access = [];
-          extraConfig = ''
-            {access, c2s, [{allow, all}]}.
-            {access, local, [{allow, all}]}.
-            {access, register, [{allow, all}]}.
-            {registration_timeout, infinity}.
-          '';
+          extraConfig = {
+            access.multi = [
+              { extuple = [
+                  { atom = "c2s"; } [
+                    { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+                  ]
+                ];
+              }
+              { extuple = [
+                  { atom = "local"; } [
+                    { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+                  ]
+                ];
+              }
+              { extuple = [
+                  { atom = "register"; } [
+                    { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+                  ]
+                ];
+              }
+            ];
+            registration_timeout.atom = "infinity";
+          };
         };
       };
     };
@@ -79,9 +96,16 @@ let
   };
 
   newServerConfig = {
-    headcounter.services.mongooseim.settings.extraConfig = ''
-      {access, c2s, [{deny, all}]}.
-    '';
+    headcounter.services.mongooseim.settings.extraConfig = {
+      access.multi = [
+        { extuple = [
+            { atom = "c2s"; } [
+              { tuple = [ { atom = "deny"; } { atom = "all"; } ]; }
+            ]
+          ];
+        }
+      ];
+    };
   };
 
   newServerCode = { pkgs, ... }: {

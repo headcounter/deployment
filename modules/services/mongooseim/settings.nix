@@ -5,12 +5,14 @@
 with lib;
 
 let
-  inherit (hclib) erlAtom erlString erlInt erlList erlTuple parseErlIpAddr;
+  inherit (hclib) erlAtom erlString erlInt erlList erlTermList erlTuple
+                  parseErlIpAddr;
 in {
   options = {
     overrides = mkOption {
       type = types.listOf types.str;
       default = [ "global" "local" "acls" ];
+      apply = map (what: "override_${what}");
       description = ''
         Overide options stored in the internal settings database.
 
@@ -163,7 +165,6 @@ in {
             port = mkOption {
               type = types.int;
               default = 5269;
-              apply = erlInt;
               description = ''
                 Port to use for connecting with the host.
               '';
@@ -377,19 +378,19 @@ in {
     };
 
     extraConfig = mkOption {
-      type = types.nullOr types.lines;
-      default = null;
-      example = ''
-        {ldap_servers, ["localhost"]}.
-        {ldap_encrypt, tls}.
-        {ldap_port, 636}.
-        {ldap_rootdn, "dc=example,dc=com"}.
-        {ldap_password, "******"}.
-        {ldap_base, "dc=example,dc=com"}.
-        {ldap_uids, [{"mail", "%u@mail.example.org"}]}.
-        {ldap_filter, "(objectClass=shadowAccount)"}.
-      '';
-      description = "Extra lines to append to configuration file.";
+      type = types.attrs;
+      default = {};
+      example = {
+        ldap_servers = ["localhost"];
+        ldap_encrypt.atom = "tls";
+        ldap_port = 636;
+        ldap_rootdn = "dc=example,dc=com";
+        ldap_password = "foobar";
+        ldap_base = "dc=example,dc=com";
+        ldap_uids = [ { tuple = ["mail" "%u@mail.example.org"]; } ];
+        ldap_filter = "(objectClass=shadowAccount)";
+      };
+      description = "Extra options to append to configuration file.";
     };
 
     generatedConfigFile = mkOption {
@@ -400,83 +401,59 @@ in {
     };
   };
 
-  config.generatedConfigFile = let
-    s2sOptions = with config.s2s; ''
-      {s2s_use_starttls, ${erlAtom useStartTLS}}.
-      ${optionalString (certfile != null) ''
-      {s2s_certfile, ${erlString certfile}}.
-      ''}
-      {s2s_default_policy, ${erlAtom filterDefaultPolicy}}.
-      ${concatStrings (mapAttrsToList (host: allow: ''
-      {{s2s_host, ${erlString host}}, ${if allow then "allow" else "deny"}}.
-      '') filterHosts)}
-      {outgoing_s2s_port, ${erlInt outgoing.port}}.
-      {outgoing_s2s_options, [${
-        concatStringsSep ", " (map erlAtom outgoing.addressFamilies)
-      }], ${toString outgoing.connectTimeout}}.
-      ${concatStrings (mapAttrsToList (host: static: ''
-        {{s2s_addr, ${erlString host}}, {${static.ipAddress}, ${static.port}}}.
-      '') outgoing.staticHosts)}
-    '';
+  config.generatedConfigFile = pkgs.writeText "mongooseim.cfg" (erlTermList ({
+    loglevel = config.loglevel;
+    hosts = config.hosts;
 
-  in pkgs.writeText "ejabberd.cfg" ''
-    % generic options
-    ${flip concatMapStrings config.overrides (what: ''
-      ${erlAtom ("override_" + what)}.
-    '')}
-    {loglevel, ${erlInt config.loglevel}}.
+    # XXX: Let's remove generatedConfig in the future and pass through Nix
+    # types instead of a string.
+    listen = map (lcfg: { __raw = lcfg.generatedConfig; }) config.listeners;
 
-    % virtual hosting
-    {hosts, ${erlList config.hosts}}.
-    ${optionalString (config.routeSubdomains != null) ''
-    {route_subdomains, ${erlAtom config.routeSubdomains}}.
-    ''}
+    s2s_use_starttls.atom = config.s2s.useStartTLS;
+    s2s_default_policy.atom = config.s2s.filterDefaultPolicy;
+    outgoing_s2s_port = config.s2s.outgoing.port;
+    outgoing_s2s_options.extuple = [
+      (map (oaf: { atom = oaf; }) config.s2s.outgoing.addressFamilies)
+      config.s2s.outgoing.connectTimeout
+    ];
 
-    % listeners
-    {listen, [
-      ${concatStringsSep ",\n  " (map
-        (getAttr "generatedConfig") config.listeners
-      )}
-    ]}.
+    s2s_host.multi = mapAttrsToList (host: allow: {
+      freekey.tuple = [ { atom = "s2s_host"; } host ];
+      value.atom = if allow then "allow" else "deny";
+    }) config.s2s.filterHosts;
 
-    % S2S options
-    ${s2sOptions}
+    s2s_addr.multi = mapAttrsToList (host: static: {
+      freekey.tuple = [ { atom = "s2s_addr"; } host ];
+      value.tuple = [ { __raw = static.ipAddress; } static.port ];
+    }) config.s2s.outgoing.staticHosts;
 
-    % session backend
-    {sm_backend, {${
-      erlAtom config.sessionManagement.backend
-    }, ${config.sessionManagement.options}}}.
+    sm_backend.tuple = [
+      { atom = config.sessionManagement.backend; }
+      { __raw = config.sessionManagement.options; } # FIXME: Rrrraawwwww!
+    ];
 
-    % authentication
-    {auth_method, ${erlAtom config.auth.method}}.
-    {auth_opts, ${config.auth.options}}.
-    ${optionalString (config.auth.mechanisms != null) ''
-      {sasl_mechanisms, ${erlList (map (mech: {
-        atom = "cyrsasl_${mech}";
-      }) config.auth.mechanisms)}}.
-    ''}
+    auth_method.atom = config.auth.method;
+    auth_opts.__raw = config.auth.options; # FIXME: Don't use __raw!
 
-    ${optionalString (config.odbc.type != null) ''
-      % ODBC configuration for ${config.odbc.type}
-      {odbc_server, ${erlTuple ([
-        { atom = config.odbc.type; }
-        config.odbc.host
-      ] ++ (optional (config.odbc.port != null) config.odbc.port) ++ [
-        config.odbc.database
-        config.odbc.username
-        config.odbc.password
-      ])}}.
-      {odbc_pool_size, ${erlInt config.odbc.poolSize}}.
-    ''}
-
-    % modules
-    {modules, [
-      ${config.modules.generatedConfig}
-    ]}.
-
-    ${optionalString (config.extraConfig != null) ''
-    % extra settings
-    ${config.extraConfig}
-    ''}
-  '';
+    modules.__raw = "[\n  ${config.modules.generatedConfig}\n]"; # FIXME: Same!
+  } // optionalAttrs (config.routeSubdomains != null) {
+    route_subdomains.atom = config.routeSubdomains;
+  } // optionalAttrs (config.auth.mechanisms != null) {
+    sasl_mechanisms = map (mech: {
+      atom = "cyrsasl_${mech}";
+    }) config.auth.mechanisms;
+  } // optionalAttrs (config.odbc.type != null) {
+    odbc_server.tuple = [
+      { atom = config.odbc.type; }
+      config.odbc.host
+    ] ++ (optional (config.odbc.port != null) config.odbc.port) ++ [
+      config.odbc.database
+      config.odbc.username
+      config.odbc.password
+    ];
+    odbc_pool_size = config.odbc.poolSize;
+  } // optionalAttrs (config.s2s.certfile != null) {
+    s2s_certfile = config.s2s.certfile;
+  } // genAttrs config.overrides (const { flag = true; })
+    // config.extraConfig));
 }

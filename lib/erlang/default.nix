@@ -42,6 +42,7 @@ in rec {
   in lib.concatLists (mapAttrsToList mkTuple val);
 
   erlPropList = val: "[${concatStringsSep ", " (erlPropListTerms val)}]";
+  erlTermList = val: concatStringsSep ".\n" (erlPropListTerms val) + ".\n";
 
   toErl = val: let
     nonNix = attr:

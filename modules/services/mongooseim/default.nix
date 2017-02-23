@@ -138,8 +138,7 @@ in {
   };
 
   config = mkMerge [
-    {
-      headcounter.services.mongooseim = {
+    { headcounter.services.mongooseim = {
         package = mkDefault pkgs.headcounter.mongooseim;
       };
     }

@@ -278,105 +278,184 @@ in {
         last.options.access.atom = "public";
       };
 
-      extraConfig = ''
-        % administrative
-        ${hclib.getcred ["xmpp" "adminACLs"] ""}
+      extraConfig = (hclib.getcred ["xmpp" "adminACLs"] {}) // {
+        acl.multi = [
+          { extuple = [
+              { atom = "local"; }
+              { tuple = [ { atom = "user_regexp"; } "" ]; }
+            ];
+          }
+          { extuple = [
+              { atom = "anonymous"; }
+              { tuple = [ { atom = "server"; } "anonymous.headcounter.org" ]; }
+            ];
+          }
+          { extuple = [
+              # Don't allow names that are too short.
+              { atom = "weirdnames"; }
+              { tuple = [ { atom = "user_regexp"; } "^..?$" ]; }
+            ];
+          }
+        ];
 
-        % Local users:
-        {acl, local, {user_regexp, ""}}.
+        access.multi = [
+          { extuple = [
+              { atom = "pubsub_createnode"; } [
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "configure"; } [
+                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "register"; } [
+                { tuple = [ { atom = "deny"; } { atom = "weirdnames"; } ]; }
+                { tuple = [ { atom = "deny"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "public"; } [
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "announce"; } [
+                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
+                { tuple = [ { atom = "allow"; } { atom = "wallops"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "c2s"; } [
+                { tuple = [ { atom = "deny"; } { atom = "blocked"; } ]; }
+                { tuple = [ { atom = "deny"; } { atom = "anonymous"; } ]; }
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "pollers"; } [
+                { tuple = [ { atom = "deny"; } { atom = "blocked"; } ]; }
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc_admin"; } [
+                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc_torservers_admin"; } [
+                { tuple = [
+                    { atom = "allow"; }
+                    { atom = "torservers_admin"; }
+                  ];
+                }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc_wallops"; } [
+                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
+                { tuple = [ { atom = "allow"; } { atom = "wallops"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc"; } [
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "local"; } [
+                { tuple = [ { atom = "allow"; } { atom = "local"; } ]; }
+              ]
+            ];
+          }
 
-        {acl, anonymous, {server, "anonymous.headcounter.org"}}.
+          # Limits
+          { extuple = [
+              { atom = "max_user_sessions"; }
+              [ { tuple = [ 10 { atom = "all"; } ]; } ]
+            ];
+          }
+          { extuple = [
+              { atom = "max_user_offline_messages"; }
+              [ { tuple = [ 5000 { atom = "admin"; } ]; }
+                { tuple = [ 200  { atom = "all"; } ]; }
+              ]
+            ];
+          }
 
-        % we don't allow too short names!
-        {acl, weirdnames, {user_regexp, "^..?$"}}.
+          # Shaper
+          { extuple = [
+              { atom = "c2s_shaper"; } [
+                { tuple = [ { atom = "none"; } { atom = "admin"; } ]; }
+                { tuple = [ { atom = "none"; } { atom = "wallops"; } ]; }
+                { tuple = [
+                    { atom = "none"; }
+                    { atom = "torservers_admin"; }
+                  ];
+                }
+                { tuple = [ { atom = "normal"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "ft_shaper"; } [
+                { tuple = [ { atom = "none"; } { atom = "admin"; } ]; }
+                { tuple = [ { atom = "none"; } { atom = "wallops"; } ]; }
+                { tuple = [
+                    { atom = "none"; }
+                    { atom = "torservers_admin"; }
+                  ];
+                }
+                { tuple = [ { atom = "ultrafast"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "s2s_shaper"; } [
+                { tuple = [ { atom = "fast"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+        ];
 
-        % Everybody can create pubsub nodes
-        {access, pubsub_createnode, [{allow, all}]}.
+        shaper.multi = [
+          { extuple = [ { atom = "slow"; } { maxrate = 500; } ]; }
+          { extuple = [ { atom = "normal"; } { maxrate = 5000; } ]; }
+          { extuple = [ { atom = "fast"; } { maxrate = 50000; } ]; }
+          { extuple = [ { atom = "ultrafast"; } { maxrate = 500000; } ]; }
+        ];
 
-        % Only admins can use configuration interface:
-        {access, configure, [{allow, admin}]}.
+        watchdog_admins = [];
 
-        % Every username can be registered via in-band registration:
-        {access, register, [{deny, weirdnames}, {deny, all}]}.
+        # See issue #13!
+        # {host_config, "anonymous.headcounter.org", [
+        #   {auth_method, anonymous},
+        #   {allow_multiple_connections, true},
+        #   {anonymous_protocol, both}
+        # ]}.
 
-        {access, public, [{allow, all}]}.
+        # Default language for server messages
+        language = "en";
 
-        % Only admins can send announcement messages:
-        {access, announce, [{allow, admin},
-                            {allow, wallops}]}.
+        s2s_ciphers = serverCiphers;
 
-        % Only non-blocked users can use c2s connections:
-        {access, c2s, [{deny, blocked},
-                       {deny, anonymous},
-                       {allow, all}]}.
-
-        % all security-aware users can use poll/bind
-        {access, pollers, [{deny, blocked},
-                           {allow, all}]}.
-
-        % shaper stuff
-        {shaper, slow, {maxrate, 500}}.
-        {shaper, normal, {maxrate, 5000}}.
-        {shaper, fast, {maxrate, 50000}}.
-        {shaper, ultrafast, {maxrate, 500000}}.
-
-        % limits
-        {access, max_user_sessions, [{10, all}]}.
-        {access, max_user_offline_messages, [{5000, admin}, {200, all}]}.
-
-        % For all users except admins use "normal" shaper
-        {access, c2s_shaper, [{none, admin},
-                              {none, torservers_admin},
-                              {none, wallops},
-                              {normal, all}]}.
-
-        % For all users except admins use "ultrafast" shaper
-        {access, ft_shaper, [{none, admin},
-                             {none, torservers_admin},
-                             {none, wallops},
-                             {ultrafast, all}]}.
-
-        % For all S2S connections use "fast" shaper
-        {access, s2s_shaper, [{fast, all}]}.
-
-        % Admins of this server are also admins of MUC service:
-        {access, muc_admin, [{allow, admin}]}.
-
-        % Torservers access rule
-        {access, muc_torservers_admin, [{allow, muc_torservers_admin}]}.
-
-        % Restricted MUC admin
-        {access, muc_wallops, [{allow, admin},
-                               {allow, wallops}]}.
-
-        {access, muc, [{allow, all}]}.
-
-        % This rule allows access only for local users:
-        {access, local, [{allow, local}]}.
-
-        %%
-        %% watchdog_admins: If an ejabberd process consumes too much memory,
-        %% send live notifications to those Jabber accounts.
-        %%
-        {watchdog_admins, []}.
-
-        % See issue #13!
-        % {host_config, "anonymous.headcounter.org", [
-        %   {auth_method, anonymous},
-        %   {allow_multiple_connections, true},
-        %   {anonymous_protocol, both}
-        % ]}.
-
-        % Default language for server messages
-        {language, "en"}.
-
-        {s2s_ciphers, "${serverCiphers}"}.
-
-        % S2S certificates
-        ${concatStrings (mapAttrsToList (name: domain: ''
-        {domain_certfile, "${domain.fqdn}", "${domain.ssl.privateKey.path}"}.
-        '') (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts))}
-      '';
+        domain_certfile.multi = mapAttrsToList (name: domain: {
+          extuple = [ domain.fqdn "${domain.ssl.privateKey.path}" ];
+        }) (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts);
+      };
     };
   } // optionalAttrs hclib.hasCredentials {
     cookie = hclib.getcred ["xmpp" "cookie"] (throw "XMPP cookie not found");

@@ -324,36 +324,96 @@ let
         password = "test";
       };
 
-      extraConfig = ''
-        {host_config, "anonymous.${serverName}", [
-          {auth_method, [anonymous]},
-          {allow_multiple_connections, true},
-          {anonymous_protocol, both}
-        ]}.
+      extraConfig = {
+        host_config.extuple = [
+          "anonymous.${serverName}"
+          { auth_method = [ { atom = "anonymous"; } ];
+            allow_multiple_connections = true;
+            anonymous_protocol.atom = "both";
+          }
+        ];
 
-        {shaper, normal, {maxrate, 1000}}.
-        {shaper, fast, {maxrate, 50000}}.
-        {max_fsm_queue, 1000}.
+        shaper.multi = [
+          { extuple = [ { atom = "normal"; } { maxrate = 1000; } ]; }
+          { extuple = [ { atom = "fast"; } { maxrate = 50000; } ]; }
+        ];
 
-        {acl, local, {user_regexp, ""}}.
+        max_fsm_queue = 1000;
 
-        {access, max_user_sessions, [{10, all}]}.
-        {access, max_user_offline_messages, [{5000, admin}, {100, all}]}.
-        {access, local, [{allow, local}]}.
-        {access, c2s, [{deny, blocked},
-                       {allow, all}]}.
-        {access, c2s_shaper, [{none, admin},
-                              {normal, all}]}.
-        {access, s2s_shaper, [{fast, all}]}.
-        {access, muc_admin, [{allow, admin}]}.
-        {access, muc_create, [{allow, local}]}.
-        {access, muc, [{allow, all}]}.
+        acl.extuple = [
+          { atom = "local"; }
+          { tuple = [ { atom = "user_regexp"; } "" ]; }
+        ];
 
-        {access, register, [{allow, all}]}.
-        {registration_timeout, infinity}.
+        access.multi = [
+          { extuple = [
+              { atom = "max_user_sessions"; }
+              [ { tuple = [ 10 { atom = "all"; } ]; } ]
+            ];
+          }
+          { extuple = [
+              { atom = "max_user_offline_messages"; }
+              [ { tuple = [ 5000 { atom = "admin"; } ]; }
+                { tuple = [ 100  { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "local"; } [
+                { tuple = [ { atom = "allow"; } { atom = "local"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "c2s"; } [
+                { tuple = [ { atom = "deny"; } { atom = "blocked"; } ]; }
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "c2s_shaper"; } [
+                { tuple = [ { atom = "none"; } { atom = "admin"; } ]; }
+                { tuple = [ { atom = "normal"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "s2s_shaper"; } [
+                { tuple = [ { atom = "fast"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc_admin"; } [
+                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc_create"; } [
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "muc"; } [
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+          { extuple = [
+              { atom = "register"; } [
+                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
+              ]
+            ];
+          }
+        ];
 
-        {language, "en"}.
-      '';
+        registration_timeout.atom = "infinity";
+
+        language = "en";
+      };
     };
   };
 
