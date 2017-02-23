@@ -324,6 +324,11 @@ let
         password = "test";
       };
 
+      shapers = {
+        normal = 1000;
+        fast = 50000;
+      };
+
       extraConfig = {
         host_config.extuple = [
           "anonymous.${serverName}"
@@ -331,11 +336,6 @@ let
             allow_multiple_connections = true;
             anonymous_protocol.atom = "both";
           }
-        ];
-
-        shaper.multi = [
-          { extuple = [ { atom = "normal"; } { maxrate = 1000; } ]; }
-          { extuple = [ { atom = "fast"; } { maxrate = 50000; } ]; }
         ];
 
         max_fsm_queue = 1000;

@@ -230,6 +230,20 @@ in {
       };
     };
 
+    shapers = mkOption {
+      type = types.attrsOf (types.nullOr types.int);
+      default = {};
+      example = {
+        normal = 1000;
+        fast = 50000;
+      };
+      description = ''
+        An attribute set of shapers with the shaper name as the key and the
+        maximum rate (or <literal>null</literal> for unlimited rate) in bytes
+        per second as the value.
+      '';
+    };
+
     auth = {
       method = mkOption {
         type = types.enum [ "internal" "external" "odbc" "pam" "ldap" ];
@@ -431,6 +445,13 @@ in {
       { atom = config.sessionManagement.backend; }
       { __raw = config.sessionManagement.options; } # FIXME: Rrrraawwwww!
     ];
+
+    shaper.multi = mapAttrsToList (name: maxrate: let
+      val = if maxrate == null then { atom = "none"; }
+            else { tuple = [ { atom = "maxrate"; } maxrate ]; };
+    in {
+      extuple = [ { atom = name; } val ];
+    }) config.shapers;
 
     auth_method.atom = config.auth.method;
     auth_opts.__raw = config.auth.options; # FIXME: Don't use __raw!

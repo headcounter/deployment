@@ -278,6 +278,13 @@ in {
         last.options.access.atom = "public";
       };
 
+      shapers = {
+        slow      = 500;
+        normal    = 5000;
+        fast      = 50000;
+        ultrafast = 500000;
+      };
+
       extraConfig = (hclib.getcred ["xmpp" "adminACLs"] {}) // {
         acl.multi = [
           { extuple = [
@@ -429,13 +436,6 @@ in {
               ]
             ];
           }
-        ];
-
-        shaper.multi = [
-          { extuple = [ { atom = "slow"; } { maxrate = 500; } ]; }
-          { extuple = [ { atom = "normal"; } { maxrate = 5000; } ]; }
-          { extuple = [ { atom = "fast"; } { maxrate = 50000; } ]; }
-          { extuple = [ { atom = "ultrafast"; } { maxrate = 500000; } ]; }
         ];
 
         watchdog_admins = [];
