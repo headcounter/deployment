@@ -312,7 +312,9 @@ in {
 
     auth = {
       method = mkOption {
-        type = types.enum [ "internal" "external" "odbc" "pam" "ldap" ];
+        type = types.enum [
+          "anonymous" "external" "http" "internal" "ldap" "odbc" "riak"
+        ];
         default = "internal";
         example = "ldap";
         description = ''
