@@ -153,8 +153,8 @@ in {
       }));
       description = ''
         Host-specific configuration settings, where the attribute name is a
-        virtual host and its value is an attribute set of
-        <settings>option</option>.
+        virtual host and its value is an attribute set similar to those options
+        in <option>settings</option>.
       '';
     };
   };
