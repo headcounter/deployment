@@ -153,11 +153,13 @@ in {
       };
     };
 
-    generatedConfig = mkOption {
-      type = types.nullOr types.str;
-      default = null;
+    expression = lib.mkOption {
+      type = lib.types.attrs;
       internal = true;
-      description = "Generated configuration values";
+      description = ''
+        The resulting Nix expression that's translated to an Erlang expression
+        for the options given by this submodule.
+      '';
     };
   };
 
@@ -173,15 +175,17 @@ in {
         ];
       }) config.http.modules;
     })
-    { generatedConfig = let
+    { expression = let
         inherit (hclib) parseErlIpAddr erlInt erlAtom;
         addrTerm = parseErlIpAddr config.address;
-        addrSpec = lib.singleton (erlInt config.port)
-                ++ lib.optional (config.address != null) addrTerm
-                ++ lib.optional (config.type != null) (erlAtom config.type);
+        addrSpec = lib.singleton config.port
+                ++ lib.optional (config.address != null) { __raw = addrTerm; }
+                ++ lib.optional (config.type != null) { atom = config.type; };
         addr = if lib.length addrSpec == 1 then lib.head addrSpec
-               else "{${lib.concatStringsSep ", " addrSpec}}";
-      in "{${addr}, ${erlAtom config.module}, ${config.options}}";
+               else { tuple = addrSpec; };
+      in {
+        tuple = [ addr { atom = config.module; } { __raw = config.options; } ];
+      };
     }
   ];
 }

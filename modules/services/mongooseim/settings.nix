@@ -561,9 +561,7 @@ in {
     loglevel = config.loglevel;
     hosts = config.hosts;
 
-    # XXX: Let's remove generatedConfig in the future and pass through Nix
-    # types instead of a string.
-    listen = map (lcfg: { __raw = lcfg.generatedConfig; }) config.listeners;
+    listen = map (lcfg: lcfg.expression) config.listeners;
 
     language = config.language;
 
@@ -626,7 +624,7 @@ in {
       ruleSets = with config.acl.rules; [ shaper limit access ];
     in concatMap (mapAttrsToList genExpr) ruleSets;
 
-    modules.__raw = "[\n  ${config.modules.generatedConfig}\n]"; # FIXME: Same!
+    modules = config.modules.expression;
   } // optionalAttrs (config.routeSubdomains != null) {
     route_subdomains.atom = config.routeSubdomains;
   } // optionalAttrs (config.maxFsmQueue != null) {

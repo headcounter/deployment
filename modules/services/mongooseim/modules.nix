@@ -175,17 +175,21 @@ let
   modulesWithDefaults = mapAttrs (name: f: f name) modules;
 in {
   options = modulesWithDefaults // {
-    generatedConfig = mkOption {
-      type = types.lines;
-      default = "";
+    expression = lib.mkOption {
+      type = lib.types.attrs;
       internal = true;
-      description = "Generated configuration values";
+      description = ''
+        The resulting Nix expression that's translated to an Erlang expression
+        for the options given by this submodule.
+      '';
     };
   };
 
-  config.generatedConfig = let
-    justModules = removeAttrs config [ "generatedConfig" "_module" ];
+  config.expression = let
+    justModules = genAttrs (attrNames modules) (mod: config.${mod});
     enabled = filterAttrs (name: mod: mod.enable) justModules;
-    mkMod = name: cfg: "{mod_${name}, ${hclib.erlPropList cfg.options}}";
-  in concatStringsSep ",\n  " (mapAttrsToList mkMod enabled);
+  in flip mapAttrs' enabled (name: cfg: {
+    name = "mod_${name}";
+    value = cfg.options;
+  });
 }
