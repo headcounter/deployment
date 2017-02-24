@@ -112,7 +112,34 @@ in {
         default = null;
         description = ''
           Global certificate file for the S2S service.
-          This can be overriden on a per-domain basis in XXX.
+          This can be overriden on a per-domain basis in
+          <option>domainCerts</option>.
+        '';
+      };
+
+      domainCerts = mkOption {
+        type = types.attrsOf types.path;
+        default = {};
+        example."example.org" = "/run/keys/supersecure.pem";
+        description = ''
+          Certificate files for the S2S service where the attribute name is the
+          domain and the value is the path to the certificate file.
+        '';
+      };
+
+      ciphers = mkOption {
+        type = types.nullOr (types.listOf types.str);
+        default = null;
+        example = [ "EECDH+AESGCM" "EDH+AESGCM" "AES256+EECDH" "AES256+EDH" ];
+        description = let
+          url = "https://www.openssl.org/docs/manmaster/man1/ciphers.html";
+        in ''
+          A list of accepted SSL ciphers in outgoing S2S connections. Please
+          refer to the <link xlink:href="${url}#CIPHER-LIST-FORMAT">OpenSSL
+          documentation</link> for the cipher list format.
+
+          If the value is <literal>null</literal> the OpenSSL default cipher
+          list is used.
         '';
       };
 
@@ -585,6 +612,10 @@ in {
       patterns = mapAttrsToList mkPatterns config.acl.patterns;
     in concatLists patterns;
 
+    domain_certfile.multi = mapAttrsToList (domain: certfile: {
+      extuple = [ domain certfile ];
+    }) config.s2s.domainCerts;
+
     access.multi = let
       genExpr = name: acls: {
         extuple = [
@@ -614,6 +645,8 @@ in {
       config.odbc.password
     ];
     odbc_pool_size = config.odbc.poolSize;
+  } // optionalAttrs (config.s2s.ciphers != null) {
+    s2s_ciphers = concatStringsSep ":" config.s2s.ciphers;
   } // optionalAttrs (config.s2s.certfile != null) {
     s2s_certfile = config.s2s.certfile;
   } // genAttrs config.overrides (const { flag = true; })

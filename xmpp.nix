@@ -45,7 +45,7 @@ let
     "ECDH-ECDSA-AES256-SHA384"
   ];
 
-  mkCiphers = clist: concatStringsSep ":" (clist ++ [ "@STRENGTH" ]);
+  mkCiphers = clist: clist ++ [ "@STRENGTH" ];
 
   clientCiphers = mkCiphers (aes128fs ++ aes256fs ++ tlsv1 ++ legacy);
   serverCiphers = mkCiphers aes256fs;
@@ -72,8 +72,14 @@ in {
 
       s2s.filterDefaultPolicy = "allow";
       s2s.useStartTLS = "required";
+      s2s.ciphers = serverCiphers;
       s2s.outgoing.port = 5269;
       s2s.outgoing.addressFamilies = [ "ipv6" "ipv4" ];
+
+      s2s.domainCerts = mapAttrs' (name: domain: {
+        name = domain.fqdn;
+        value = domain.ssl.privateKey.path;
+      }) (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts);
 
       listeners = flatten (mapAttrsToList (name: domain: let
         mkAddr = module: attrs: [
@@ -89,7 +95,7 @@ in {
             access.atom = "c2s";
             max_stanza_size = 65536;
             shaper = "c2s_shaper";
-            ciphers = clientCiphers;
+            ciphers = concatStringsSep ":" clientCiphers;
             protocol_options = [ "no_sslv2" "no_sslv3" ];
           } // (if isLegacy then {
             tls.flag = true;
@@ -114,7 +120,7 @@ in {
           options = {
             max_stanza_size = 131072;
             shaper = "s2s_shaper";
-            ciphers = serverCiphers;
+            ciphers = concatStringsSep ":" serverCiphers;
             protocol_options = [ "no_sslv2" "no_sslv3" ];
           } // optionalAttrs (domain.ssl.privateKey != null) {
             certfile = domain.ssl.privateKey.path;
@@ -357,20 +363,12 @@ in {
         s2s_shaper = [ { shaper = "fast"; } ];
       };
 
-      extraConfig = {
-        # See issue #13!
-        # {host_config, "anonymous.headcounter.org", [
-        #   {auth_method, anonymous},
-        #   {allow_multiple_connections, true},
-        #   {anonymous_protocol, both}
-        # ]}.
-
-        s2s_ciphers = serverCiphers;
-
-        domain_certfile.multi = mapAttrsToList (name: domain: {
-          extuple = [ domain.fqdn "${domain.ssl.privateKey.path}" ];
-        }) (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts);
-      };
+      # See issue #13!
+      # {host_config, "anonymous.headcounter.org", [
+      #   {auth_method, anonymous},
+      #   {allow_multiple_connections, true},
+      #   {anonymous_protocol, both}
+      # ]}.
     };
   } // optionalAttrs hclib.hasCredentials {
     cookie = hclib.getcred ["xmpp" "cookie"] (throw "XMPP cookie not found");
