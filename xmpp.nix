@@ -358,8 +358,6 @@ in {
       };
 
       extraConfig = {
-        watchdog_admins = [];
-
         # See issue #13!
         # {host_config, "anonymous.headcounter.org", [
         #   {auth_method, anonymous},
