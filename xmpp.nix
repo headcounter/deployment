@@ -93,7 +93,6 @@ in {
             certfile = domain.ssl.privateKey.path;
           }) // {
             access.atom = "c2s";
-            max_stanza_size = 65536;
             shaper = "c2s_shaper";
             ciphers = concatStringsSep ":" clientCiphers;
             protocol_options = [ "no_sslv2" "no_sslv3" ];
@@ -118,7 +117,6 @@ in {
         s2s = mkAddr "ejabberd_s2s_in" {
           port = 5269;
           options = {
-            max_stanza_size = 131072;
             shaper = "s2s_shaper";
             ciphers = concatStringsSep ":" serverCiphers;
             protocol_options = [ "no_sslv2" "no_sslv3" ];
