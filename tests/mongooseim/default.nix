@@ -365,6 +365,8 @@ let
 
       registrationTimeout = null;
 
+      maxFsmQueue = 1000;
+
       extraConfig = {
         host_config.extuple = [
           "anonymous.${serverName}"
@@ -373,8 +375,6 @@ let
             anonymous_protocol.atom = "both";
           }
         ];
-
-        max_fsm_queue = 1000;
       };
     };
   };

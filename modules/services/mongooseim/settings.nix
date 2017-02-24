@@ -267,6 +267,22 @@ in {
       '';
     };
 
+    maxFsmQueue = mkOption {
+      type = types.nullOr types.int;
+      default = null;
+      example = 1000;
+      description = ''
+        When set to an integer, it will terminate certain processes such as
+        <literal>c2s</literal> or <literal>s2s_out</literal> that exceed the
+        limit defined here to prevent resource exhaustion.
+
+        If this is set to <literal>null</literal> no such limit is imposed.
+
+        This is set for all listeners, but can be overridden for some listeners
+        in their options.
+      '';
+    };
+
     auth = {
       method = mkOption {
         type = types.enum [ "internal" "external" "odbc" "pam" "ldap" ];
@@ -582,6 +598,8 @@ in {
     modules.__raw = "[\n  ${config.modules.generatedConfig}\n]"; # FIXME: Same!
   } // optionalAttrs (config.routeSubdomains != null) {
     route_subdomains.atom = config.routeSubdomains;
+  } // optionalAttrs (config.maxFsmQueue != null) {
+    max_fsm_queue = config.maxFsmQueue;
   } // optionalAttrs (config.auth.mechanisms != null) {
     sasl_mechanisms = map (mech: {
       atom = "cyrsasl_${mech}";
