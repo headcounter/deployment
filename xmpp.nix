@@ -365,9 +365,6 @@ in {
         #   {anonymous_protocol, both}
         # ]}.
 
-        # Default language for server messages
-        language = "en";
-
         s2s_ciphers = serverCiphers;
 
         domain_certfile.multi = mapAttrsToList (name: domain: {

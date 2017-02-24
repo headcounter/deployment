@@ -375,8 +375,6 @@ let
         max_fsm_queue = 1000;
 
         registration_timeout.atom = "infinity";
-
-        language = "en";
       };
     };
   };
