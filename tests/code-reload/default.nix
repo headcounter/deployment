@@ -56,9 +56,7 @@ let
           acl.rules.access.c2s = [ { allow = true; } ];
           acl.rules.access.local = [ { allow = true; } ];
           acl.rules.access.register = [ { allow = true; } ];
-          extraConfig = {
-            registration_timeout.atom = "infinity";
-          };
+          registrationTimeout = null;
         };
       };
     };

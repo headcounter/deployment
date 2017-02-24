@@ -82,6 +82,15 @@ in {
       '';
     };
 
+    registrationTimeout = mkOption {
+      type = types.nullOr types.int;
+      default = 600;
+      description = ''
+        Maximum rgistration frequency in seconds from a single IP. If value is
+        <literal>null</literal> no limit is imposed.
+      '';
+    };
+
     s2s = {
       useStartTLS = mkOption {
         type = types.enum [ "false" "optional" "required" "required_trusted" ];
@@ -514,6 +523,10 @@ in {
     listen = map (lcfg: { __raw = lcfg.generatedConfig; }) config.listeners;
 
     language = config.language;
+
+    registration_timeout = if config.registrationTimeout == null then {
+      atom = "infinity";
+    } else config.registrationTimeout;
 
     s2s_use_starttls.atom = config.s2s.useStartTLS;
     s2s_default_policy.atom = config.s2s.filterDefaultPolicy;
