@@ -323,6 +323,55 @@ in {
           <option>rules</option>.
         '';
       };
+
+      rules = let
+        mkRuleOption = { type, ... }@attrs: mkOption (attrs // {
+          type = let
+            submodule = types.submodule (import ./access.nix {
+              inherit type;
+              optPrefix = "headcounter.services.mongooseim.settings";
+              patterns = config.acl.patterns;
+            });
+          in types.attrsOf (types.listOf submodule);
+        });
+      in {
+        shaper = mkRuleOption {
+          type = "shaper";
+          default = {};
+          example.c2s_shaper = [
+            { match = "admin"; shaper = "none"; }
+            { shaper = "normal"; }
+          ];
+          description = ''
+            Rules for traffic shapers, which can be used in the options of
+            various modules.
+          '';
+        };
+
+        limit = mkRuleOption {
+          type = "limit";
+          default = {};
+          example.max_user_offline_messages = [
+            { match = "admin"; limit = 5000; }
+            { limit = 100; }
+          ];
+          description = ''
+            Rules for limits (like for example maximum requests) for use in the
+            options of some modules.
+          '';
+        };
+
+        access = mkRuleOption {
+          type = "access";
+          default = {};
+          example.muc_create = [ { match = "local"; allow = true; } ];
+          example.muc_admin  = [ { match = "admin"; allow = true; } ];
+          description = ''
+            Rules for access rights, typically used in the
+            <option>access</option> option of various modules.
+          '';
+        };
+      };
     };
 
     odbc = {
@@ -490,6 +539,16 @@ in {
       mkPatterns = name: concatMap (mkMatch name);
       patterns = mapAttrsToList mkPatterns config.acl.patterns;
     in concatLists patterns;
+
+    access.multi = let
+      genExpr = name: acls: {
+        extuple = [
+          { atom = name; }
+          (map (acl: acl.expression) acls)
+        ];
+      };
+      ruleSets = with config.acl.rules; [ shaper limit access ];
+    in concatMap (mapAttrsToList genExpr) ruleSets;
 
     modules.__raw = "[\n  ${config.modules.generatedConfig}\n]"; # FIXME: Same!
   } // optionalAttrs (config.routeSubdomains != null) {

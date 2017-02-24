@@ -53,27 +53,10 @@ let
         settings = {
           hosts = [ "server" ];
           modules.register.options.ip_access = [];
+          acl.rules.access.c2s = [ { allow = true; } ];
+          acl.rules.access.local = [ { allow = true; } ];
+          acl.rules.access.register = [ { allow = true; } ];
           extraConfig = {
-            access.multi = [
-              { extuple = [
-                  { atom = "c2s"; } [
-                    { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-                  ]
-                ];
-              }
-              { extuple = [
-                  { atom = "local"; } [
-                    { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-                  ]
-                ];
-              }
-              { extuple = [
-                  { atom = "register"; } [
-                    { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-                  ]
-                ];
-              }
-            ];
             registration_timeout.atom = "infinity";
           };
         };
@@ -96,15 +79,8 @@ let
   };
 
   newServerConfig = {
-    headcounter.services.mongooseim.settings.extraConfig = {
-      access.multi = [
-        { extuple = [
-            { atom = "c2s"; } [
-              { tuple = [ { atom = "deny"; } { atom = "all"; } ]; }
-            ]
-          ];
-        }
-      ];
+    headcounter.services.mongooseim.settings = {
+      acl.rules.access.c2s = lib.mkForce [ { allow = false; } ];
     };
   };
 

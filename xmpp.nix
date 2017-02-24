@@ -285,147 +285,79 @@ in {
         ultrafast = 500000;
       };
 
-      acl = {
-        patterns.local.user.regex = "";
-        patterns.anonymous.server = "anonymous.headcounter.org";
+      acl.patterns = {
+        local.user.regex = "";
+        anonymous.server = "anonymous.headcounter.org";
         # Don't allow names that are too short.
-        patterns.weirdnames.user.regex = "^..?$";
+        weirdnames.user.regex = "^..?$";
+        # Placeholder to quickly block spammy JIDs at runtime.
+        blocked = {};
+      } // hclib.getcred ["xmpp" "adminACLs"] {
+        admin = { user = "admin"; server = "headcounter.org"; };
+        wallops = { user = "wallop"; server = "headcounter.org"; };
+        torservers_admin = { user = "toradmin"; server = "torservers.net"; };
       };
 
-      extraConfig = (hclib.getcred ["xmpp" "adminACLs"] {}) // {
-        access.multi = [
-          { extuple = [
-              { atom = "pubsub_createnode"; } [
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "configure"; } [
-                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "register"; } [
-                { tuple = [ { atom = "deny"; } { atom = "weirdnames"; } ]; }
-                { tuple = [ { atom = "deny"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "public"; } [
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "announce"; } [
-                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
-                { tuple = [ { atom = "allow"; } { atom = "wallops"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "c2s"; } [
-                { tuple = [ { atom = "deny"; } { atom = "blocked"; } ]; }
-                { tuple = [ { atom = "deny"; } { atom = "anonymous"; } ]; }
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "pollers"; } [
-                { tuple = [ { atom = "deny"; } { atom = "blocked"; } ]; }
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc_admin"; } [
-                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc_torservers_admin"; } [
-                { tuple = [
-                    { atom = "allow"; }
-                    { atom = "torservers_admin"; }
-                  ];
-                }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc_wallops"; } [
-                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
-                { tuple = [ { atom = "allow"; } { atom = "wallops"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc"; } [
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "local"; } [
-                { tuple = [ { atom = "allow"; } { atom = "local"; } ]; }
-              ]
-            ];
-          }
-
-          # Limits
-          { extuple = [
-              { atom = "max_user_sessions"; }
-              [ { tuple = [ 10 { atom = "all"; } ]; } ]
-            ];
-          }
-          { extuple = [
-              { atom = "max_user_offline_messages"; }
-              [ { tuple = [ 5000 { atom = "admin"; } ]; }
-                { tuple = [ 200  { atom = "all"; } ]; }
-              ]
-            ];
-          }
-
-          # Shaper
-          { extuple = [
-              { atom = "c2s_shaper"; } [
-                { tuple = [ { atom = "none"; } { atom = "admin"; } ]; }
-                { tuple = [ { atom = "none"; } { atom = "wallops"; } ]; }
-                { tuple = [
-                    { atom = "none"; }
-                    { atom = "torservers_admin"; }
-                  ];
-                }
-                { tuple = [ { atom = "normal"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "ft_shaper"; } [
-                { tuple = [ { atom = "none"; } { atom = "admin"; } ]; }
-                { tuple = [ { atom = "none"; } { atom = "wallops"; } ]; }
-                { tuple = [
-                    { atom = "none"; }
-                    { atom = "torservers_admin"; }
-                  ];
-                }
-                { tuple = [ { atom = "ultrafast"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "s2s_shaper"; } [
-                { tuple = [ { atom = "fast"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
+      acl.rules.access = {
+        pubsub_createnode = [ { allow = true; } ];
+        configure = [ { allow = true; match = "admin"; } ];
+        register = [
+          { allow = false; match = "weirdnames"; }
+          { allow = false; }
         ];
+        public = [ { allow = true; } ];
+        announce = [
+          { allow = true; match = "admin"; }
+          { allow = true; match = "wallops"; }
+        ];
+        c2s = [
+          { allow = false; match = "blocked"; }
+          { allow = false; match = "anonymous"; }
+          { allow = true; }
+        ];
+        pollers = [
+          { allow = false; match = "blocked"; }
+          { allow = true; }
+        ];
+        muc_admin = [
+          { allow = true; match = "admin"; }
+        ];
+        muc_torservers_admin = [
+          { allow = true; match = "torservers_admin"; }
+        ];
+        muc_wallops = [
+          { allow = true; match = "admin"; }
+          { allow = true; match = "wallops"; }
+        ];
+        muc = [ { allow = true; } ];
+        local = [ { allow = true; match = "local"; } ];
+      };
 
+      acl.rules.limit = {
+        max_user_sessions = [ { limit = 10; } ];
+        max_user_offline_messages = [
+          { limit = 5000; match = "admin"; }
+          { limit = 200; }
+        ];
+      };
+
+      acl.rules.shaper = {
+        c2s_shaper = [
+          { shaper = null; match = "admin"; }
+          { shaper = null; match = "wallops"; }
+          { shaper = null; match = "torservers_admin"; }
+          { shaper = "normal"; }
+        ];
+        ft_shaper = [
+          { shaper = null; match = "admin"; }
+          { shaper = null; match = "wallops"; }
+          { shaper = null; match = "torservers_admin"; }
+          { shaper = "ultrafast"; }
+        ];
+        s2s_shaper = [ { shaper = "fast"; } ];
+      };
+
+      extraConfig = {
         watchdog_admins = [];
 
         # See issue #13!

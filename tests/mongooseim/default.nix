@@ -329,7 +329,39 @@ let
         fast = 50000;
       };
 
-      acl.patterns.local.user.regex = "";
+      acl.patterns = {
+        local.user.regex = "";
+        admin = {};
+        blocked = {};
+      };
+
+      acl.rules.access = {
+        local = [ { allow = true; match = "local"; } ];
+        c2s = [
+          { allow = false; match = "blocked"; }
+          { allow = true; }
+        ];
+        muc_admin = [ { allow = true; match = "admin"; } ];
+        muc_create = [ { allow = true; } ];
+        muc = [ { allow = true; } ];
+        register = [ { allow = true; } ];
+      };
+
+      acl.rules.shaper = {
+        c2s_shaper = [
+          { shaper = null; match = "admin"; }
+          { shaper = "normal"; }
+        ];
+        s2s_shaper = [ { shaper = "fast"; } ];
+      };
+
+      acl.rules.limit = {
+        max_user_sessions = [ { limit = 10; } ];
+        max_user_offline_messages = [
+          { limit = 5000; match = "admin"; }
+          { limit = 100; }
+        ];
+      };
 
       extraConfig = {
         host_config.extuple = [
@@ -341,71 +373,6 @@ let
         ];
 
         max_fsm_queue = 1000;
-
-        access.multi = [
-          { extuple = [
-              { atom = "max_user_sessions"; }
-              [ { tuple = [ 10 { atom = "all"; } ]; } ]
-            ];
-          }
-          { extuple = [
-              { atom = "max_user_offline_messages"; }
-              [ { tuple = [ 5000 { atom = "admin"; } ]; }
-                { tuple = [ 100  { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "local"; } [
-                { tuple = [ { atom = "allow"; } { atom = "local"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "c2s"; } [
-                { tuple = [ { atom = "deny"; } { atom = "blocked"; } ]; }
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "c2s_shaper"; } [
-                { tuple = [ { atom = "none"; } { atom = "admin"; } ]; }
-                { tuple = [ { atom = "normal"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "s2s_shaper"; } [
-                { tuple = [ { atom = "fast"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc_admin"; } [
-                { tuple = [ { atom = "allow"; } { atom = "admin"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc_create"; } [
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "muc"; } [
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-          { extuple = [
-              { atom = "register"; } [
-                { tuple = [ { atom = "allow"; } { atom = "all"; } ]; }
-              ]
-            ];
-          }
-        ];
 
         registration_timeout.atom = "infinity";
 
