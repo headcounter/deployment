@@ -3,8 +3,8 @@ vhost:
 { pkgs, lib, ... }: let
 
   testLibs = let
-    inherit (pkgs.headcounter.erlangPackages) escalus;
-    deps = lib.singleton escalus ++ escalus.recursiveErlangDeps;
+    pkg = pkgs.headcounter.mongooseimTests;
+    deps = lib.singleton pkg ++ pkg.recursiveErlangDeps;
   in map (d: "${d.appDir}/ebin") deps;
 
   users = {
@@ -30,6 +30,7 @@ vhost:
     "${pkgs.erlang}/bin/ct_run"
     "-noinput" "-noshell"
     "-config" "/etc/headcounter/test.config"
+    "-ct_hooks" "ct_tty_hook" "[]"
     "-logdir" "ct_report"
     "-dir" "test"
     "-erl_args"
