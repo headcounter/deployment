@@ -1,12 +1,61 @@
-{ pkgs, hclib, toplevelConfig, ... }:
+{ pkgs, hclib, toplevelConfig, hostSpecific ? false, ... }:
 
-{ config, lib, ... }:
+{ options, config, lib, ... }:
 
 with lib;
 
 let
   inherit (hclib) erlAtom erlString erlInt erlList erlTermList erlTuple
                   parseErlIpAddr;
+
+  hasDefaultAssigned = path: let
+    defaultValue = (getAttrFromPath path options).default;
+  in defaultValue == getAttrFromPath path config;
+
+  optionalHostSpecific = path: attrs: let
+    needsAttrs = !hasDefaultAssigned path;
+  in if hostSpecific then optionalAttrs needsAttrs attrs else attrs;
+
+  optionalHostSpecifics = paths: attrs: let
+    needsAttrs = !all hasDefaultAssigned paths;
+  in if hostSpecific then optionalAttrs needsAttrs attrs else attrs;
+
+  modulesMod = (import ./modules.nix {
+    inherit pkgs hclib toplevelConfig;
+    defaults = if hostSpecific then {} else {
+      adhoc.enable = true;
+      blocking.enable = true;
+      carboncopy.enable = true;
+      csi.enable = true;
+      disco.enable = true;
+      last.enable = true;
+      muc.enable = true;
+      muc.options.host = "muc.${toplevelConfig.networking.hostName}";
+      muc.options.access.atom = "muc";
+      muc.options.access_create.atom = "muc_create";
+      offline.enable = true;
+      privacy.enable = true;
+      private.enable = true;
+      pubsub.enable = true;
+      register.enable = true;
+      register.options.welcome_message = ""; # TODO?
+      register.options.ip_access = [
+        { tuple = [ "allow" "127.0.0.1/8" ]; }
+        { tuple = [ "deny" "0.0.0.0/0" ]; }
+      ];
+      register.options.access.atom = "register";
+      roster.enable = true;
+      sic.enable = true;
+      stream_management.enable = true;
+      vcard.enable = true;
+      vcard.options.allow_return_all = true;
+      vcard.options.search_all_hosts = true;
+    };
+  }) {
+    inherit lib;
+    config = config.modules;
+  };
+
 in {
   options = {
     overrides = mkOption {
@@ -56,13 +105,6 @@ in {
       description = ''
         Default language for messages sent by server to users.
       '';
-    };
-
-    hosts = mkOption {
-      type = types.listOf types.str;
-      default = singleton "localhost";
-      example = [ "example.net" "example.com" "example.org" ];
-      description = "List of domains to be served.";
     };
 
     routeSubdomains = mkOption {
@@ -228,7 +270,7 @@ in {
       type = types.listOf (types.submodule (import ./listeners.nix {
         inherit pkgs hclib;
       }));
-      default = [
+      default = optionals (!hostSpecific) [
         { port = 5280;
           module = "mod_bosh";
           options.num_acceptors = 10;
@@ -267,7 +309,7 @@ in {
       };
 
       options = mkOption {
-        type = hclib.types.erlPropList;
+        type = types.attrs;
         default = {};
         example.pool_size = 3;
         example.worker_config = {
@@ -351,7 +393,7 @@ in {
       };
 
       options = mkOption {
-        type = hclib.types.erlPropList;
+        type = types.attrs;
         default.password_format.atom = "plain";
         default.scram_iterations = 4096;
         example = {
@@ -496,44 +538,7 @@ in {
       };
     };
 
-    modules = mkOption {
-      type = types.submodule (import ./modules.nix {
-        inherit pkgs hclib toplevelConfig;
-        defaults = {
-          adhoc.enable = true;
-          blocking.enable = true;
-          carboncopy.enable = true;
-          csi.enable = true;
-          disco.enable = true;
-          last.enable = true;
-          muc.enable = true;
-          muc.options.host = "muc.${toplevelConfig.networking.hostName}";
-          muc.options.access.atom = "muc";
-          muc.options.access_create.atom = "muc_create";
-          offline.enable = true;
-          privacy.enable = true;
-          private.enable = true;
-          pubsub.enable = true;
-          register.enable = true;
-          register.options.welcome_message = ""; # TODO?
-          register.options.ip_access = [
-            { tuple = [ "allow" "127.0.0.1/8" ]; }
-            { tuple = [ "deny" "0.0.0.0/0" ]; }
-          ];
-          register.options.access.atom = "register";
-          roster.enable = true;
-          sic.enable = true;
-          stream_management.enable = true;
-          vcard.enable = true;
-          vcard.options.allow_return_all = true;
-          vcard.options.search_all_hosts = true;
-        };
-      });
-      default = {};
-      description = ''
-        Modules enabled for this particular virtual host.
-      '';
-    };
+    modules = modulesMod.options;
 
     extraConfig = mkOption {
       type = types.attrs;
@@ -551,34 +556,26 @@ in {
       description = "Extra options to append to configuration file.";
     };
 
-    generatedConfigFile = mkOption {
-      type = types.nullOr types.path;
-      default = null;
+    expression = lib.mkOption {
+      type = lib.types.attrs;
       internal = true;
-      description = "Generated configuration file";
+      description = ''
+        The resulting Nix expression that's translated to an Erlang expression
+        for the options given by this submodule.
+      '';
+    };
+  } // optionalAttrs (!hostSpecific) {
+    hosts = mkOption {
+      type = types.listOf types.str;
+      default = singleton "localhost";
+      example = [ "example.net" "example.com" "example.org" ];
+      description = "List of domains to be served.";
     };
   };
 
-  config.generatedConfigFile = pkgs.writeText "mongooseim.cfg" (erlTermList ({
-    loglevel = config.loglevel;
-    hosts = config.hosts;
+  config.modules = modulesMod.config;
 
-    listen = map (lcfg: lcfg.expression) config.listeners;
-
-    language = config.language;
-
-    registration_timeout = if config.registrationTimeout == null then {
-      atom = "infinity";
-    } else config.registrationTimeout;
-
-    s2s_use_starttls.atom = config.s2s.useStartTLS;
-    s2s_default_policy.atom = config.s2s.filterDefaultPolicy;
-    outgoing_s2s_port = config.s2s.outgoing.port;
-    outgoing_s2s_options.extuple = [
-      (map (oaf: { atom = oaf; }) config.s2s.outgoing.addressFamilies)
-      config.s2s.outgoing.connectTimeout
-    ];
-
+  config.expression = {
     s2s_host.multi = mapAttrsToList (host: allow: {
       freekey.tuple = [ { atom = "s2s_host"; } host ];
       value.atom = if allow then "allow" else "deny";
@@ -589,20 +586,12 @@ in {
       value.tuple = [ { __raw = static.ipAddress; } static.port ];
     }) config.s2s.outgoing.staticHosts;
 
-    sm_backend.tuple = [
-      { atom = config.sessionManagement.backend; }
-      { __raw = config.sessionManagement.options; } # FIXME: Rrrraawwwww!
-    ];
-
     shaper.multi = mapAttrsToList (name: maxrate: let
       val = if maxrate == null then { atom = "none"; }
             else { tuple = [ { atom = "maxrate"; } maxrate ]; };
     in {
       extuple = [ { atom = name; } val ];
     }) config.shapers;
-
-    auth_method.atom = config.auth.method;
-    auth_opts.__raw = config.auth.options; # FIXME: Don't use __raw!
 
     acl.multi = let
       mkMatch = name: pattern: optional (pattern.match != null) {
@@ -626,7 +615,42 @@ in {
       ruleSets = with config.acl.rules; [ shaper limit access ];
     in concatMap (mapAttrsToList genExpr) ruleSets;
 
+  } // optionalHostSpecifics [ ["sessionManagement" "backend"]
+                               ["sessionManagement" "options"]
+                             ] {
+    sm_backend.tuple = [
+      { atom = config.sessionManagement.backend; }
+      config.sessionManagement.options
+    ];
+  } // optionalHostSpecifics [ ["s2s" "outgoing" "addressFamilies"]
+                               ["s2s" "outgoing" "connectTimeout"]
+                             ] {
+    outgoing_s2s_options.extuple = [
+      (map (oaf: { atom = oaf; }) config.s2s.outgoing.addressFamilies)
+      config.s2s.outgoing.connectTimeout
+    ];
+  } // optionalHostSpecific ["listeners"] {
+    listen = map (lcfg: lcfg.expression) config.listeners;
+  } // optionalAttrs (config.modules.expression != {}) {
     modules = config.modules.expression;
+  } // optionalHostSpecific ["auth" "method"] {
+    auth_method.atom = config.auth.method;
+  } // optionalHostSpecific ["auth" "options"] {
+    auth_opts = config.auth.options;
+  } // optionalHostSpecific ["s2s" "useStartTLS"] {
+    s2s_use_starttls.atom = config.s2s.useStartTLS;
+  } // optionalHostSpecific ["s2s" "filterDefaultPolicy"] {
+    s2s_default_policy.atom = config.s2s.filterDefaultPolicy;
+  } // optionalHostSpecific ["s2s" "outgoing" "port"] {
+    outgoing_s2s_port = config.s2s.outgoing.port;
+  } // optionalHostSpecific ["language"] {
+    language = config.language;
+  } // optionalHostSpecific ["loglevel"] {
+    loglevel = config.loglevel;
+  } // optionalHostSpecific ["registrationTimeout"] {
+    registration_timeout = if config.registrationTimeout == null then {
+      atom = "infinity";
+    } else config.registrationTimeout;
   } // optionalAttrs (config.routeSubdomains != null) {
     route_subdomains.atom = config.routeSubdomains;
   } // optionalAttrs (config.maxFsmQueue != null) {
@@ -649,6 +673,8 @@ in {
     s2s_ciphers = concatStringsSep ":" config.s2s.ciphers;
   } // optionalAttrs (config.s2s.certfile != null) {
     s2s_certfile = config.s2s.certfile;
-  } // genAttrs config.overrides (const { flag = true; })
-    // config.extraConfig));
+  } // optionalAttrs (!hostSpecific) ({
+    hosts = config.hosts;
+  } // genAttrs config.overrides (const { flag = true; }))
+    // config.extraConfig;
 }

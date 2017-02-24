@@ -366,15 +366,13 @@ let
       registrationTimeout = null;
 
       maxFsmQueue = 1000;
+    };
 
+    headcounter.services.mongooseim.hostSettings."anonymous.${serverName}" = {
+      auth.method = "anonymous";
       extraConfig = {
-        host_config.extuple = [
-          "anonymous.${serverName}"
-          { auth_method = [ { atom = "anonymous"; } ];
-            allow_multiple_connections = true;
-            anonymous_protocol.atom = "both";
-          }
-        ];
+        allow_multiple_connections = true;
+        anonymous_protocol.atom = "both";
       };
     };
   };

@@ -3,7 +3,7 @@
 with lib;
 
 let
-  inherit (hclib) shErlEsc erlAtom erlString;
+  inherit (hclib) shErlEsc erlAtom erlString erlTermList;
   cfg = config.headcounter.services.mongooseim;
 
   progName = "mongooseim";
@@ -65,6 +65,14 @@ let
     ${erlCall "application set_env [ejabberd, config, ${erlString cfgFile}]"}
     "${ctlTool}" reload_local >&2
   '';
+
+  defaultCfgFile = let
+    topLevel = cfg.settings.expression;
+    terms = topLevel // mapAttrs' (name: settings: {
+      name = "host_config";
+      value.extuple = [ name settings.expression ];
+    }) cfg.hostSettings;
+  in pkgs.writeText "mongooseim.cfg" (erlTermList terms);
 
 in {
   options.headcounter.services.mongooseim = {
@@ -135,6 +143,20 @@ in {
       });
       description = "Configuration settings.";
     };
+
+    hostSettings = mkOption {
+      default = {};
+      type = types.attrsOf (types.submodule (import ./settings.nix {
+        inherit pkgs hclib;
+        toplevelConfig = config;
+        hostSpecific = true;
+      }));
+      description = ''
+        Host-specific configuration settings, where the attribute name is a
+        virtual host and its value is an attribute set of
+        <settings>option</option>.
+      '';
+    };
   };
 
   config = mkMerge [
@@ -147,7 +169,7 @@ in {
     })
     (mkIf cfg.enable {
       headcounter.services.mongooseim = {
-        configFile = mkDefault cfg.settings.generatedConfigFile;
+        configFile = mkDefault defaultCfgFile;
         cookie = mkDefault (let
           randCookie = pkgs.runCommand "erlang-cookie.nix" {
             preferLocalBuild = true;
