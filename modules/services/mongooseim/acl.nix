@@ -116,7 +116,7 @@ in {
     };
 
     match = lib.mkOption {
-      type = lib.types.attrs;
+      type = lib.types.nullOr lib.types.attrs;
       internal = true;
       description = ''
         The resulting Nix expression that's translated to an Erlang expression
@@ -125,5 +125,8 @@ in {
     };
   };
 
-  config.match = if config.all then { atom = "all"; } else transformed;
+  config.match = let
+    nothing = lib.all (o: !options.${o}.isDefined) optAttrs && (!config.all);
+    something = if config.all then { atom = "all"; } else transformed;
+  in if nothing then null else something;
 }

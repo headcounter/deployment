@@ -484,10 +484,11 @@ in {
     auth_opts.__raw = config.auth.options; # FIXME: Don't use __raw!
 
     acl.multi = let
-      mkMatch = name: pattern: {
+      mkMatch = name: pattern: optional (pattern.match != null) {
         extuple = [ { atom = name; } pattern.match ];
       };
-      patterns = mapAttrsToList (name: map (mkMatch name)) config.acl.patterns;
+      mkPatterns = name: concatMap (mkMatch name);
+      patterns = mapAttrsToList mkPatterns config.acl.patterns;
     in concatLists patterns;
 
     modules.__raw = "[\n  ${config.modules.generatedConfig}\n]"; # FIXME: Same!
