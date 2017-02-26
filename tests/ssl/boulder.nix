@@ -1,4 +1,14 @@
-{ pkgs, lib, ... }:
+# Fully pluggable module to have Letsencrypt's Boulder ACME service running in
+# a test environment.
+#
+# Everything that's needed from outside of the module is a name server with
+# valid zones to be usable for validation and config.headcounter.snakeOilCaCert
+# from the node attribute of the host using this module to get a file to add to
+# the system CA bundle.
+#
+# Zones for name servers running on other nodes are automatically discovered
+# from BIND and NSD NixOS configurations and delegated from a fake root zone.
+{ config, pkgs, nodes, lib, ... }:
 
 let
   softhsm = pkgs.stdenv.mkDerivation rec {
@@ -105,6 +115,9 @@ let
         -e '/^def +install/a \    return True' \
         -e 's,exec \./bin/,,' \
         test/startservers.py
+
+      cat "${snakeOilCa}/ca.key" > test/test-ca.key
+      cat "${snakeOilCa}/ca.pem" > test/test-ca.pem
     '';
 
     goPackagePath = "github.com/${owner}/${repo}";
@@ -118,7 +131,86 @@ let
     1:/var/lib/softhsm/slot1.db
   '';
 
-  cfgDir = "${boulderSource}/test/config";
+  snakeOilCa = pkgs.runCommand "snakeoil-ca" {
+    buildInputs = [ pkgs.openssl ];
+  } ''
+    mkdir "$out"
+    openssl req -newkey rsa:4096 -x509 -sha256 -days 36500 \
+      -subj '/CN=Snakeoil CA' -nodes \
+      -out "$out/ca.pem" -keyout "$out/ca.key"
+  '';
+
+  createAndSignCert = fqdn: let
+    snakeoilCertConf = pkgs.writeText "snakeoil.cnf" ''
+      [req]
+      default_bits = 4096
+      prompt = no
+      default_md = sha256
+      req_extensions = req_ext
+      distinguished_name = dn
+      [dn]
+      CN = ${fqdn}
+      [req_ext]
+      subjectAltName = DNS:${fqdn}
+    '';
+  in pkgs.runCommand "snakeoil-certs-${fqdn}" {
+    buildInputs = [ pkgs.openssl ];
+  } ''
+    mkdir "$out"
+    openssl genrsa -out "$out/snakeoil.key" 4096
+    openssl req -new -key "$out/snakeoil.key" \
+      -config ${lib.escapeShellArg snakeoilCertConf} \
+      -out snakeoil.csr
+    openssl x509 -req -in snakeoil.csr -sha256 -set_serial 666 \
+      -CA "${snakeOilCa}/ca.pem" -CAkey "${snakeOilCa}/ca.key" \
+      -extfile ${lib.escapeShellArg snakeoilCertConf} \
+      -out "$out/snakeoil.pem" -days 36500
+  '';
+
+  wfeCerts = createAndSignCert wfeDomain;
+  wfeDomain = "acme-v01.api.letsencrypt.org";
+  wfeCertFile = "${wfeCerts}/snakeoil.pem";
+  wfeKeyFile = "${wfeCerts}/snakeoil.key";
+
+  siteCerts = createAndSignCert siteDomain;
+  siteDomain = "letsencrypt.org";
+  siteCertFile = "${siteCerts}/snakeoil.pem";
+  siteKeyFile = "${siteCerts}/snakeoil.key";
+
+  # Retrieved via:
+  # curl -s -I https://acme-v01.api.letsencrypt.org/terms \
+  #   | sed -ne 's/^[Ll]ocation: *//p'
+  tosUrl = "https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf";
+  tosPath = builtins.head (builtins.match "https?://[^/]+(.*)" tosUrl);
+
+  tosFile = pkgs.fetchurl {
+    url = tosUrl;
+    sha256 = "08b2gacdz23mzji2pjr1pwnk82a84rzvr36isif7mmi9kydl6wv3";
+  };
+
+  cfgDir = pkgs.stdenv.mkDerivation {
+    name = "boulder-config";
+    src = "${boulderSource}/test/config";
+    nativeBuildInputs = [ pkgs.jq ];
+    phases = [ "unpackPhase" "patchPhase" "installPhase" ];
+    postPatch = ''
+      sed -i -e 's/5002/80/' -e 's/5002/443/' va.json
+      sed -i -e '/listenAddress/s/:4000/:80/' wfe.json
+      sed -i -r \
+        -e ${lib.escapeShellArg "s,http://boulder:4000/terms/v1,${tosUrl},g"} \
+        -e 's,http://(boulder|127\.0\.0\.1):4000,https://${wfeDomain},g' \
+        -e '/dnsResolver/s/(127\.0\.0\.1):8053/\1:53/' \
+        *.json
+      if grep 4000 *.json; then exit 1; fi
+
+      # Patch out all additional issuer certs
+      jq '. + {ca: (.ca + {Issuers:
+        [.ca.Issuers[] | select(.CertFile == "test/test-ca.pem")]
+      })}' ca.json > tmp
+      mv tmp ca.json
+    '';
+    installPhase = "cp -r . \"$out\"";
+  };
 
   components = {
     gsb-test-srv.args = "-apikey my-voice-is-my-passport";
@@ -135,7 +227,6 @@ let
     ocsp-updater.after = [ "boulder-publisher" ];
     ocsp-responder.args = "--config ${cfgDir}/ocsp-responder.json";
     ct-test-srv = {};
-    dns-test-srv = {};
     mail-test-srv.args = "--closeFirst 5";
   };
 
@@ -185,83 +276,145 @@ let
   }) components;
 
 in {
-  networking.extraHosts = "127.0.0.1 ${toString [
-    "sa.boulder" "ra.boulder" "wfe.boulder" "ca.boulder" "va.boulder"
-    "publisher.boulder" "ocsp-updater.boulder" "admin-revoker.boulder"
-    "boulder" "boulder-mysql" "boulder-rabbitmq"
-  ]}";
+  options.headcounter.snakeOilCaCert = lib.mkOption {
+    type = lib.types.path;
+    description = ''
+      A certificate file to use with the <literal>nodes</literal> attribute to
+      inject the snakeoil CA certificate into
+      <option>security.pki.certificateFiles</option>.
+    '';
+  };
 
-  services.mysql.enable = true;
-  services.mysql.package = pkgs.mariadb;
+  config = {
+    headcounter.snakeOilCaCert = "${snakeOilCa}/ca.pem";
 
-  services.rabbitmq.enable = true;
-  services.rabbitmq.port = 5673;
+    networking.extraHosts = "127.0.0.1 ${toString [
+      "sa.boulder" "ra.boulder" "wfe.boulder" "ca.boulder" "va.boulder"
+      "publisher.boulder" "ocsp-updater.boulder" "admin-revoker.boulder"
+      "boulder" "boulder-mysql" "boulder-rabbitmq" wfeDomain
+    ]}";
 
-  systemd.services = {
-    pkcs11-daemon = {
-      description = "PKCS11 Daemon";
-      after = [ "boulder-init-softhsm.service" ];
-      before = map (n: "${n}.service") (lib.attrNames componentServices);
-      wantedBy = [ "multi-user.target" ];
-      environment.SOFTHSM_CONF = softHsmConf;
-      environment.PKCS11_DAEMON_SOCKET = "tcp://127.0.0.1:5657";
-      serviceConfig.ExecStart = let
-        softhsmLib = "${softhsm}/lib/softhsm/libsofthsm.so";
-      in "${pkcs11-proxy}/bin/pkcs11-daemon ${softhsmLib}";
-    };
+    services.bind.enable = true;
+    services.bind.zones = lib.singleton {
+      name = ".";
+      file = let
+        addDot = zone: zone + lib.optionalString (!lib.hasSuffix "." zone) ".";
+        mkNsdZoneNames = zones: map addDot (lib.attrNames zones);
+        mkBindZoneNames = zones: map (zone: addDot zone.name) zones;
+        getZones = cfg: mkNsdZoneNames cfg.services.nsd.zones
+                       ++ mkBindZoneNames cfg.services.bind.zones;
 
-    boulder-init-rabbitmq = {
-      description = "Boulder ACME Init (RabbitMQ)";
-      after = [ "rabbitmq.service" ];
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      serviceConfig.WorkingDirectory = boulderSource;
-      path = commonPath;
-      script = "rabbitmq-setup -server amqp://localhost:5673";
-    };
+        getZonesForNode = attrs: {
+          ip = attrs.config.networking.primaryIPAddress;
+          zones = getZones attrs.config;
+        };
 
-    boulder-init-mysql = {
-      description = "Boulder ACME Init (MySQL)";
-      after = [ "mysql.service" ];
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      serviceConfig.WorkingDirectory = boulderSource;
-      path = commonPath;
-      script = "${pkgs.bash}/bin/sh test/create_db.sh";
-    };
+        notMyself = attrs: attrs.config.networking.hostName
+                        != config.networking.hostName;
+        otherNodes = lib.filterAttrs (lib.const notMyself) nodes;
+        zoneInfo = lib.mapAttrsToList (lib.const getZonesForNode) otherNodes;
 
-    boulder-init-softhsm = {
-      description = "Boulder ACME Init (SoftHSM";
-      environment.SOFTHSM_CONF = softHsmConf;
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      serviceConfig.WorkingDirectory = boulderSource;
-      preStart = "mkdir -p /var/lib/softhsm";
-      path = commonPath;
-      script = ''
-        softhsm --slot 0 --init-token \
-          --label intermediate --pin 5678 --so-pin 1234
-        softhsm --slot 0 --import test/test-ca.key \
-          --label intermediate_key --pin 5678 --id FB
-        softhsm --slot 1 --init-token \
-          --label root --pin 5678 --so-pin 1234
-        softhsm --slot 1 --import test/test-root.key \
-          --label root_key --pin 5678 --id FA
+      in pkgs.writeText "fake-root.zone" ''
+        $TTL 3600
+        . IN SOA ns.fakedns. admin.fakedns. ( 1 3h 1h 1w 1d )
+        ns.fakedns. IN A ${config.networking.primaryIPAddress}
+        . IN NS ns.fakedns.
+        ${lib.concatImapStrings (num: { ip, zones }: ''
+          ns${toString num}.fakedns. IN A ${ip}
+          ${lib.concatMapStrings (zone: ''
+          ${zone} IN NS ns${toString num}.fakedns.
+          '') zones}
+        '') (lib.filter (zi: zi.zones != []) zoneInfo)}
       '';
     };
 
-    boulder = {
-      description = "Boulder ACME Server";
-      after = map (n: "${n}.service") (lib.attrNames componentServices);
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
-      script = let
-        ports = lib.range 8000 8005 ++ lib.singleton 4000;
-        netcat = "${pkgs.netcat-openbsd}/bin/nc";
-        mkPortCheck = port: "${netcat} -z 127.0.0.1 ${toString port}";
-        portCheck = "(${lib.concatMapStringsSep " && " mkPortCheck ports})";
-      in "while ! ${portCheck}; do :; done";
+    services.mysql.enable = true;
+    services.mysql.package = pkgs.mariadb;
+
+    services.rabbitmq.enable = true;
+    services.rabbitmq.port = 5673;
+
+    services.nginx.enable = true;
+    services.nginx.recommendedProxySettings = true;
+    services.nginx.virtualHosts.${wfeDomain} = {
+      enableSSL = true;
+      sslCertificate = wfeCertFile;
+      sslCertificateKey = wfeKeyFile;
+      locations."/".proxyPass = "http://127.0.0.1:80";
     };
-  } // componentServices;
+    services.nginx.virtualHosts.${siteDomain} = {
+      enableSSL = true;
+      sslCertificate = siteCertFile;
+      sslCertificateKey = siteKeyFile;
+      locations.${tosPath}.extraConfig = "alias ${tosFile};";
+    };
+
+    systemd.services = {
+      pkcs11-daemon = {
+        description = "PKCS11 Daemon";
+        after = [ "boulder-init-softhsm.service" ];
+        before = map (n: "${n}.service") (lib.attrNames componentServices);
+        wantedBy = [ "multi-user.target" ];
+        environment.SOFTHSM_CONF = softHsmConf;
+        environment.PKCS11_DAEMON_SOCKET = "tcp://127.0.0.1:5657";
+        serviceConfig.ExecStart = let
+          softhsmLib = "${softhsm}/lib/softhsm/libsofthsm.so";
+        in "${pkcs11-proxy}/bin/pkcs11-daemon ${softhsmLib}";
+      };
+
+      boulder-init-rabbitmq = {
+        description = "Boulder ACME Init (RabbitMQ)";
+        after = [ "rabbitmq.service" ];
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        serviceConfig.WorkingDirectory = boulderSource;
+        path = commonPath;
+        script = "rabbitmq-setup -server amqp://localhost:5673";
+      };
+
+      boulder-init-mysql = {
+        description = "Boulder ACME Init (MySQL)";
+        after = [ "mysql.service" ];
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        serviceConfig.WorkingDirectory = boulderSource;
+        path = commonPath;
+        script = "${pkgs.bash}/bin/sh test/create_db.sh";
+      };
+
+      boulder-init-softhsm = {
+        description = "Boulder ACME Init (SoftHSM";
+        environment.SOFTHSM_CONF = softHsmConf;
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        serviceConfig.WorkingDirectory = boulderSource;
+        preStart = "mkdir -p /var/lib/softhsm";
+        path = commonPath;
+        script = ''
+          softhsm --slot 0 --init-token \
+            --label intermediate --pin 5678 --so-pin 1234
+          softhsm --slot 0 --import test/test-ca.key \
+            --label intermediate_key --pin 5678 --id FB
+          softhsm --slot 1 --init-token \
+            --label root --pin 5678 --so-pin 1234
+          softhsm --slot 1 --import test/test-root.key \
+            --label root_key --pin 5678 --id FA
+        '';
+      };
+
+      boulder = {
+        description = "Boulder ACME Server";
+        after = map (n: "${n}.service") (lib.attrNames componentServices);
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        script = let
+          ports = lib.range 8000 8005 ++ lib.singleton 80;
+          netcat = "${pkgs.netcat-openbsd}/bin/nc";
+          mkPortCheck = port: "${netcat} -z 127.0.0.1 ${toString port}";
+          portCheck = "(${lib.concatMapStringsSep " && " mkPortCheck ports})";
+        in "while ! ${portCheck}; do :; done";
+      };
+    } // componentServices;
+  };
 }
