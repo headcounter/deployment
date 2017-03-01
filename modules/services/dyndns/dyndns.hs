@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric, DeriveDataTypeable, TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
 {-# OPTIONS_GHC -O2 -Wall -fno-warn-orphans #-}
-import Control.Concurrent (forkIO, killThread)
+import Control.Concurrent (forkIO, killThread, threadDelay)
 import Control.Concurrent.STM (atomically)
 
 import qualified Control.Concurrent.Async as A
@@ -265,8 +265,16 @@ serveMany :: ListenerConfig -> ((NS.Socket, NS.SockAddr) -> IO ()) -> IO ()
 serveMany lc fun =
     fmap snd . A.waitAny <=< mapM A.async $ fmap listenTo (hosts lc)
   where
+    throttledRetry :: T.Text -> IO () -> IO ()
+    throttledRetry host f = onException f $ do
+        logBSLn [ "Unable to bind to slave address ", TE.encodeUtf8 host, ":"
+                , BC.pack . show $ port lc, ", retrying in 3 seconds..."]
+        threadDelay 3000000
+        throttledRetry host f
+
     listenTo :: T.Text -> IO ()
-    listenTo h = NS.serve (fromString $ T.unpack h) (show $ port lc) fun
+    listenTo h = throttledRetry h $
+        NS.serve (fromString $ T.unpack h) (show $ port lc) fun
 
 masterWorker :: MasterConfig -> AS.AcidState ZoneDatabase
              -> TC.TChan Zone -> IO ()
