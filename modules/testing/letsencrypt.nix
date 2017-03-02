@@ -40,6 +40,11 @@ let
     buildInputs = [ pkgs.openssl pkgs.libseccomp ];
   };
 
+  mkGoDep = { goPackagePath, url ? "https://${goPackagePath}", rev, sha256 }: {
+    inherit goPackagePath;
+    src = pkgs.fetchgit { inherit url rev sha256; };
+  };
+
   goose = let
     owner = "liamstask";
     repo = "goose";
@@ -57,12 +62,7 @@ let
 
     goPackagePath = "bitbucket.org/${owner}/${repo}";
     subPackages = [ "cmd/goose" ];
-    extraSrcs = let
-      mkDep = { goPackagePath, url ? goPackagePath, rev, sha256 }: {
-        inherit goPackagePath;
-        src = pkgs.fetchgit { url = "https://${url}"; inherit rev sha256; };
-      };
-    in map mkDep [
+    extraSrcs = map mkGoDep [
       { goPackagePath = "github.com/go-sql-driver/mysql";
         rev = "2e00b5cd70399450106cec6431c2e2ce3cae5034";
         sha256 = "085g48jq9hzmlcxg122n0c4pi41sc1nn2qpx1vrl2jfa8crsppa5";
@@ -84,7 +84,7 @@ let
         sha256 = "0bkc9x8sgqbzgdimsmsnhb0qrzlzfv33fgajmmjxl4hcb21qz3rf";
       }
       { goPackagePath = "golang.org/x/net";
-        url = "go.googlesource.com/net";
+        url = "https://go.googlesource.com/net";
         rev = "10c134ea0df15f7e34d789338c7a2d76cc7a3ab9";
         sha256 = "14cbr2shl08gyg85n5gj7nbjhrhhgrd52h073qd14j97qcxsakcz";
       }
