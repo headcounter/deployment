@@ -1,18 +1,26 @@
 { lib, ... }@passthru:
 
 let
-  # Machine config for the Headcounter XMPP server (only XMPP specific parts).
-  ultron = { config, lib, ... }: {
-    imports = [ ../../xmpp.nix ../../domains.nix ];
+  # All the machines in the deployment
+  deployment =  lib.mapAttrs (node: config: {
+    imports = [ config ../../modules/testing/nixops.nix ];
 
-    headcounter.useSnakeOil = true;
-    users.extraUsers.mongoose.extraGroups = lib.singleton "keys";
+    config = {
+      headcounter.nixops = {
+        inherit (import ../../network.nix) resources;
+      };
+    } // lib.optionalAttrs (node == "ultron") {
+      headcounter.useSnakeOil = true;
+      headcounter.vhostDefaultDevice = "eth1";
 
-    headcounter.vhostDefaultDevice = "eth1";
+      virtualisation.vlans = lib.singleton 1;
+      virtualisation.memorySize = 2048;
+    };
+  }) (builtins.removeAttrs (import ../../network.nix) [
+    "network" "defaults" "resources" "require" "_file"
+  ]);
 
-    virtualisation.vlans = lib.singleton 1;
-    virtualisation.memorySize = 2048;
-  };
+  isTestNode = node: !lib.elem node (lib.attrNames deployment);
 
   # Common config for each test node that's not ultron.
   testNodeConfig = { lib, nodes, ... }: let
@@ -46,11 +54,9 @@ let
   in {
     name = "headcounter-${attrs.name}";
 
-    nodes = { inherit ultron; } // lib.mapAttrs (node: cfg: {
-      imports = [
-        (if node == "ultron" then ultron else testNodeConfig) cfg
-      ];
-    }) (attrs.nodes or {});
+    nodes = lib.zipAttrsWith (node: cfgs: {
+      imports = cfgs ++ lib.optional (isTestNode node) testNodeConfig;
+    }) [ deployment (attrs.nodes or {}) ];
 
     testScript = scriptAttrs: let
       subTestScript = if builtins.isFunction attrs.testScript
