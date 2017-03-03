@@ -101,7 +101,7 @@ let
     };
   in {
     wantedBy = [ "multi-user.target" ];
-    after = [ "network.target" ];
+    after = [ "network.target" "encrypted-links.target" ];
     description = "Dynamic DNS ${modeUCFirst} Server";
     restartTriggers = [ cfgFile ];
     serviceConfig = commonSC // specificSC // userGroupSC;
