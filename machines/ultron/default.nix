@@ -109,6 +109,8 @@ in {
     '';
   };
 
+  systemd.services.postgresql.after = [ "encrypted-links.target" ];
+
   headcounter.services.lighttpd = {
     enable = true;
     defaultPort = null;
