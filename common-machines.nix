@@ -30,7 +30,7 @@ in {
   nix = {
     package = pkgs.nixUnstable;
     nrBuildUsers = 100;
-    useChroot = true;
+    useSandbox = true;
     readOnlyStore = true;
     buildCores = 0;
   };
