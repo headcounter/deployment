@@ -147,7 +147,6 @@ in {
         ExecStart = "${openssh}/bin/sshd -f \"${sftpdConfigFile}\"";
         KillMode = "process";
         Restart = "always";
-        Type = "forking";
       };
     };
 
