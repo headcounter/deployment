@@ -304,7 +304,6 @@ in {
 
       acl.rules.access = {
         pubsub_createnode = [ { allow = true; } ];
-        configure = [ { allow = true; match = "admin"; } ];
         register = [
           { allow = false; match = "weirdnames"; }
           { allow = false; }
@@ -328,10 +327,6 @@ in {
         ];
         muc_torservers_admin = [
           { allow = true; match = "torservers_admin"; }
-        ];
-        muc_wallops = [
-          { allow = true; match = "admin"; }
-          { allow = true; match = "wallops"; }
         ];
         muc = [ { allow = true; } ];
         local = [ { allow = true; match = "local"; } ];
