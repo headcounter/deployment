@@ -3,15 +3,19 @@
 with lib;
 
 let
-  hydraSrc = overrideDerivation ((import <nixpkgs> {}).fetchFromGitHub {
+  hydraSrc = let
+    rev = "fd754d678e691ddb32fd702186135f8a3291cb13";
+  in overrideDerivation ((import <nixpkgs> {}).fetchFromGitHub {
     repo = "hydra";
     owner = "NixOS";
-    rev = "e7ce22555853abfc8d28fc15296a1c57a25e2c6e";
-    sha256 = "1mz7qk434rcvm52vzlj9pi8y8mv3n58sihlmm2gynyl4vj3z7ycg";
+    inherit rev;
+    sha256 = "0mlgv6dggmknn6483d8xp10z6cwf8vmp5x8ga7s80jrzv10i5ivh";
   }) (drv: {
     postFetch = (drv.postFetch or "") + ''
       patch -p1 -d "$out" < "${./hydra-build.patch}"
     '';
+    inherit rev;
+    revCount = 2374;
   });
 
   hydraRelease = import "${hydraSrc}/release.nix" {
@@ -32,7 +36,7 @@ let
 in {
   imports = singleton hydraModule;
 
-  services.hydra = {
+  services.hydra-dev = {
     package = hydra;
     enable = true;
     hydraURL = "https://headcounter.org/hydra/";
