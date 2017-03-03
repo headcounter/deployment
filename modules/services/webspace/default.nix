@@ -144,7 +144,7 @@ in {
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
-        ExecStart = "${openssh}/sbin/sshd -f \"${sftpdConfigFile}\"";
+        ExecStart = "${openssh}/bin/sshd -f \"${sftpdConfigFile}\"";
         KillMode = "process";
         Restart = "always";
         Type = "forking";
