@@ -55,9 +55,9 @@ in {
     '';
     deployment.encryptedLinksTo = [ "ultron" ];
 
-    services.hydra.listenHost = lib.mkForce
+    services.hydra-dev.listenHost = lib.mkForce
       config.networking.p2pTunnels.ssh.ultron.localIPv4;
-    services.hydra.dbi = let
+    services.hydra-dev.dbi = let
       inherit (config.networking.p2pTunnels.ssh) ultron;
     in "dbi:Pg:dbname=hydra;user=hydra;host=${ultron.remoteIPv4}";
   };
