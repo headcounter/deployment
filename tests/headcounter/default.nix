@@ -62,11 +62,18 @@ let
       subTestScript = if builtins.isFunction attrs.testScript
                       then attrs.testScript scriptAttrs
                       else attrs.testScript;
+
+      runForDeplMachines = command: let
+        runCommand = machine: "\$${machine}->${command};";
+        machines = lib.attrNames deployment;
+      in lib.concatMapStrings runCommand machines;
     in ''
       my $out = $ENV{'out'};
-      startAll;
 
-      $ultron->waitForUnit("mongooseim.service");
+      ${runForDeplMachines "start"}
+      ${runForDeplMachines "waitForUnit('multi-user.target')"}
+
+      startAll;
 
       ${subTestScript}
     '';
