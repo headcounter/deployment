@@ -1,11 +1,14 @@
 { pkgs, lib, config, ... }:
 
 let
-  vuizvuiRev = "408b7de48eb41828d70d247fb152c8e5bd45fb5e";
-  vuizvuiUrl = "https://github.com/openlab-aux/vuizvui/archive/"
-             + "${vuizvuiRev}.tar.gz";
-  vuizvui = fetchTarball vuizvuiUrl;
-  vim = import "${vuizvui}/modules/user/aszlig/programs/vim/default.nix";
+  vuizvui = (import <nixpkgs> {}).fetchFromGitHub {
+    owner = "openlab-aux";
+    repo = "vuizvui";
+    rev = "9e235ef0f0d48f241ec6b0bcb7b332c182c2aadf";
+    sha256 = "1ja2nc3q0c4il6f507mlxig5fzl3j384asnx3jb89r7jjryjm0jr";
+  };
+
+  vim = "${vuizvui}/modules/user/aszlig/programs/vim/default.nix";
 
 in {
   imports = [ ./common.nix vim ];
