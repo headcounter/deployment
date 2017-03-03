@@ -1,10 +1,11 @@
-{ stdenv, fetchgit, fetchurl, srcOnly, makeWrapper, unzip, haxe, neko }:
+{ stdenv, fetchFromGitHub, fetchurl, srcOnly, makeWrapper, unzip, haxe, neko }:
 
 let
-  hase = fetchgit {
-    url = "git://github.com/aszlig/hase.git";
+  hase = fetchFromGitHub {
+    owner = "aszlig";
+    repo = "hase";
     rev = "ad2107172a14bd4e024ca49b1bf285b13ab2fd56";
-    sha256 = "1j3bkk4vrzzriv0rkn4iyyx43bb09ys0hwvpp0naqqzjc5a9p2df";
+    sha256 = "1i29isgql7pi1qadchg2k10d3jqpfxhig0b2xfn4jm2ia69jyj2m";
   };
 
   hxcpp = srcOnly rec {
