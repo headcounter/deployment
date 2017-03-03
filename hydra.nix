@@ -50,7 +50,9 @@ in {
   users.extraUsers.hydra-www.extraGroups = [ "keys" ];
   users.extraUsers.hydra-queue-runner.extraGroups = [ "keys" ];
   systemd.services.hydra-init.requires = [ "keys.target" ];
-  systemd.services.hydra-init.after = [ "keys.target" ];
+  systemd.services.hydra-init.after = [
+    "keys.target" "encrypted-links.target"
+  ];
 
   nix.distributedBuilds = true;
   nix.buildMachines = flip mapAttrsToList buildNodes (hostName: node: {
