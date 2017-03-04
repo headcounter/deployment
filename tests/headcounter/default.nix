@@ -10,7 +10,7 @@ let
       DefaultTimeoutStopSec=600s
       DefaultRestartSec=600s
     '';
-    systemd.services.postgresql.serviceConfig.TimeoutSec = lib.mkForce 120;
+    systemd.services.postgresql.serviceConfig.TimeoutSec = lib.mkForce 600;
   };
 
   # All the machines in the deployment
