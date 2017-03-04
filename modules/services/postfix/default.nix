@@ -9,12 +9,6 @@ let
 
   optDoc = opt: "<option>headcounter.services.postfix.${opt}</option>";
 
-  portType = lib.mkOptionType {
-    name = "TCP port";
-    check = p: lib.isInt p && p <= 65535 && p >= 0;
-    merge = lib.mergeOneOption;
-  };
-
   # Maximum value for an unsigned int, designating "unlimited" processes.
   unlimitedProcs = 4294967295;
 
@@ -49,7 +43,7 @@ let
       };
 
       address = mkOption {
-        type = types.either portType types.str;
+        type = types.either hclib.types.port types.str;
         default = name;
         example = "[::1]:25";
         description = ''
