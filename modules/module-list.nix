@@ -1,5 +1,6 @@
 [
   ./core.nix
+  ./config/conditions.nix
   ./config/erlang-inet
   ./config/vhosts.nix
   ./config/imperative-containers.nix
