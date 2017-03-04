@@ -8,7 +8,6 @@ let
     systemd.extraConfig = ''
       DefaultTimeoutStartSec=600s
       DefaultTimeoutStopSec=600s
-      DefaultRestartSec=600s
     '';
     systemd.services.postgresql.serviceConfig.TimeoutSec = lib.mkForce 600;
   };
