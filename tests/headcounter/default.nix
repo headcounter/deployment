@@ -1,9 +1,21 @@
 { lib, ... }@passthru:
 
 let
+  # This is for all machines in the deployment, because when run on Hydra, all
+  # of the deployment tests are run at once which causes a lot of services to
+  # time out because of the high load.
+  timeoutConfig = { lib, ... }: {
+    systemd.extraConfig = ''
+      DefaultTimeoutStartSec=600s
+      DefaultTimeoutStopSec=600s
+      DefaultRestartSec=600s
+    '';
+    systemd.services.postgresql.serviceConfig.TimeoutSec = lib.mkForce 120;
+  };
+
   # All the machines in the deployment
-  deployment =  lib.mapAttrs (node: config: {
-    imports = [ config ../../modules/testing/nixops.nix ];
+  deployment = lib.mapAttrs (node: config: {
+    imports = [ config ../../modules/testing/nixops.nix timeoutConfig ];
 
     config = {
       headcounter.nixops = {
