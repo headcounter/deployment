@@ -32,7 +32,9 @@ in {
     '';
   };
 
-  taalo = { pkgs, lib, config, ... }: mkMachine {
+  taalo = { pkgs, lib, nodes, config, ... }: let
+    inherit (config.networking.p2pTunnels.ssh) ultron;
+  in mkMachine {
     imports = [ ./hydra.nix ];
     deployment.hetzner.mainIPv4 = "188.40.96.202";
 
@@ -55,11 +57,15 @@ in {
     '';
     deployment.encryptedLinksTo = [ "ultron" ];
 
-    services.hydra-dev.listenHost = lib.mkForce
-      config.networking.p2pTunnels.ssh.ultron.localIPv4;
-    services.hydra-dev.dbi = let
-      inherit (config.networking.p2pTunnels.ssh) ultron;
-    in "dbi:Pg:dbname=hydra;user=hydra;host=${ultron.remoteIPv4}";
+    services.hydra-dev = {
+      listenHost = lib.mkForce ultron.localIPv4;
+      dbi = "dbi:Pg:dbname=hydra;user=hydra;host=${ultron.remoteIPv4}";
+    };
+
+    headcounter.conditions.hydra-init.connectable = {
+      address = ultron.remoteIPv4;
+      inherit (nodes.ultron.config.services.postgresql) port;
+    };
   };
 
   benteflork = mkMachine {

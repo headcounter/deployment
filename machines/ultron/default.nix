@@ -41,6 +41,9 @@ let
       '';
     }
   ];
+
+  ultronTunnel = nodes.taalo.config.networking.p2pTunnels.ssh.ultron;
+
 in {
   imports = [ ../../domains.nix ../../xmpp.nix ];
 
@@ -97,19 +100,19 @@ in {
     credentials = hclib.getcred "dyndns-users" {};
   };
 
-  services.postgresql = let
-    inherit (nodes.taalo.config.networking.p2pTunnels.ssh) ultron;
-  in {
+  services.postgresql = {
     enable = true;
     extraConfig = ''
-      listen_addresses = '${ultron.remoteIPv4}'
+      listen_addresses = '${ultronTunnel.remoteIPv4}'
     '';
     authentication = mkAfter ''
-      host hydra all ${ultron.localIPv4}/32 trust
+      host hydra all ${ultronTunnel.localIPv4}/32 trust
     '';
   };
 
-  systemd.services.postgresql.after = [ "encrypted-links.target" ];
+  headcounter.conditions.postgresql.bindable = {
+    address = ultronTunnel.remoteIPv4;
+  };
 
   headcounter.services.lighttpd = {
     enable = true;

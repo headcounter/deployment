@@ -101,7 +101,7 @@ let
     };
   in {
     wantedBy = [ "multi-user.target" ];
-    after = [ "network.target" "encrypted-links.target" ];
+    after = [ "network.target" ];
     description = "Dynamic DNS ${modeUCFirst} Server";
     restartTriggers = [ cfgFile ];
     serviceConfig = commonSC // specificSC // userGroupSC;
@@ -174,6 +174,11 @@ let
       masterPort: ${toString cfg.slave.master.port}
       writeZoneCommand: ${yamlStr cfg.slave.zoneCommand}
     '';
+
+    headcounter.conditions.dyndns-slave.connectable = {
+      address = cfg.slave.master.host;
+      inherit (cfg.slave.master) port;
+    };
 
     users.users.dyndns = mkIf (cfg.slave.user == "dyndns") {
       description = "Dynamic DNS Slave User";
