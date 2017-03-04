@@ -4,6 +4,7 @@ let
   callPackage = pkgs.lib.callPackageWith (pkgs // headcounter);
 
   headcounter = rec {
+    compileC = callPackage ./build-support/compile-c.nix {};
     buildErlang = callPackage ./build-support/build-erlang {};
     writeEscript = callPackage ./build-support/write-escript.nix {};
 
