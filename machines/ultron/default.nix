@@ -108,6 +108,10 @@ in {
     authentication = mkAfter ''
       host hydra all ${ultronTunnel.localIPv4}/32 trust
     '';
+    initialScript = pkgs.writeText "postgresql-init.sql" ''
+      CREATE ROLE hydra LOGIN;
+      CREATE DATABASE hydra OWNER hydra;
+    '';
   };
 
   headcounter.conditions.postgresql.bindable = {
