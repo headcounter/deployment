@@ -72,6 +72,8 @@ in {
     environment.etc."headcounter/test.config".source = mkTestConfig hclib fqdn;
   };
 
+  excludeNodes = [ "taalo" "benteflork" "unzervalt" ];
+
   testScript = { nodes, ... }: let
     inherit (nodes.ultron.config.headcounter.vhosts.${vhost}) fqdn;
   in ''

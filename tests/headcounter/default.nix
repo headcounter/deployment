@@ -62,12 +62,16 @@ let
     isDirect = builtins.isFunction maybeExpr || builtins.isAttrs maybeExpr;
     expr = if isDirect then maybeExpr else import maybeExpr;
     attrs = if builtins.isFunction expr then expr passthru else expr;
-  in {
-    name = "headcounter-${attrs.name}";
 
     nodes = lib.zipAttrsWith (node: cfgs: {
       imports = cfgs ++ lib.optional (isTestNode node) testNodeConfig;
     }) [ deployment (attrs.nodes or {}) ];
+
+    excludeNodes = attrs.excludeNodes or [];
+  in {
+    name = "headcounter-${attrs.name}";
+
+    inherit nodes;
 
     testScript = scriptAttrs: let
       subTestScript = if builtins.isFunction attrs.testScript
@@ -76,15 +80,20 @@ let
 
       runForDeplMachines = command: let
         runCommand = machine: "\$${machine}->${command};";
-        machines = lib.attrNames deployment;
+        machines = lib.attrNames (removeAttrs deployment excludeNodes);
       in lib.concatMapStrings runCommand machines;
+
+      startRest = let
+        runCommand = node: "\$${node}->start;";
+        others = lib.attrNames (removeAttrs nodes (lib.attrNames deployment));
+      in lib.concatMapStrings runCommand others;
     in ''
       my $out = $ENV{'out'};
 
       ${runForDeplMachines "start"}
       ${runForDeplMachines "waitForUnit('multi-user.target')"}
 
-      startAll;
+      ${startRest}
 
       ${subTestScript}
     '';
