@@ -42,7 +42,7 @@ let
     }
   ];
 
-  ultronTunnel = nodes.taalo.config.networking.p2pTunnels.ssh.ultron;
+  taaloTunnel = nodes.taalo.config.networking.p2pTunnels.ssh.ultron;
 
 in {
   imports = [ ../../domains.nix ../../xmpp.nix ];
@@ -103,10 +103,10 @@ in {
   services.postgresql = {
     enable = true;
     extraConfig = ''
-      listen_addresses = '${ultronTunnel.remoteIPv4}'
+      listen_addresses = '${taaloTunnel.remoteIPv4}'
     '';
     authentication = mkAfter ''
-      host hydra all ${ultronTunnel.localIPv4}/32 trust
+      host hydra all ${taaloTunnel.localIPv4}/32 trust
     '';
     initialScript = pkgs.writeText "postgresql-init.sql" ''
       CREATE ROLE hydra LOGIN;
@@ -115,7 +115,7 @@ in {
   };
 
   headcounter.conditions.postgresql.bindable = {
-    address = ultronTunnel.remoteIPv4;
+    address = taaloTunnel.remoteIPv4;
   };
 
   headcounter.services.lighttpd = {
