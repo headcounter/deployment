@@ -69,6 +69,7 @@ in {
   nodes.client = { nodes, hclib, ... }: let
     inherit (nodes.ultron.config.headcounter.vhosts.${vhost}) fqdn;
   in {
+    virtualisation.memorySize = 1024;
     environment.etc."headcounter/test.config".source = mkTestConfig hclib fqdn;
   };
 
