@@ -5,11 +5,12 @@
 
   options = {
     boot.kernelPackages = let
-      tunPatch = {
+      tunPatch = rec {
         name = "tun-poll-fix";
         patch = pkgs.fetchurl {
-          url = "https://redmoonstudios.org/~aszlig/fdbc/tun2.patch";
-          sha256 = "0axaacmwfy4w9m0gsz8855a98li3akidxgxh5zc4kjr4b5m2al5m";
+          name = "${name}.patch";
+          url = "https://patchwork.ozlabs.org/patch/737900/raw/";
+          sha256 = "18330picypxbaq7and7zjjv6pkmxp1fhc200dzn6ajamnzyfy2p9";
         };
       };
     in assert config.system.nixosRelease == "16.09"; lib.mkOption {
