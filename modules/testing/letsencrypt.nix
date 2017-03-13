@@ -1,14 +1,14 @@
 # Fully pluggable module to have Letsencrypt's Boulder ACME service running in
 # a test environment.
 #
-# Everything that's needed from outside of the module is a name server with
+# Everything that's needed from outside of the module is a DNS resolver with
 # valid zones to be usable for validation and config.headcounter.snakeOilCaCert
 # from the node attribute of the host using this module to get a file to add to
 # the system CA bundle.
 #
-# Zones for name servers running on other nodes are automatically discovered
-# from BIND and NSD NixOS configurations and delegated from a fake root zone.
-{ config, pkgs, nodes, lib, ... }:
+# The resolver can be simply set via the networking.nameservers. Keep in mind
+# that *only* the first one is used for the validator.
+{ config, pkgs, lib, ... }:
 
 let
   softhsm = pkgs.stdenv.mkDerivation rec {
@@ -188,6 +188,8 @@ let
     sha256 = "08b2gacdz23mzji2pjr1pwnk82a84rzvr36isif7mmi9kydl6wv3";
   };
 
+  resolver = lib.head config.networking.nameservers;
+
   cfgDir = pkgs.stdenv.mkDerivation {
     name = "boulder-config";
     src = "${boulderSource}/test/config";
@@ -199,7 +201,7 @@ let
       sed -i -r \
         -e ${lib.escapeShellArg "s,http://boulder:4000/terms/v1,${tosUrl},g"} \
         -e 's,http://(boulder|127\.0\.0\.1):4000,https://${wfeDomain},g' \
-        -e '/dnsResolver/s/(127\.0\.0\.1):8053/\1:53/' \
+        -e '/dnsResolver/s/127\.0\.0\.1:8053/${resolver}:53/' \
         *.json
       if grep 4000 *.json; then exit 1; fi
 
@@ -293,40 +295,6 @@ in {
       "publisher.boulder" "ocsp-updater.boulder" "admin-revoker.boulder"
       "boulder" "boulder-mysql" "boulder-rabbitmq" wfeDomain
     ]}";
-
-    services.bind.enable = true;
-    services.bind.zones = lib.singleton {
-      name = ".";
-      file = let
-        addDot = zone: zone + lib.optionalString (!lib.hasSuffix "." zone) ".";
-        mkNsdZoneNames = zones: map addDot (lib.attrNames zones);
-        mkBindZoneNames = zones: map (zone: addDot zone.name) zones;
-        getZones = cfg: mkNsdZoneNames cfg.services.nsd.zones
-                       ++ mkBindZoneNames cfg.services.bind.zones;
-
-        getZonesForNode = attrs: {
-          ip = attrs.config.networking.primaryIPAddress;
-          zones = getZones attrs.config;
-        };
-
-        notMyself = attrs: attrs.config.networking.hostName
-                        != config.networking.hostName;
-        otherNodes = lib.filterAttrs (lib.const notMyself) nodes;
-        zoneInfo = lib.mapAttrsToList (lib.const getZonesForNode) otherNodes;
-
-      in pkgs.writeText "fake-root.zone" ''
-        $TTL 3600
-        . IN SOA ns.fakedns. admin.fakedns. ( 1 3h 1h 1w 1d )
-        ns.fakedns. IN A ${config.networking.primaryIPAddress}
-        . IN NS ns.fakedns.
-        ${lib.concatImapStrings (num: { ip, zones }: ''
-          ns${toString num}.fakedns. IN A ${ip}
-          ${lib.concatMapStrings (zone: ''
-          ${zone} IN NS ns${toString num}.fakedns.
-          '') zones}
-        '') (lib.filter (zi: zi.zones != []) zoneInfo)}
-      '';
-    };
 
     services.mysql.enable = true;
     services.mysql.package = pkgs.mariadb;
