@@ -15,7 +15,10 @@ else
     exists=0
 fi
 
-cat > "$zonefile"
+zonedata="$(cat)"
+
+echo "$zonedata" | @checkzone@ "$fqdn" - || exit 1
+echo "$zonedata" > "$zonefile"
 
 if [ "$oldMTime" -eq "$(stat -c %Y "$zonefile")" ]; then
     touchZonefile

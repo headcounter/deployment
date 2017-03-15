@@ -81,6 +81,7 @@ in {
       isExecutable = true;
       inotifywait = "${pkgs.inotify-tools}/bin/inotifywait";
       ctrl = "${pkgs.nsd}/bin/nsd-control -c ${nsdControlConfig}";
+      checkzone = "${pkgs.nsd}/bin/nsd-checkzone";
     };
   };
 }
