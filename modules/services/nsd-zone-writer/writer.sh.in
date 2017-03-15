@@ -44,7 +44,7 @@ if [ $exists -eq 1 ]; then
     echo -n "Reloading zone $fqdn: " >&2
     @ctrl@ reload "$fqdn" >&2
 else
-    @ctrl@ addzone "$fqdn" dyndns
+    @ctrl@ addzone "$fqdn" dynzone
 fi
 
 for waitTime in 1 2 5 10 30; do

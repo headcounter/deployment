@@ -191,9 +191,17 @@ let
     };
   };
 
-  slaveNSDConfig = mkIf cfg.slave.useNSD (import ./nsd.nix {
-    inherit config pkgs lib;
-  });
+  slaveNSDConfig = mkIf cfg.slave.useNSD {
+    systemd.services.dyndns-slave.after = [ "nsd.service" ];
+    headcounter.nsd-zone-writer.enable = lib.mkOverride 900 true;
+    headcounter.nsd-zone-writer.beforeUnits = [ "dyndns-slave.service" ];
+
+    headcounter.services.dyndns.slave = {
+      zoneCommand = let
+        zoneWriter = toString config.system.build.nsd-zone-writer;
+      in lib.mkOverride 900 zoneWriter;
+    };
+  };
 
   slaveConfig = mkMerge [ slaveBaseConfig slaveNSDConfig ];
 

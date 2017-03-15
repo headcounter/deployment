@@ -10,6 +10,7 @@
   ./services/mongooseim
   ./services/mongooseim/ctl.nix
   ./services/nix-ssh-build.nix
+  ./services/nsd-zone-writer
   ./services/postfix
   ./services/webspace
 ]
