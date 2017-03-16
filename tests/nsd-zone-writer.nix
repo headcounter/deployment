@@ -55,5 +55,10 @@ import ./make-test.nix ({ lib, ... }: {
     checkStat "/var/lib/nsd/dynzones/foo.zone", "-rw-r-----", "dynzone", "nsd";
     ${writeTestZone "fail" "bob" "bar"}
     $machine->fail('stat /var/lib/nsd/dynzones/bar.zone');
+
+    $machine->shutdown;
+    $machine->waitForUnit('multi-user.target');
+    ${writeTestZone "succeed" "alice" "xxx"}
+    checkZone "xxx";
   '';
 })

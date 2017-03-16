@@ -5,6 +5,7 @@ let
 
   nsdcfg = config.services.nsd.remoteControl;
 
+  ctlKeyDir = "/var/lib/nsd-zone-writer-ctl";
   nsdStateDir = config.users.users.nsd.home;
   baseDir = "${nsdStateDir}/dynzones";
 
@@ -106,6 +107,7 @@ in {
       after = [ "nsd.service" ];
       before = config.headcounter.nsd-zone-writer.beforeUnits;
       serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
       serviceConfig.UMask = "0057";
       script = ''
         chgrp dynzone ${lib.escapeShellArg nsdStateDir}
@@ -115,6 +117,44 @@ in {
         chown dynzone:nsd ${lib.escapeShellArg baseDir}
         chmod g=sx ${lib.escapeShellArg baseDir}
       '';
+    };
+
+    systemd.services.nsd-control-keys-setup = let
+      keyFiles = map (f: "${ctlKeyDir}/${f}") [
+        "nsd_control.key" "nsd_control.pem" "nsd_server.key" "nsd_server.pem"
+      ];
+    in {
+      description = "Set Up NSD Control Keys";
+      requiredBy = [ "nsd.service" ];
+      before = [ "nsd.service" ];
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+      serviceConfig.UMask = "0077";
+      serviceConfig.User = "dynzonekeys";
+      serviceConfig.Group = "dynzone";
+      serviceConfig.PermissionsStartOnly = true;
+      unitConfig.ConditionPathExists = map (f: "!${f}") keyFiles;
+      path = [ pkgs.openssl ];
+      preStart = ''
+        mkdir -p ${lib.escapeShellArg ctlKeyDir}
+        chown dynzonekeys ${lib.escapeShellArg ctlKeyDir}
+      '';
+      script = ''
+        "${pkgs.nsd}/bin/nsd-control-setup" -d ${lib.escapeShellArg ctlKeyDir}
+      '';
+      postStart = ''
+        chown root ${lib.escapeShellArg ctlKeyDir}
+        ${lib.concatMapStrings (keyFile: ''
+          chmod 0440 ${lib.escapeShellArg keyFile}
+          chown dynzone:nsd ${lib.escapeShellArg keyFile}
+        '') keyFiles}
+        chmod o+x ${lib.escapeShellArg ctlKeyDir}
+      '';
+    };
+
+    users.users.dynzonekeys = {
+      description = "User for Creating NSD Control Keys";
+      uid = 2024;
     };
 
     users.users.dynzone = {
@@ -137,23 +177,14 @@ in {
           zonefile: "${baseDir}/%s.zone"
       '';
 
-      remoteControl = let
-        # We can use this as long as remoteControl.interfaces doesn't serve on
-        # external interfaces.
-        snakeOil = pkgs.runCommand "nsd-control-certs" {
-          buildInputs = [ pkgs.openssl ];
-        } ''
-          mkdir -p "$out"
-          "${pkgs.nsd}/bin/nsd-control-setup" -d "$out"
-        '';
-      in lib.mkMerge [
+      remoteControl = lib.mkMerge [
         { interfaces = setOpt [ "127.0.0.1" ]; }
         (lib.mkIf (nsdcfg.interfaces == [ "127.0.0.1" ]) {
           enable = setOpt true;
-          controlKeyFile = setOpt "${snakeOil}/nsd_control.key";
-          controlCertFile = setOpt "${snakeOil}/nsd_control.pem";
-          serverKeyFile = setOpt "${snakeOil}/nsd_server.key";
-          serverCertFile = setOpt "${snakeOil}/nsd_server.pem";
+          controlKeyFile = setOpt "${ctlKeyDir}/nsd_control.key";
+          controlCertFile = setOpt "${ctlKeyDir}/nsd_control.pem";
+          serverKeyFile = setOpt "${ctlKeyDir}/nsd_server.key";
+          serverCertFile = setOpt "${ctlKeyDir}/nsd_server.pem";
         })
       ];
     };
