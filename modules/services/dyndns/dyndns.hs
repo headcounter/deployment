@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric, DeriveDataTypeable, TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
-{-# OPTIONS_GHC -O2 -Wall -fno-warn-orphans #-}
 import Control.Concurrent (forkIO, killThread, threadDelay)
 import Control.Concurrent.STM (atomically)
 

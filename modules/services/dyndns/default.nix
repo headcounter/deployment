@@ -4,18 +4,14 @@ let
   inherit (lib) mkOption mkEnableOption mkIf mkMerge mkDefault types;
   cfg = config.headcounter.services.dyndns;
 
-  package = pkgs.stdenv.mkDerivation {
+  daemon = pkgs.headcounter.compileHaskell {
     name = "dyndns";
-    src = ./dyndns.hs;
+    source = ./dyndns.hs;
 
-    ghc = pkgs.haskellPackages.ghcWithPackages (pkgs: with pkgs; [
-      wai warp iproute stm yaml network-simple acid-state
-    ]);
-
-    buildCommand = ''
-      mkdir -p "$out/bin"
-      "$ghc/bin/ghc" --make "$src" -o "$out/bin/dyndns"
-    '';
+    ghcflags = [ "-O2" "-Wall" "-fno-warn-orphans" ];
+    buildDepends = [
+      "acid-state" "iproute" "network-simple" "stm" "wai" "warp" "yaml"
+    ];
   };
 
   mkListenerOptions = desc: defHost: defPort: {
@@ -89,7 +85,7 @@ let
       Group = cfg.slave.group;
     };
     commonSC = {
-      ExecStart = "@${package}/bin/dyndns dyndns-${mode} --${mode} ${cfgFile}";
+      ExecStart = "@${daemon} dyndns-${mode} --${mode} ${cfgFile}";
       RestartSec = 10;
     };
     specificSC = if mode == "master" then {

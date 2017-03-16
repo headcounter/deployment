@@ -5,6 +5,7 @@ let
 
   headcounter = rec {
     compileC = callPackage ./build-support/compile-c.nix {};
+    compileHaskell = callPackage ./build-support/compile-haskell.nix {};
     buildErlang = callPackage ./build-support/build-erlang {};
     writeEscript = callPackage ./build-support/write-escript.nix {};
 
