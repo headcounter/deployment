@@ -195,10 +195,11 @@ let
     systemd.services.dyndns-slave.after = [ "nsd.service" ];
     headcounter.nsd-zone-writer.enable = lib.mkOverride 900 true;
     headcounter.nsd-zone-writer.beforeUnits = [ "dyndns-slave.service" ];
+    headcounter.nsd-zone-writer.allowedUsers = lib.singleton cfg.slave.user;
 
     headcounter.services.dyndns.slave = {
       zoneCommand = let
-        zoneWriter = toString config.system.build.nsd-zone-writer;
+        zoneWriter = config.headcounter.nsd-zone-writer.command;
       in lib.mkOverride 900 zoneWriter;
     };
   };

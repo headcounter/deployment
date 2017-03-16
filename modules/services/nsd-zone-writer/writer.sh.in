@@ -1,26 +1,29 @@
-#!@shell@ -e
 fqdn="$1"
-umask 0007
-zonefile="/var/lib/nsd/dynzones/$fqdn.zone"
+umask 0027
+zonefile="@baseDir@/$fqdn.zone"
 
 touchZonefile() {
-    touch -r "$zonefile" -d '1 sec' "$zonefile"
+    @touch@ -r "$zonefile" -d '1 sec' "$zonefile"
 }
 
 if [ -e "$zonefile" ]; then
-    oldMTime="$(stat -c %Y "$zonefile")"
+    oldMTime="$(@stat@ -c %Y "$zonefile")"
     exists=1
 else
     oldMTime=0
     exists=0
 fi
 
-zonedata="$(cat)"
+zonedata="$(@cat@)"
 
-echo "$zonedata" | @checkzone@ "$fqdn" - || exit 1
+if ! zoneErrors="$(echo "$zonedata" | @checkzone@ "$fqdn" - 2>&1)"; then
+    echo "$zoneErrors" >&2
+    exit 1
+fi
+
 echo "$zonedata" > "$zonefile"
 
-if [ "$oldMTime" -eq "$(stat -c %Y "$zonefile")" ]; then
+if [ "$oldMTime" -eq "$(@stat@ -c %Y "$zonefile")" ]; then
     touchZonefile
 fi
 
@@ -62,7 +65,7 @@ for waitTime in 1 2 5 10 30; do
     echo "Reload of $fqdn failed, touching zone file and" \
          "resending reload..." >&2
     touchZonefile
-    read touched <&''${waitForUpdate[0]}
+    read touched <&${waitForUpdate[0]}
     @ctrl@ reload "$fqdn" >&2
 done
 echo "Reloading of zone $fqdn failed after 5 retries." >&2
