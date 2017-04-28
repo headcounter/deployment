@@ -9,6 +9,8 @@ let
     buildErlang = callPackage ./build-support/build-erlang {};
     writeEscript = callPackage ./build-support/write-escript.nix {};
 
+    nexus = pkgs.haskellPackages.callPackage ./nexus {};
+
     mongooseim = callPackage ./mongooseim {};
     mongooseimTests = callPackage ./mongooseim/tests {};
     spectrum2 = callPackage ./spectrum2 {};

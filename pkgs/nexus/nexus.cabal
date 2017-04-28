@@ -1,0 +1,37 @@
+name:                nexus
+version:             0.1.0.0
+license:             AGPL-3
+license-file:        LICENSE
+author:              aszlig
+maintainer:          aszlig@redmoonstudios.org
+category:            Network
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  ghc-options:         -Wall
+  exposed-modules:     Nexus
+  build-depends:       base == 4.*,
+                       async,
+                       bytestring,
+                       cereal,
+                       network,
+                       stm,
+                       systemd,
+                       template-haskell
+  build-tools:         hsc2hs
+  default-language:    Haskell2010
+
+test-suite nexus-test
+  ghc-options:         -Wall
+  type:                exitcode-stdio-1.0
+  main-is:             Test.hs
+  build-depends:       base == 4.*,
+                       async,
+                       bytestring,
+                       cereal,
+                       network,
+                       nexus,
+                       stm,
+                       unix
+  default-language:    Haskell2010
