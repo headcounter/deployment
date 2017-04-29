@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric, DeriveDataTypeable, TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
-import Control.Concurrent (forkIO, killThread, threadDelay)
+import Control.Concurrent (forkIO, killThread)
 import Control.Concurrent.STM (atomically)
 
 import qualified Control.Concurrent.Async as A
@@ -17,6 +17,7 @@ import Data.Maybe (catMaybes)
 import Data.String (fromString)
 import Data.Typeable (Typeable)
 import Data.Word (Word16, Word32)
+import Data.Serialize.Text ()
 
 import qualified Data.Acid as AS
 import qualified Data.Aeson as J
@@ -39,7 +40,6 @@ import Network.HTTP.Types.URI (Query)
 import Network.Wai (Application, responseLBS, queryString)
 
 import qualified Network.Wai.Handler.Warp as Warp
-import qualified Network.Simple.TCP as NS
 
 import System.Environment (getArgs, getProgName)
 import System.Exit (exitFailure, ExitCode(..))
@@ -48,6 +48,8 @@ import System.IO (stderr, hClose)
 import qualified System.Process as P
 
 import Text.Read (readMaybe)
+
+import qualified Nexus
 
 data UpdateInfo = UpdateInfo
     { uiUsername :: T.Text
@@ -66,18 +68,24 @@ data Zone = Zone
     , zoneSerial :: Word32
     , zoneIPv4Address :: Maybe IP.IPv4
     , zoneIPv6Address :: Maybe IP.IPv6
-    } deriving (Show, Typeable)
+    } deriving (Show, Typeable, Generic)
 
-data ZoneDatabase = ZoneDatabase (M.Map T.Text Zone)
+instance S.Serialize Zone
+
+newtype ZoneDatabase = ZoneDatabase (M.Map T.Text Zone)
     deriving (Show, Typeable)
 
 instance SC.SafeCopy IP.IPv4 where
     putCopy = SC.contain . SC.safePut . IP.fromIPv4
     getCopy = SC.contain $ IP.toIPv4 <$> SC.safeGet
 
+instance S.Serialize IP.IPv4
+
 instance SC.SafeCopy IP.IPv6 where
     putCopy = SC.contain . SC.safePut . IP.fromIPv6
     getCopy = SC.contain $ IP.toIPv6 <$> SC.safeGet
+
+instance S.Serialize IP.IPv6
 
 $(SC.deriveSafeCopy 0 'SC.base ''Zone)
 $(SC.deriveSafeCopy 0 'SC.base ''ZoneDatabase)
@@ -92,18 +100,8 @@ instance J.ToJSON UserInfo
 
 type Credentials = HM.HashMap T.Text UserInfo
 
-data ListenerConfig = ListenerConfig
-    { port :: Word16
-    , hosts :: [T.Text]
-    } deriving (Generic, Show)
-
-instance J.FromJSON ListenerConfig
-instance J.ToJSON ListenerConfig
-
 data MasterConfig = MasterConfig
     { credentials :: Credentials
-    , httpConfig :: ListenerConfig
-    , slaveConfig :: ListenerConfig
     , stateDir :: FilePath
     , nameservers :: [T.Text]
     , email :: T.Text
@@ -115,6 +113,7 @@ instance J.ToJSON MasterConfig
 data SlaveConfig = SlaveConfig
     { masterHost :: T.Text
     , masterPort :: Word16
+    , masterDevice :: Maybe String
     , writeZoneCommand :: FilePath
     } deriving (Generic, Show)
 
@@ -260,46 +259,19 @@ httpApp cfg state workChan request respond =
   where
     respondText s = respond . responseLBS s [("Content-Type", "text/plain")]
 
-serveMany :: ListenerConfig -> ((NS.Socket, NS.SockAddr) -> IO ()) -> IO ()
-serveMany lc fun =
-    fmap snd . A.waitAny <=< mapM A.async $ fmap listenTo (hosts lc)
-  where
-    throttledRetry :: T.Text -> IO () -> IO ()
-    throttledRetry host f = onException f $ do
-        logBSLn [ "Unable to bind to slave address ", TE.encodeUtf8 host, ":"
-                , BC.pack . show $ port lc, ", retrying in 3 seconds..."]
-        threadDelay 3000000
-        throttledRetry host f
-
-    listenTo :: T.Text -> IO ()
-    listenTo h = throttledRetry h $
-        NS.serve (fromString $ T.unpack h) (show $ port lc) fun
-
-masterWorker :: MasterConfig -> AS.AcidState ZoneDatabase
-             -> TC.TChan Zone -> IO ()
-masterWorker cfg state workChan = serveMany lc $ \(sock, sockAddr) -> do
+masterWorker :: AS.AcidState ZoneDatabase -> TC.TChan Zone -> IO ()
+masterWorker state workChan = Nexus.serve (Just "slave") $ \conn -> do
     workQueue <- atomically $ TC.dupTChan workChan
     existing <- AS.query state GetAllZones
-    NS.sendMany sock $ (S.runPut . SC.safePut) <$> existing
+    mapM_ (Nexus.send conn) existing
     forever $ do
         newZone <- atomically $ TC.readTChan workQueue
-        logBSLn [ "Zone update from ", BC.pack $ show sockAddr, ": "
-                , BC.pack $ show newZone
-                ]
-        NS.send sock . S.runPut $ SC.safePut newZone
-  where lc = slaveConfig cfg
+        logBSLn ["Zone update: ", BC.pack $ show newZone]
+        Nexus.send conn newZone
 
 defaultMasterConfig :: MasterConfig
 defaultMasterConfig = MasterConfig
     { credentials = HM.empty
-    , httpConfig = ListenerConfig
-        { port = 3000
-        , hosts = ["127.0.0.1"]
-        }
-    , slaveConfig = ListenerConfig
-        { port = 6000
-        , hosts = ["*"]
-        }
     , stateDir = "/tmp/dyndns.state"
     , nameservers = []
     , email = "unconfigured@example.org"
@@ -309,6 +281,7 @@ defaultSlaveConfig :: SlaveConfig
 defaultSlaveConfig = SlaveConfig
     { masterPort = 6000
     , masterHost = "localhost"
+    , masterDevice = Nothing
     , writeZoneCommand = "false"
     }
 
@@ -330,26 +303,23 @@ loadConfigAndRun fp defcfg fun = do
                       ["Could not convert to settings: ", BC.pack s]
                   J.Success settings -> fun settings
 
-serveManyWarps :: ListenerConfig -> Application -> IO ()
-serveManyWarps lc app =
-    fmap snd . A.waitAny <=< mapM A.async $ fmap listenTo (hosts lc)
+serveManyWarps :: Application -> IO [A.Async ()]
+serveManyWarps app =
+    mapM A.async . fmap listenTo <=<  Nexus.getSocketsFor $ Just "http"
   where
-    mkWarpSettings :: T.Text -> Warp.Settings
-    mkWarpSettings h =
-        Warp.setPort (fromIntegral $ port lc) $
-        Warp.setHost (fromString $ T.unpack h)
-        Warp.defaultSettings
-    listenTo :: T.Text -> IO ()
-    listenTo h = Warp.runSettings (mkWarpSettings h) app
+    listenTo :: Nexus.Socket -> IO ()
+    listenTo sock = do
+        Nexus.setNonBlocking sock
+        Warp.runSettingsSocket Warp.defaultSettings sock app
 
 startMaster :: MasterConfig -> IO (Either ByteString ())
 startMaster MasterConfig { nameservers = [] } =
     return $ Left "No nameservers defined in config"
 startMaster cfg = bracket openAcidState AS.closeAcidState $ \state -> do
     workChan <- TC.newBroadcastTChanIO
-    let createWorker = forkIO $ masterWorker cfg state workChan
-    bracket createWorker killThread . const $
-        serveManyWarps (httpConfig cfg) $ httpApp cfg state workChan
+    master <- A.async $ masterWorker state workChan
+    warps <- serveManyWarps $ httpApp cfg state workChan
+    snd <$> A.waitAnyCancel (master : warps)
     return $ Right ()
   where
     openAcidState = AS.openLocalStateFrom (stateDir cfg) (ZoneDatabase M.empty)
@@ -435,45 +405,31 @@ slaveHandler zoneQueue cmd zone = do
     zoneBS = BC.intercalate "." $ TE.encodeUtf8 <$> zoneFQDN zone
     fqdnArg = T.unpack $ T.intercalate "." $ zoneFQDN zone
 
-slaveConnectionProcessor :: SlaveConfig -> ZoneQueue -> NS.Socket
-                         -> IO (Either ByteString ())
-slaveConnectionProcessor cfg zoneQueue sock =
-    let getResult :: S.Result Zone -> IO (Either ByteString ())
-        getResult (S.Fail err _) = return . Left $ BC.pack err
-        getResult (S.Partial cont) = do
-            next <- NS.recv sock bufsize
-            case next of
-                 Just newData -> getResult $ cont newData
-                 Nothing -> return $ Right ()
-        getResult (S.Done result rest) = do
-            slaveHandler zoneQueue (writeZoneCommand cfg) result
-            recvData rest
-
-        recvData :: ByteString -> IO (Either ByteString ())
-        recvData bs = getResult $ S.runGetPartial SC.safeGet bs
-    in recvData BC.empty
-  where bufsize = 4096
-
 startSlave :: SlaveConfig -> IO (Either ByteString ())
 startSlave cfg = do
     logBS [ "Connecting to ", TE.encodeUtf8 $ masterHost cfg, ":"
           , BC.pack sPort, "..."
           ]
-    result <- onException (NS.connect sHost sPort scc) $
+    onException (Nexus.connect sHost sPort (masterDevice cfg) scc) $
         logBSLn [" failed."]
-    case result of
-         Left msg -> logBSLn ["Connection closed because: ", msg]
-         Right _  -> logBSLn ["Connection closed."]
+    BC.hPutStrLn stderr "Connection closed."
     return $ Right ()
   where sHost = fromString . T.unpack $ masterHost cfg
         sPort = show $ masterPort cfg
         cmd = writeZoneCommand cfg
+        process zq c = do
+            result <- Nexus.recv c
+            case result of
+                 Just newZone -> do
+                     slaveHandler zq (writeZoneCommand cfg) newZone
+                     process zq c
+                 Nothing -> return ()
         scc c = do
             logBSLn [" connected."]
             zoneQueue <- TQ.newTQueueIO
             bracket (forkIO $ slaveZoneUpdater cmd zoneQueue)
                     killThread
-                    (const $ slaveConnectionProcessor cfg zoneQueue $ fst c)
+                    (const $ process zoneQueue c)
 
 realMain :: [String] -> IO (Either ByteString ())
 realMain ["--master", cfgFile] =

@@ -10,26 +10,42 @@ let
 
     ghcflags = [ "-O2" "-Wall" "-fno-warn-orphans" ];
     buildDepends = [
-      "acid-state" "iproute" "network-simple" "stm" "wai" "warp" "yaml"
+      "acid-state" "cereal-text" "iproute" "stm" "wai" "warp"
+      "yaml" pkgs.headcounter.nexus
     ];
   };
 
-  mkListenerOptions = desc: defHost: defPort: {
-    hosts = mkOption {
-      type = types.listOf types.str;
-      default = [ defHost ];
-      description = ''
-        List of Hosts or IPs to listen for ${desc}.
-      '';
-    };
+  mkListenerOption = desc: defHost: defPort: mkOption {
+    type = types.listOf (types.submodule {
+      options.host = mkOption {
+        type = types.str;
+        example = "::";
+        description = ''
+          Hostname, IPv4 or IPv6 address to listen for ${desc}.
+        '';
+      };
 
-    port = mkOption {
-      type = types.int;
-      default = defPort;
-      description = ''
-        Port to listen for ${desc}.
-      '';
-    };
+      options.port = mkOption {
+        type = types.int;
+        default = defPort;
+        description = "Port to listen for ${desc}.";
+      };
+
+      options.device = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "tun1000";
+        description = "The network device to bind the slave sockets to.";
+      };
+    });
+
+    default = lib.singleton { host = defHost; };
+    example = [
+      { host = "localhost"; }
+      { host = "1.2.3.4"; port = 666; device = "eth0"; }
+    ];
+
+    description = "Hosts/Ports/Devices to listen for ${desc}.";
   };
 
   credentialOptions = { name, ... }: {
@@ -127,15 +143,32 @@ let
       credentials: !include ${yamlStr cfg.master.credentialFile}
       '' else credentials}
       ${nameservers}
-      httpConfig:
-        hosts: ${yamlList cfg.master.http.hosts}
-        port: ${toString cfg.master.http.port}
-      slaveConfig:
-        hosts: ${yamlList cfg.master.slave.hosts}
-        port: ${toString cfg.master.slave.port}
       email: ${yamlStr cfg.master.emailAddress}
       stateDir: ${yamlStr cfg.master.stateDir}
     '';
+
+    systemd.sockets = let
+      mkSocketsFor = name: desc: builtins.listToAttrs (lib.imap (n: lcfg: {
+        name = "dyndns-master-${name}-${toString n}";
+        value = let
+          isV6 = builtins.match ".*:.*" lcfg.host != null;
+          host = if isV6 then "[${lcfg.host}]" else lcfg.host;
+          hostPort = "${host}:${toString lcfg.port}";
+        in {
+          description = "${desc} (${hostPort})";
+          requiredBy = [ "dyndns-master.service" ];
+          socketConfig = {
+            FreeBind = true;
+            Service = "dyndns-master.service";
+            FileDescriptorName = name;
+            ListenStream = hostPort;
+          } // lib.optionalAttrs (lcfg.device != null) {
+            BindToDevice = lcfg.device;
+          };
+        };
+      }) cfg.master.${name});
+    in mkSocketsFor "slave" "Dyndns Slave Socket For Master"
+    // mkSocketsFor "http" "Dyndns HTTP Socket For Master";
 
     users.users.dyndns = mkIf (cfg.master.user == "dyndns") {
       uid = 2022;
@@ -168,6 +201,9 @@ let
     systemd.services.dyndns-slave = mkService "slave" ''
       masterHost: ${yamlStr cfg.slave.master.host}
       masterPort: ${toString cfg.slave.master.port}
+      ${lib.optionalString (cfg.slave.master.device != null) ''
+      masterDevice: ${yamlStr cfg.slave.master.device}
+      ''}
       writeZoneCommand: ${yamlStr cfg.slave.zoneCommand}
     '';
 
@@ -206,8 +242,8 @@ in {
 
   options.headcounter.services.dyndns.master = {
     enable = mkEnableOption "Headcounter dynamic DNS master service";
-    http = mkListenerOptions "incoming HTTP connections" "*" 3000;
-    slave = mkListenerOptions "incoming slave connections" "127.0.0.1" 6000;
+    http = mkListenerOption "incoming HTTP connections" "::" 3000;
+    slave = mkListenerOption "incoming slave connections" "127.0.0.1" 6000;
 
     credentials = mkOption {
       type = types.attrsOf (types.submodule credentialOptions);
@@ -292,6 +328,14 @@ in {
       default = 6000;
       description = ''
         Master server port where to receive zone updates from.
+      '';
+    };
+
+    master.device = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        Device to use for connecting to the master.
       '';
     };
   } // userGroupOptions "slave";

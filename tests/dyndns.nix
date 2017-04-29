@@ -14,7 +14,7 @@ let
     };
   };
 
-  mkSlaveConfig = masterAddress: { lib, ... }: {
+  mkSlaveConfig = masterAddress: masterDevice: { lib, ... }: {
     services.nsd = {
       enable = true;
       interfaces = lib.mkForce [];
@@ -46,6 +46,7 @@ let
       enable = true;
       useNSD = true;
       master.host = masterAddress;
+      master.device = masterDevice;
     };
   };
 
@@ -56,14 +57,14 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     nameserver1 = {
       imports = [
         (mkNetConfig 1 0 1)
-        (mkSlaveConfig "192.168.0.2")
+        (mkSlaveConfig "192.168.0.2" "eth1")
       ];
     };
 
     nameserver2 = {
       imports = [
         (mkNetConfig 1 1 1)
-        (mkSlaveConfig "192.168.1.2")
+        (mkSlaveConfig "192.168.1.2" "eth1")
       ];
     };
 
@@ -74,7 +75,14 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
         enable = true;
         emailAddress = "noc@example.org";
         nameservers = [ "ns.example.org" ];
-        slave.hosts = [ "192.168.0.2" "192.168.1.2" ];
+        slave = [
+          { host = "192.168.0.2";
+            device = "eth1";
+          }
+          { host = "192.168.1.2";
+            device = "eth2";
+          }
+        ];
         credentials = {
           alice.password = "myrealpassword";
           alice.domains = [ "alice.example.org" "alice2.example.org" ];
@@ -108,53 +116,6 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     '';
 
     masterConfig = nodes.webserver.config;
-
-    blocker = pkgs.runCommand "block-master-socket" {} ''
-      gcc -o "$out" -Wall -xc - <<EOF
-      #include <stdio.h>
-      #include <stdlib.h>
-      #include <unistd.h>
-      #include <sys/socket.h>
-      #include <arpa/inet.h>
-
-      int block_host(const char *host, unsigned int port) {
-        int fd, enable = 1;
-        struct sockaddr_in addr;
-        fprintf(stderr, "Blocking port %d for address %s... ", port, host);
-        if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-          perror("socket");
-          return -1;
-        }
-        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable,
-            sizeof(enable)) != 0) {
-          perror("setsockopt");
-          return -1;
-        }
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = inet_addr(host);
-        addr.sin_port = htons(port);
-        if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
-          perror("bind");
-          return -1;
-        }
-        if (listen(fd, 1000) != 0) {
-          perror("listen");
-          return -1;
-        }
-        fputs("done.\n", stderr);
-        return 0;
-      }
-
-      int main(void) {
-        ${lib.concatMapStrings (host: ''
-          if (block_host("${host}", 6000) != 0)
-            return EXIT_FAILURE;
-        '') masterConfig.headcounter.services.dyndns.master.slave.hosts}
-        fclose(fopen("/tmp/ready", "w"));
-        for (;;) sleep(10);
-      }
-      EOF
-    '';
 
   in ''
     my %dnsReplies;
@@ -300,26 +261,5 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     }}
 
     expectDNS("a", "bob.example.org", "3.3.3.3", 23);
-
-    $webserver->succeed('systemctl stop dyndns-master.service');
-    $webserver->waitUntilFails('nc -z localhost 3000');
-    ${lib.concatMapStrings (host: ''
-    $webserver->waitUntilFails('nc -z ${host} 6000');
-    '') masterConfig.headcounter.services.dyndns.master.slave.hosts}
-    $webserver->execute('systemd-run --unit=block-master ${blocker}');
-    $webserver->waitForFile('/tmp/ready');
-    $webserver->succeed('systemctl start dyndns-master.service');
-    $webserver->waitForOpenPort(3000);
-    $webserver->sleep(20);
-    $webserver->succeed('systemctl stop block-master.service');
-
-    ${dynTest {
-      username = "alice";
-      password = "myrealpassword";
-      domain = "alice.example.org";
-      ipaddr = "4.4.4.4";
-    }}
-
-    expectDNS("a", "alice.example.org", "4.4.4.4", 3);
   '';
 })
