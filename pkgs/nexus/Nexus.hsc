@@ -62,7 +62,11 @@ data Connection a = Connection
     { recvQueue      :: ReceiveQueue
     , broadcastQueue :: Maybe (BroadcastQueue a)
     , connSock       :: NS.Socket
+    , sockAddr       :: NS.SockAddr
     }
+
+instance Show (Connection a) where
+    show = show . sockAddr
 
 -- | A handler function which can 'recv', 'send' and 'broadcast' to the
 --   'Connection'.
@@ -104,10 +108,10 @@ getSocketsFor (Just name) =
     filterSocks :: [(NS.Socket, String)] -> [NS.Socket]
     filterSocks = fmap fst . filter ((==) name . snd)
 
-startConnection :: NS.Socket -> IO (Connection a)
-startConnection sock = do
+startConnection :: NS.Socket -> NS.SockAddr -> IO (Connection a)
+startConnection sock sockaddr = do
     recvQ <- TQ.newTQueueIO
-    return $ Connection recvQ Nothing sock
+    return $ Connection recvQ Nothing sock sockaddr
 
 stopConnection :: Connection a -> IO ()
 stopConnection = NS.close . connSock
@@ -128,11 +132,11 @@ startBroadcaster sock queue finisher = do
              startBroadcaster sock queue finisher
          Nothing -> return ()
 
-acceptHandler :: S.Serialize a => Handler a -> BroadcastQueue a -> NS.Socket
-              -> IO ()
-acceptHandler handlerFun bcastQ sock = do
+acceptHandler :: S.Serialize a => Handler a -> BroadcastQueue a
+              -> NS.Socket -> NS.SockAddr -> IO ()
+acceptHandler handlerFun bcastQ sock sockaddr = do
     bcastReadQ <- atomically $ TC.dupTChan bcastQ
-    rconn <- startConnection sock
+    rconn <- startConnection sock sockaddr
     let conn = rconn { broadcastQueue = Just bcastQ }
     flip finally (stopConnection conn) $ do
         finisher <- TV.newTVarIO False
@@ -145,8 +149,8 @@ acceptHandler handlerFun bcastQ sock = do
 runAcceptor :: S.Serialize a => Handler a -> BroadcastQueue a -> NS.Socket
             -> IO ()
 runAcceptor handler bcastQ lsock = do
-    sock <- fst <$> NS.accept lsock
-    void . forkIO $ acceptHandler handler bcastQ sock
+    (sock, sockaddr) <- NS.accept lsock
+    void . forkIO $ acceptHandler handler bcastQ sock sockaddr
     runAcceptor handler bcastQ lsock
 
 runPool :: S.Serialize a => [NS.Socket] -> Handler a -> IO ()
@@ -166,7 +170,7 @@ spawnClient sock sockaddr =
         maybeTimedOut <- timeout 5000000 $ NS.connect sock sockaddr
         case maybeTimedOut of
              Nothing -> ioError connectErr
-             Just _  -> startConnection sock
+             Just _  -> startConnection sock sockaddr
 
 -- | Wait for data on the current endpoint of the 'Connection'.
 recv :: S.Serialize a => Connection a -> IO (Maybe a)
