@@ -53,7 +53,7 @@ serverHandler results sync conn = do
     case val of
         Just (TestData 1 "sent first") -> do
             writeResults results "server got first"
-            Nexus.broadcast conn $ TestData 2 "to all"
+            True <- Nexus.broadcast conn $ TestData 2 "to all"
             writeResults results "sent to all"
             void $ Nexus.recv conn
         Just (TestData 3 "client after bogus") -> do
@@ -61,7 +61,7 @@ serverHandler results sync conn = do
             atomically $ signalTSem sync
         Just (TestData 4 "client 2 ready") -> do
             writeResults results "client signalled ready"
-            Nexus.send conn (TestData 5 "client 2 go")
+            True <- Nexus.send conn (TestData 5 "client 2 go")
             void $ Nexus.recv conn
         Just _ -> writeResults results "unexpected data from client"
         Nothing -> do
@@ -71,13 +71,14 @@ serverHandler results sync conn = do
 handler1 :: ResultChan -> TSem -> Connection TestData -> IO ()
 handler1 results sync conn = do
     atomically $ waitTSem sync
-    Nexus.send conn $ TestData 1 "sent first"
+    True <- Nexus.send conn $ TestData 1 "sent first"
     writeResults results "sent first"
+    Just (TestData 2 "to all") <- Nexus.recv conn
     atomically $ waitTSem sync
 
 handler2 :: ResultChan -> TSem -> Connection TestData -> IO ()
 handler2 results sync conn = do
-    Nexus.send conn $ TestData 4 "client 2 ready"
+    True <- Nexus.send conn $ TestData 4 "client 2 ready"
     Just (TestData 5 "client 2 go") <- Nexus.recv conn
     atomically $ signalTSem sync
     Just (TestData 2 "to all") <- Nexus.recv conn
@@ -87,8 +88,8 @@ handler2 results sync conn = do
 checkResults :: ResultChan -> IO ()
 checkResults results = do
     expect "client signalled ready"
-    expect "sent first"
     expect "server got first"
+    expect "sent first"
     expect "sent to all"
     expect "got broadcast"
     expect "bogus packet from client"
@@ -131,7 +132,7 @@ main = do
 
     task "Run non-bogus client" $
         Nexus.connectUnix "test3.sock" $ \conn -> do
-            Nexus.send conn $ TestData 3 "client after bogus"
+            True <- Nexus.send conn $ TestData 3 "client after bogus"
             atomically $ waitTSem sync
 
     task "Collect results" $

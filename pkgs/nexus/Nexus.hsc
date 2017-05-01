@@ -112,6 +112,12 @@ startConnection sock sockaddr = do
     recvQ <- TQ.newTQueueIO
     return $ Connection recvQ Nothing sock sockaddr
 
+sendWithAck :: NS.Socket -> ByteString -> IO Bool
+sendWithAck sock buf = do
+    NSB.sendAll sock buf
+    ack <- NSB.recv sock 1
+    return $ ack == BC.singleton '@'
+
 startBroadcaster :: S.Serialize a
                  => NS.Socket
                  -> BroadcastQueue a
@@ -124,7 +130,7 @@ startBroadcaster sock queue finisher = do
     case result of
          Just (sockfd, msg) -> do
              when (sockfd /= NS.fdSocket sock) $
-                 NSB.sendAll sock . S.runPut $ S.put msg
+                 void . sendWithAck sock . S.runPut $ S.put msg
              startBroadcaster sock queue finisher
          Nothing -> return ()
 
@@ -191,15 +197,16 @@ recv conn =
     decodeLoop (S.Fail err _) = do
         BC.hPutStrLn stderr . BC.pack $ "Error in decoding data: " ++ err
         return Nothing
-    decodeLoop (S.Done result rest) =
+    decodeLoop (S.Done result rest) = do
+        NSB.sendAll (connSock conn) $ BC.singleton '@'
         putRest rest >> return (Just result)
 
 -- | Send the packet to the current endpoint of the 'Connection'.
-send :: S.Serialize a => Connection a -> a -> IO ()
-send conn = NSB.sendAll (connSock conn) . S.runPut . S.put
+send :: S.Serialize a => Connection a -> a -> IO Bool
+send conn = sendWithAck (connSock conn) . S.runPut . S.put
 
 -- | Broadcast the packet to all of the connected clients.
-broadcast :: S.Serialize a => Connection a -> a -> IO ()
+broadcast :: S.Serialize a => Connection a -> a -> IO Bool
 broadcast conn@Connection { broadcastQueue = Just bcastQ } val = do
     atomically . TC.writeTChan bcastQ $
         Just (NS.fdSocket $ connSock conn, val)
