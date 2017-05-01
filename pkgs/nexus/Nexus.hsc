@@ -24,17 +24,16 @@ module Nexus
     , NS.Socket
     ) where
 
-import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically)
 import Control.Exception (bracket, finally)
-import Control.Monad (void, when)
+import Control.Monad (void, when, forM, (<=<))
 import Data.ByteString (ByteString)
 import Foreign.C.String (withCStringLen)
 import Foreign.C.Types (CInt(..), CChar)
 import Foreign.Ptr (Ptr)
 import GHC.IO.Exception (IOException(IOError), IOErrorType(TimeExpired))
 import Network.Socket.Internal (throwSocketErrorIfMinus1_)
-import System.IO (stderr)
+import System.IO (stderr, fixIO)
 import System.Posix.Internals (setNonBlockingFD)
 import System.Timeout (timeout)
 
@@ -113,9 +112,6 @@ startConnection sock sockaddr = do
     recvQ <- TQ.newTQueueIO
     return $ Connection recvQ Nothing sock sockaddr
 
-stopConnection :: Connection a -> IO ()
-stopConnection = NS.close . connSock
-
 startBroadcaster :: S.Serialize a
                  => NS.Socket
                  -> BroadcastQueue a
@@ -138,31 +134,35 @@ acceptHandler handlerFun bcastQ sock sockaddr = do
     bcastReadQ <- atomically $ TC.dupTChan bcastQ
     rconn <- startConnection sock sockaddr
     let conn = rconn { broadcastQueue = Just bcastQ }
-    flip finally (stopConnection conn) $ do
-        finisher <- TV.newTVarIO False
-        broadcaster <- A.async $ startBroadcaster sock bcastReadQ finisher
-        handler <- A.async . finally (handlerFun conn) $
-            atomically $ TV.writeTVar finisher True
-        void $ A.waitCatch broadcaster
-        void $ A.waitCatch handler
+    finisher <- TV.newTVarIO False
+    broadcaster <- A.async $ startBroadcaster sock bcastReadQ finisher
+    handler <- A.async . finally (handlerFun conn) $
+        atomically $ TV.writeTVar finisher True
+    void $ A.waitCatch broadcaster
+    void $ A.waitCatch handler
 
-runAcceptor :: S.Serialize a => Handler a -> BroadcastQueue a -> NS.Socket
+runAcceptor :: S.Serialize a
+            => Handler a -> BroadcastQueue a -> NS.Socket -> A.Async ()
             -> IO ()
-runAcceptor handler bcastQ lsock = do
+runAcceptor handler bcastQ lsock self = do
     (sock, sockaddr) <- NS.accept lsock
-    void . forkIO $ acceptHandler handler bcastQ sock sockaddr
-    runAcceptor handler bcastQ lsock
+    A.link2 self <=< A.async $
+        finally (acceptHandler handler bcastQ sock sockaddr) (NS.close sock)
+    runAcceptor handler bcastQ lsock self
 
 runPool :: S.Serialize a => [NS.Socket] -> Handler a -> IO ()
 runPool sockets handler = do
     mapM_ setNonBlocking sockets
     bcastQ <- TC.newBroadcastTChanIO
-    finally (A.mapConcurrently_ (runAcceptor handler bcastQ) sockets) $
+    acceptors <- forM sockets $ \sock ->
+        fixIO (A.async . runAcceptor handler bcastQ sock)
+    finally (void $ A.waitAnyCancel acceptors) $ do
         atomically $ TC.writeTChan bcastQ Nothing
+        mapM A.uninterruptibleCancel acceptors
 
 spawnClient :: NS.Socket -> NS.SockAddr -> Handler a -> IO ()
 spawnClient sock sockaddr =
-    bracket startup stopConnection
+    bracket startup (NS.close . connSock)
   where
     errDesc = "Timed out after 5 seconds"
     connectErr = IOError Nothing TimeExpired "connect" errDesc Nothing Nothing
