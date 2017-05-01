@@ -94,12 +94,12 @@ in {
     emailAddress = "postmaster@headcounter.org";
     nameservers = [ "ns1.headcounter.org" "ns2.headcounter.org" ];
     http = mkForce (singleton { host = "127.0.0.1"; device = "lo"; });
-    slave = let
-      mkSlaveListener = m: with config.networking.p2pTunnels.ssh.${m}; {
-        host = localIPv4;
+    slaves = let
+      mkSlaveConnector = m: with config.networking.p2pTunnels.ssh.${m}; {
+        host = remoteIPv4;
         device = "tun${toString localTunnel}";
       };
-    in mkForce (unique (map mkSlaveListener [ "dugee" "gussh" ]));
+    in mkForce (unique (map mkSlaveConnector [ "dugee" "gussh" ]));
     credentials = hclib.getcred "dyndns-users" {};
   };
 

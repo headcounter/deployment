@@ -104,15 +104,14 @@ let
       ExecStart = "@${daemon} dyndns-${mode} --${mode} ${cfgFile}";
       RestartSec = 10;
     };
-    specificSC = if mode == "master" then {
+    specificSC = {
       Restart = "on-failure";
       User = "dyndns";
       Group = "dyndns";
-    } else {
-      Restart = "always";
+    } // lib.optionalAttrs (lib.any (s: s.device != null) cfg.master.slaves) {
+      AmbientCapabilities = [ "CAP_NET_RAW" ];
     };
   in {
-    wantedBy = [ "multi-user.target" ];
     after = [ "network.target" ];
     description = "Dynamic DNS ${modeUCFirst} Server";
     restartTriggers = [ cfgFile ];
@@ -137,6 +136,37 @@ let
     nsHosts = map mkNS cfg.master.nameservers;
   in lib.concatStringsSep "\n" (lib.singleton "nameservers:" ++ nsHosts);
 
+  mkSocket = { name, description, service ? "${name}.service", fdname }: lcfg: {
+    inherit name;
+    value = let
+      isV6 = builtins.match ".*:.*" lcfg.host != null;
+      host = if isV6 then "[${lcfg.host}]" else lcfg.host;
+      hostPort = "${host}:${toString lcfg.port}";
+    in {
+      description = "${description} (${hostPort})";
+      wantedBy = let
+        devUnit = "sys-subsystem-net-devices-${lcfg.device}.device";
+        target = if lcfg.device == null then "sockets.target" else devUnit;
+      in lib.singleton target;
+      requiredBy = [ service ];
+      socketConfig = {
+        FreeBind = true;
+        Service = service;
+        FileDescriptorName = fdname;
+        ListenStream = hostPort;
+      } // lib.optionalAttrs (lcfg.device != null) {
+        BindToDevice = lcfg.device;
+      };
+    };
+  };
+
+  mkYamlSlave = scfg: let
+    attrs = [
+      "host: ${yamlStr scfg.host}"
+      "port: ${toString scfg.port}"
+    ] ++ lib.optional (scfg.device != null) "device: ${yamlStr scfg.device}";
+  in "- " + lib.concatStringsSep "\n    " attrs;
+
   masterConfig = mkIf cfg.master.enable {
     systemd.services.dyndns-master = mkService "master" ''
       ${if cfg.master.credentialFile != null then ''
@@ -145,30 +175,16 @@ let
       ${nameservers}
       email: ${yamlStr cfg.master.emailAddress}
       stateDir: ${yamlStr cfg.master.stateDir}
+      slaves:
+        ${lib.concatMapStringsSep "\n  " mkYamlSlave cfg.master.slaves}
     '';
 
-    systemd.sockets = let
-      mkSocketsFor = name: desc: builtins.listToAttrs (lib.imap (n: lcfg: {
-        name = "dyndns-master-${name}-${toString n}";
-        value = let
-          isV6 = builtins.match ".*:.*" lcfg.host != null;
-          host = if isV6 then "[${lcfg.host}]" else lcfg.host;
-          hostPort = "${host}:${toString lcfg.port}";
-        in {
-          description = "${desc} (${hostPort})";
-          requiredBy = [ "dyndns-master.service" ];
-          socketConfig = {
-            FreeBind = true;
-            Service = "dyndns-master.service";
-            FileDescriptorName = name;
-            ListenStream = hostPort;
-          } // lib.optionalAttrs (lcfg.device != null) {
-            BindToDevice = lcfg.device;
-          };
-        };
-      }) cfg.master.${name});
-    in mkSocketsFor "slave" "Dyndns Slave Socket For Master"
-    // mkSocketsFor "http" "Dyndns HTTP Socket For Master";
+    systemd.sockets = builtins.listToAttrs (lib.imap (n: mkSocket {
+      name = "dyndns-master-http-${toString n}";
+      description = "Dyndns HTTP Socket For Master";
+      service = "dyndns-master.service";
+      fdname = "http";
+    }) cfg.master.http);
 
     users.users.dyndns = mkIf (cfg.master.user == "dyndns") {
       uid = 2022;
@@ -199,18 +215,15 @@ let
 
   slaveBaseConfig = mkIf cfg.slave.enable {
     systemd.services.dyndns-slave = mkService "slave" ''
-      masterHost: ${yamlStr cfg.slave.master.host}
-      masterPort: ${toString cfg.slave.master.port}
-      ${lib.optionalString (cfg.slave.master.device != null) ''
-      masterDevice: ${yamlStr cfg.slave.master.device}
-      ''}
       writeZoneCommand: ${yamlStr cfg.slave.zoneCommand}
     '';
 
-    headcounter.conditions.dyndns-slave.connectable = {
-      address = cfg.slave.master.host;
-      inherit (cfg.slave.master) port;
-    };
+    systemd.sockets = builtins.listToAttrs (lib.imap (n: mkSocket {
+      name = "dyndns-slave-${toString n}";
+      description = "Dyndns Socket For Master Connections";
+      service = "dyndns-slave.service";
+      fdname = "master";
+    }) cfg.slave.master);
 
     users.users.dyndns = mkIf (cfg.slave.user == "dyndns") {
       description = "Dynamic DNS Slave User";
@@ -243,7 +256,38 @@ in {
   options.headcounter.services.dyndns.master = {
     enable = mkEnableOption "Headcounter dynamic DNS master service";
     http = mkListenerOption "incoming HTTP connections" "::" 3000;
-    slave = mkListenerOption "incoming slave connections" "127.0.0.1" 6000;
+
+    slaves = mkOption {
+      type = types.listOf (types.submodule {
+        options.host = mkOption {
+          type = types.str;
+          description = ''
+            The hostname or IP address of the slave listener to connect and push
+            zone updates to.
+          '';
+        };
+
+        options.port = mkOption {
+          type = types.int;
+          default = 6000;
+          description = ''
+            The port of the slave listener to connect and push zone updates to.
+          '';
+        };
+
+        options.device = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          description = ''
+            Device to use for connectiong to the slave.
+          '';
+        };
+      });
+      default = [];
+      description = ''
+        A list of slaves to connect to and send DNS zone updates.
+      '';
+    };
 
     credentials = mkOption {
       type = types.attrsOf (types.submodule credentialOptions);
@@ -295,6 +339,7 @@ in {
 
   options.headcounter.services.dyndns.slave = {
     enable = mkEnableOption "Headcounter dynamic DNS slave service";
+    master = mkListenerOption "incoming master connections" "::" 6000;
 
     useNSD = mkOption {
       type = types.bool;
@@ -312,30 +357,6 @@ in {
 
         The FQDN of the zone is passed as the first argument and the zone file
         contents are piped to that command via <literal>stdin</literal>.
-      '';
-    };
-
-    master.host = mkOption {
-      type = types.str;
-      default = "localhost";
-      description = ''
-        Master server host/IP where to receive zone updates from.
-      '';
-    };
-
-    master.port = mkOption {
-      type = types.int;
-      default = 6000;
-      description = ''
-        Master server port where to receive zone updates from.
-      '';
-    };
-
-    master.device = mkOption {
-      type = types.nullOr types.str;
-      default = null;
-      description = ''
-        Device to use for connecting to the master.
       '';
     };
   } // userGroupOptions "slave";

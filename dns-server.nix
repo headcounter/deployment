@@ -10,9 +10,13 @@
   headcounter.services.dyndns.slave = {
     enable = true;
     useNSD = true;
-    master.host = let
-      m = config.networking.hostName;
-    in nodes.ultron.config.networking.p2pTunnels.ssh.${m}.localIPv4;
+    master = let
+      myself = config.networking.hostName;
+      tunnel = nodes.ultron.config.networking.p2pTunnels.ssh.${myself};
+    in lib.singleton {
+      host = tunnel.remoteIPv4;
+      device = "tun${toString tunnel.remoteTunnel}";
+    };
   };
 
   services.nsd = let

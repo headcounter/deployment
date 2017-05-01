@@ -14,7 +14,7 @@ let
     };
   };
 
-  mkSlaveConfig = masterAddress: masterDevice: { lib, ... }: {
+  mkSlaveConfig = host: device: { lib, ... }: {
     services.nsd = {
       enable = true;
       interfaces = lib.mkForce [];
@@ -22,11 +22,11 @@ let
 
       zones."example.org.".data = ''
         @ SOA ns1.example.org noc.example.org 666 7200 3600 1209600 3600
-        ns1 IN A 192.168.0.1
-        ns1 IN AAAA fc00::1
 
-        ns2 IN A 192.168.1.1
-        ns2 IN AAAA fc01::1
+        ${lib.concatMapStrings (num: ''
+          ns${toString num} IN A 192.168.${toString (num - 1)}.1
+          ns${toString num} IN AAAA fc0${toString (num - 1)}::1
+        '') (lib.range 1 3)}
 
         www IN A 192.168.0.2
         www IN AAAA fc00::2
@@ -45,8 +45,7 @@ let
     headcounter.services.dyndns.slave = {
       enable = true;
       useNSD = true;
-      master.host = masterAddress;
-      master.device = masterDevice;
+      master = lib.singleton { inherit host device; };
     };
   };
 
@@ -57,30 +56,43 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     nameserver1 = {
       imports = [
         (mkNetConfig 1 0 1)
-        (mkSlaveConfig "192.168.0.2" "eth1")
+        (mkSlaveConfig "192.168.0.1" "eth1")
       ];
     };
 
     nameserver2 = {
       imports = [
         (mkNetConfig 1 1 1)
-        (mkSlaveConfig "192.168.1.2" "eth1")
+        (mkSlaveConfig "192.168.1.1" "eth1")
       ];
     };
 
-    webserver = {
-      imports = [ (mkNetConfig 1 0 2) (mkNetConfig 2 1 2) ];
+    nameserver3 = { pkgs, ... }: {
+      imports = [
+        (mkNetConfig 1 2 1)
+        (mkSlaveConfig "192.168.3.1" "tun0")
+      ];
+      environment.systemPackages = [ pkgs.socat ];
+    };
+
+    webserver = { pkgs, ... }: {
+      imports = [ (mkNetConfig 1 0 2) (mkNetConfig 2 1 2) (mkNetConfig 3 2 2) ];
+
+      environment.systemPackages = [ pkgs.socat ];
 
       headcounter.services.dyndns.master = {
         enable = true;
         emailAddress = "noc@example.org";
         nameservers = [ "ns.example.org" ];
-        slave = [
-          { host = "192.168.0.2";
+        slaves = [
+          { host = "192.168.0.1";
             device = "eth1";
           }
-          { host = "192.168.1.2";
+          { host = "192.168.1.1";
             device = "eth2";
+          }
+          { host = "192.168.3.1";
+            device = "tun0";
           }
         ];
         credentials = {
@@ -94,10 +106,13 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     };
 
     client = { lib, ... }: {
-      imports = [ (mkNetConfig 1 0 10) (mkNetConfig 2 1 10) ];
+      imports = [
+        (mkNetConfig 1 0 10) (mkNetConfig 2 1 10) (mkNetConfig 3 2 10)
+      ];
       networking.nameservers = lib.mkForce [
         "192.168.0.1" "fc00::1"
         "192.168.1.1" "fc01::1"
+        "192.168.2.1" "fc02::1"
       ];
     };
   };
@@ -124,7 +139,7 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
       my ($type, $fqdn, $expect, $eserial) = @_;
       my $uctype = uc $type;
       my $addr = uc $expect;
-      for my $ns ("ns1.example.org", "ns2.example.org") {
+      for my $ns ("ns1.example.org", "ns2.example.org", "ns3.example.org") {
         my $soaCmd = "host -r -t soa $fqdn $ns 2> /dev/null | grep serial";
         my $msg = "waiting for $uctype of $fqdn to point to $addr on $ns";
         $client->nest($msg, sub {
@@ -155,18 +170,27 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
 
     startAll;
 
-    $webserver->waitForUnit("dyndns-master.service");
+    $webserver->waitForUnit("dyndns-master-http-1.socket");
 
-    for my $ns ($nameserver1, $nameserver2) {
+    $nameserver3->nest('establish tunnel to webserver', sub {
+      $webserver->succeed('socat TCP-LISTEN:1111 TUN:192.168.3.2/24,up &');
+      $webserver->waitUntilSucceeds('netstat -ntl | grep -q ":1111\\>"');
+      $nameserver3->waitForUnit('network.target');
+      $nameserver3->succeed(
+        'socat TCP:192.168.2.2:1111 TUN:192.168.3.1/24,up &'
+      );
+    });
+
+    for my $ns ($nameserver1, $nameserver2, $nameserver3) {
       $ns->waitForUnit("nsd.service");
-      $ns->waitForUnit("dyndns-slave.service");
-      $ns->waitUntilSucceeds("netstat -ntpe | grep -q 'ESTABLISHED.*dyndns'");
+      $ns->waitForUnit("dyndns-slave-1.socket");
     }
 
     $client->waitForUnit("multi-user.target");
 
     $client->succeed("host ns1.example.org ns1.example.org");
     $client->succeed("host ns2.example.org ns2.example.org");
+    $client->succeed("host ns3.example.org ns3.example.org");
 
     ${dynTest {
       username = "alice";

@@ -1,13 +1,13 @@
 {-# LANGUAGE DeriveGeneric, DeriveDataTypeable, TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell, OverloadedStrings #-}
-import Control.Concurrent (forkIO, killThread)
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM (atomically)
 
 import qualified Control.Concurrent.Async as A
 import qualified Control.Concurrent.STM.TChan as TC
 import qualified Control.Concurrent.STM.TQueue as TQ
 
-import Control.Exception (bracket, onException)
+import Control.Exception (bracket, catch, SomeException)
 import Control.Monad (join, forever, (<=<))
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get, put)
@@ -34,6 +34,7 @@ import qualified Data.Yaml as Y
 import qualified Data.Yaml.Include as YI
 
 import GHC.Generics
+import GHC.IO.Exception (IOException(IOError))
 
 import Network.HTTP.Types (status200, status400, status401)
 import Network.HTTP.Types.URI (Query)
@@ -44,6 +45,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import System.Environment (getArgs, getProgName)
 import System.Exit (exitFailure, ExitCode(..))
 import System.IO (stderr, hClose)
+import System.IO.Error (eofErrorType)
 
 import qualified System.Process as P
 
@@ -100,10 +102,20 @@ instance J.ToJSON UserInfo
 
 type Credentials = HM.HashMap T.Text UserInfo
 
+data ConnectionConfig = ConnectionConfig
+    { host :: T.Text
+    , port :: Word16
+    , device :: Maybe String
+    } deriving (Generic, Show)
+
+instance J.FromJSON ConnectionConfig
+instance J.ToJSON ConnectionConfig
+
 data MasterConfig = MasterConfig
     { credentials :: Credentials
     , stateDir :: FilePath
     , nameservers :: [T.Text]
+    , slaves :: [ConnectionConfig]
     , email :: T.Text
     } deriving (Generic, Show)
 
@@ -111,10 +123,7 @@ instance J.FromJSON MasterConfig
 instance J.ToJSON MasterConfig
 
 data SlaveConfig = SlaveConfig
-    { masterHost :: T.Text
-    , masterPort :: Word16
-    , masterDevice :: Maybe String
-    , writeZoneCommand :: FilePath
+    { writeZoneCommand :: FilePath
     } deriving (Generic, Show)
 
 instance J.FromJSON SlaveConfig
@@ -259,31 +268,45 @@ httpApp cfg state workChan request respond =
   where
     respondText s = respond . responseLBS s [("Content-Type", "text/plain")]
 
-masterWorker :: AS.AcidState ZoneDatabase -> TC.TChan Zone -> IO ()
-masterWorker state workChan = Nexus.serve (Just "slave") $ \conn -> do
+masterWorker :: AS.AcidState ZoneDatabase -> TC.TChan Zone -> ConnectionConfig
+             -> IO ()
+masterWorker state workChan connCfg = retry $ \conn -> do
     workQueue <- atomically $ TC.dupTChan workChan
     existing <- AS.query state GetAllZones
-    mapM_ (Nexus.send conn) existing
+    mapM_ (throwIfFalse <=< Nexus.send conn) existing
     forever $ do
         newZone <- atomically $ TC.readTChan workQueue
         logBSLn ["Zone update: ", BC.pack $ show newZone]
-        Nexus.send conn newZone
+        throwIfFalse =<< Nexus.send conn newZone
+  where
+    errDesc = "Connection closed by the remote side."
+    eofError = IOError Nothing eofErrorType "connect" errDesc Nothing Nothing
+    throwIfFalse False = ioError eofError
+    throwIfFalse True  = return ()
+    sHost = fromString . T.unpack $ host connCfg
+    sPort = show $ port connCfg
+    handleError :: SomeException -> IO ()
+    handleError err = do
+        logBSLn [ "Connection to slave ", BC.pack sHost, ":", BC.pack sPort
+                , " has failed (", BC.pack $ show err
+                , "), retrying in one second..."
+                ]
+        threadDelay 1000000
+    retry handler = do
+        catch (Nexus.connect sHost sPort (device connCfg) handler) handleError
+        retry handler
 
 defaultMasterConfig :: MasterConfig
 defaultMasterConfig = MasterConfig
     { credentials = HM.empty
     , stateDir = "/tmp/dyndns.state"
     , nameservers = []
+    , slaves = []
     , email = "unconfigured@example.org"
     }
 
 defaultSlaveConfig :: SlaveConfig
-defaultSlaveConfig = SlaveConfig
-    { masterPort = 6000
-    , masterHost = "localhost"
-    , masterDevice = Nothing
-    , writeZoneCommand = "false"
-    }
+defaultSlaveConfig = SlaveConfig "false"
 
 mergeConfig :: J.Value -> J.Value -> J.Value
 mergeConfig (J.Object x) (J.Object y) = J.Object $ HM.unionWith mergeConfig x y
@@ -305,7 +328,7 @@ loadConfigAndRun fp defcfg fun = do
 
 serveManyWarps :: Application -> IO [A.Async ()]
 serveManyWarps app =
-    mapM A.async . fmap listenTo <=<  Nexus.getSocketsFor $ Just "http"
+    mapM A.async . fmap listenTo <=< Nexus.getSocketsFor $ Just "http"
   where
     listenTo :: Nexus.Socket -> IO ()
     listenTo sock = do
@@ -317,9 +340,9 @@ startMaster MasterConfig { nameservers = [] } =
     return $ Left "No nameservers defined in config"
 startMaster cfg = bracket openAcidState AS.closeAcidState $ \state -> do
     workChan <- TC.newBroadcastTChanIO
-    master <- A.async $ masterWorker state workChan
+    slaveWorkers <- mapM (A.async . masterWorker state workChan) $ slaves cfg
     warps <- serveManyWarps $ httpApp cfg state workChan
-    snd <$> A.waitAnyCancel (master : warps)
+    snd <$> A.waitAnyCancel (slaveWorkers ++ warps)
     return $ Right ()
   where
     openAcidState = AS.openLocalStateFrom (stateDir cfg) (ZoneDatabase M.empty)
@@ -406,30 +429,21 @@ slaveHandler zoneQueue cmd zone = do
     fqdnArg = T.unpack $ T.intercalate "." $ zoneFQDN zone
 
 startSlave :: SlaveConfig -> IO (Either ByteString ())
-startSlave cfg = do
-    logBS [ "Connecting to ", TE.encodeUtf8 $ masterHost cfg, ":"
-          , BC.pack sPort, "..."
-          ]
-    onException (Nexus.connect sHost sPort (masterDevice cfg) scc) $
-        logBSLn [" failed."]
-    BC.hPutStrLn stderr "Connection closed."
+startSlave SlaveConfig { writeZoneCommand = cmd } = do
+    Nexus.serve (Just "master") scc
     return $ Right ()
-  where sHost = fromString . T.unpack $ masterHost cfg
-        sPort = show $ masterPort cfg
-        cmd = writeZoneCommand cfg
-        process zq c = do
+  where process zq c = do
             result <- Nexus.recv c
             case result of
                  Just newZone -> do
-                     slaveHandler zq (writeZoneCommand cfg) newZone
+                     slaveHandler zq cmd newZone
                      process zq c
                  Nothing -> return ()
         scc c = do
-            logBSLn [" connected."]
+            logBSLn ["New connection from master on ", BC.pack $ show c, "."]
             zoneQueue <- TQ.newTQueueIO
-            bracket (forkIO $ slaveZoneUpdater cmd zoneQueue)
-                    killThread
-                    (const $ process zoneQueue c)
+            let updater = slaveZoneUpdater cmd zoneQueue
+            A.race_ updater $ process zoneQueue c
 
 realMain :: [String] -> IO (Either ByteString ())
 realMain ["--master", cfgFile] =
