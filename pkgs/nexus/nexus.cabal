@@ -10,7 +10,7 @@ cabal-version:       >=1.10
 
 library
   ghc-options:         -Wall
-  exposed-modules:     Nexus
+  exposed-modules:     Nexus, Nexus.Socket
   build-depends:       base == 4.*,
                        async,
                        bytestring,

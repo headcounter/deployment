@@ -9,7 +9,7 @@ package. However it differs in the following aspects:
 
 -}
 {-# LANGUAGE TemplateHaskell #-}
-module Nexus
+module Nexus.Socket
     ( Connection
     , Handler
     , connect
