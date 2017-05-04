@@ -14,7 +14,9 @@ qualified imports like this:
 
 -}
 module Nexus
-    ( module Nexus.Socket
+    ( module Nexus.NatInt32
+    , module Nexus.Socket
     ) where
 
+import Nexus.NatInt32
 import Nexus.Socket
