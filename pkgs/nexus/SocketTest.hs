@@ -16,7 +16,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Network.Socket as NS
 import qualified Network.Socket.ByteString as NSB
 
-import Nexus
+import Nexus.Socket as Nexus
 
 data TestData = TestData Int String deriving (Show, Generic)
 instance Serialize TestData
