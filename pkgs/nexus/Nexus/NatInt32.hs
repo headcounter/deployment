@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 -- | This module implements a data type for natural 32-bit signed integers.
 --
 -- This is what's used for the @REFRESH@, @RETRY@ and @EXPIRE@ fields as
@@ -10,9 +11,13 @@ import Control.Monad (liftM2)
 import Data.Int (Int32)
 import GHC.Exception (throw, ArithException(Underflow, Overflow))
 
+import qualified Data.SafeCopy as SC
+
 -- | A positive 32-bit signed integer ranging from @0@ to @2147483647@
 newtype NatInt32 = NatInt32 Int32
     deriving (Eq, Ord)
+
+SC.deriveSafeCopy 0 'SC.base ''NatInt32
 
 instance Read NatInt32 where
     readsPrec d = fmap (first NatInt32) . filter (cond . fst) . readsPrec d
