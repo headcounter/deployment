@@ -10,8 +10,7 @@ cabal-version:       >=1.10
 
 library
   ghc-options:         -Wall
-  exposed-modules:     Nexus,
-                       Nexus.DNS,
+  exposed-modules:     Nexus.DNS,
                        Nexus.DNS.DomainName,
                        Nexus.NatInt32,
                        Nexus.Socket
