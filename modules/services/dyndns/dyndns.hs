@@ -51,7 +51,7 @@ import qualified System.Process as P
 
 import Text.Read (readMaybe)
 
-import qualified Nexus
+import qualified Nexus.Socket as NS
 
 data UpdateInfo = UpdateInfo
     { uiUsername :: T.Text
@@ -273,11 +273,11 @@ masterWorker :: AS.AcidState ZoneDatabase -> TC.TChan Zone -> ConnectionConfig
 masterWorker state workChan connCfg = retry $ \conn -> do
     workQueue <- atomically $ TC.dupTChan workChan
     existing <- AS.query state GetAllZones
-    mapM_ (throwIfFalse <=< Nexus.send conn) existing
+    mapM_ (throwIfFalse <=< NS.send conn) existing
     forever $ do
         newZone <- atomically $ TC.readTChan workQueue
         logBSLn ["Zone update: ", BC.pack $ show newZone]
-        throwIfFalse =<< Nexus.send conn newZone
+        throwIfFalse =<< NS.send conn newZone
   where
     errDesc = "Connection closed by the remote side."
     eofError = IOError Nothing eofErrorType "connect" errDesc Nothing Nothing
@@ -293,7 +293,7 @@ masterWorker state workChan connCfg = retry $ \conn -> do
                 ]
         threadDelay 1000000
     retry handler = do
-        catch (Nexus.connect sHost sPort (device connCfg) handler) handleError
+        catch (NS.connect sHost sPort (device connCfg) handler) handleError
         retry handler
 
 defaultMasterConfig :: MasterConfig
@@ -328,11 +328,11 @@ loadConfigAndRun fp defcfg fun = do
 
 serveManyWarps :: Application -> IO [A.Async ()]
 serveManyWarps app =
-    mapM A.async . fmap listenTo <=< Nexus.getSocketsFor $ Just "http"
+    mapM A.async . fmap listenTo <=< NS.getSocketsFor $ Just "http"
   where
-    listenTo :: Nexus.Socket -> IO ()
+    listenTo :: NS.Socket -> IO ()
     listenTo sock = do
-        Nexus.setNonBlocking sock
+        NS.setNonBlocking sock
         Warp.runSettingsSocket Warp.defaultSettings sock app
 
 startMaster :: MasterConfig -> IO (Either ByteString ())
@@ -430,10 +430,10 @@ slaveHandler zoneQueue cmd zone = do
 
 startSlave :: SlaveConfig -> IO (Either ByteString ())
 startSlave SlaveConfig { writeZoneCommand = cmd } = do
-    Nexus.serve (Just "master") scc
+    NS.serve (Just "master") scc
     return $ Right ()
   where process zq c = do
-            result <- Nexus.recv c
+            result <- NS.recv c
             case result of
                  Just newZone -> do
                      slaveHandler zq cmd newZone
