@@ -14,9 +14,15 @@ module Nexus.DNS
     , mkSOA
     , mkTinySOA
     , mkRR
+
+    , updateRecords
     ) where
 
+import Data.Function (on)
+import Data.List (unionBy)
+import Data.Data (Data(..))
 import Data.Maybe (catMaybes)
+import Data.String (IsString(..))
 import Data.Typeable (Typeable)
 import Data.Word (Word16, Word32)
 import GHC.Generics (Generic)
@@ -77,31 +83,37 @@ data Domain
     = FullDomain DomainName -- ^ A fully qualified domain name
     | SubDomain DomainName  -- ^ A domain relative to the 'Origin'
     | Origin                -- ^ The root of the current zone
-    deriving (Show, Typeable, Generic)
+    deriving (Show, Eq, Data, Typeable, Generic)
 
 -- | An IP version 4 address
-newtype IPv4 = IPv4 { unIPv4 :: IP.IPv4 }
-    deriving (Show, Eq, Bounded, Enum, Typeable, Generic)
+newtype IPv4 = IPv4 IP.IPv4
+    deriving (Show, Eq, Bounded, Enum, Data, Typeable, Generic)
 
 instance SC.SafeCopy IPv4 where
-    putCopy = SC.contain . SC.safePut . IP.fromIPv4 . unIPv4
+    putCopy (IPv4 i) = SC.contain . SC.safePut $ IP.fromIPv4 i
     getCopy = SC.contain $ fmap (IPv4 . IP.toIPv4) SC.safeGet
 
 instance S.Serialize IPv4 where
-    put = S.put . IP.fromIPv4 . unIPv4
+    put (IPv4 i) = S.put $ IP.fromIPv4 i
     get = fmap (IPv4 . IP.toIPv4) S.get
 
+instance IsString IPv4 where
+    fromString = IPv4 . fromString
+
 -- | An IP version 6 address
-newtype IPv6 = IPv6 { unIPv6 :: IP.IPv6 }
-    deriving (Show, Eq, Bounded, Enum, Typeable, Generic)
+newtype IPv6 = IPv6 IP.IPv6
+    deriving (Show, Eq, Bounded, Enum, Data, Typeable, Generic)
 
 instance SC.SafeCopy IPv6 where
-    putCopy = SC.contain . SC.safePut . IP.fromIPv6 . unIPv6
+    putCopy (IPv6 i) = SC.contain . SC.safePut $ IP.fromIPv6 i
     getCopy = SC.contain $ fmap (IPv6 . IP.toIPv6) SC.safeGet
 
 instance S.Serialize IPv6 where
-    put = S.put . IP.fromIPv6 . unIPv6
+    put (IPv6 i) = S.put $ IP.fromIPv6 i
     get = fmap (IPv6 . IP.toIPv6) S.get
+
+instance IsString IPv6 where
+    fromString = IPv6 . fromString
 
 -- | The DNS record type and its data as an ADT.
 data Record
@@ -114,7 +126,7 @@ data Record
     | Nameserver     Domain                      -- ^ @NS@ record
     | Pointer        Domain                      -- ^ @PTR@ record
     | ServiceLocator Word16 Word16 Word16 Domain -- ^ @SRV@ record
-    deriving (Show, Typeable, Generic)
+    deriving (Show, Data, Typeable, Generic)
 
 -- | A DNS resource record with the most common fields.
 --
@@ -175,6 +187,18 @@ mkRR record = ResourceRecord
     , rrTTL    = Nothing
     , rrRecord = record
     }
+
+-- | Update the records of a 'Zone' that have the same 'rrName' as the ones
+--   specified in the first argument and increment the serial by one.
+--
+-- If a record doesn't exist in the 'Zone' it's added.
+updateRecords :: [ResourceRecord] -> Zone -> Zone
+updateRecords newRRs zone = zone
+    { zoneSOA = (zoneSOA zone) { soaSerial = soaSerial (zoneSOA zone) + 1 }
+    , zoneRecords = unionBy ((==) `on` match) newRRs $ zoneRecords zone
+    }
+  where
+    match rr = (rrName rr, toConstr $ rrRecord rr)
 
 SC.deriveSafeCopy 0 'SC.base ''Domain
 SC.deriveSafeCopy 0 'SC.base ''Record

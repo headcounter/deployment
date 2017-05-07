@@ -17,6 +17,7 @@ import Control.Applicative
 import Data.Attoparsec.ByteString.Char8 hiding (take)
 import Data.ByteString (ByteString)
 import Data.Char (toLower)
+import Data.Data (Data)
 import Data.List (isSuffixOf)
 import Data.Maybe (isJust)
 import Data.Semigroup (Semigroup(..))
@@ -29,7 +30,7 @@ import qualified Data.ByteString.Char8 as BC
 
 -- | A fully qualified domain name.
 newtype DomainName = DN [ByteString]
-    deriving (Eq, Ord, Typeable, Generic)
+    deriving (Eq, Ord, Data, Typeable, Generic)
 
 instance Show DomainName where
     show = show . toByteString
