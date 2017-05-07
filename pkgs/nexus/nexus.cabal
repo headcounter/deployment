@@ -12,7 +12,7 @@ library
   ghc-options:         -Wall
   exposed-modules:     Nexus.DNS,
                        Nexus.DNS.DomainName,
-                       Nexus.NatInt32,
+                       Nexus.DNS.NatInt32,
                        Nexus.Socket
   build-depends:       base == 4.*,
                        async,

@@ -27,7 +27,7 @@ import qualified Data.Serialize as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 
-import Nexus.NatInt32
+import Nexus.DNS.NatInt32
 import Nexus.DNS.DomainName
 
 -- | Obsolete version of 'Zone' for safecopy migrations.
