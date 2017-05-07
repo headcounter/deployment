@@ -4,7 +4,7 @@
 -- This is what's used for the @REFRESH@, @RETRY@ and @EXPIRE@ fields as
 -- defined by <https://tools.ietf.org/html/rfc1035#section-3.3.13 RFC1035>.
 --
-module Nexus.DNS.NatInt32 (NatInt32(..)) where
+module Nexus.DNS.Types.NatInt32 (NatInt32(..)) where
 
 import Control.Arrow (first)
 import Control.Monad (liftM2)

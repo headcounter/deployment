@@ -1,7 +1,7 @@
 -- | Data type and utility functions for manipulating (fully qualified) domain
 --   names.
 {-# LANGUAGE TemplateHaskell, DeriveGeneric, DeriveDataTypeable #-}
-module Nexus.DNS.DomainName
+module Nexus.DNS.Types.DomainName
     ( DomainName
 
     , fromByteString
