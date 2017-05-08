@@ -9,6 +9,8 @@ module Nexus.DNS
     , mkZone
 
     , updateRecords
+
+    , renderZone
     ) where
 
 import Control.Lens ((%~), (^..))
@@ -17,6 +19,7 @@ import Data.Function (on)
 import Data.List (unionBy)
 
 import Nexus.DNS.Types
+import Nexus.DNS.ZoneBuilder
 
 -- | Create a SOA record with some defaults as recommended by
 --   <https://www.ripe.net/publications/docs/ripe-203>.

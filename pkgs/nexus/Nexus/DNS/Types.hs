@@ -5,8 +5,9 @@ module Nexus.DNS.Types
     ( Domain(..)
     , IPv4
     , IPv6
-    , NatInt32
-    , DomainName
+
+    , module Nexus.DNS.Types.NatInt32
+    , module Nexus.DNS.Types.DomainName
 
     , Record(..)
     , AsRecord(..)

@@ -15,6 +15,7 @@ library
   other-modules:       Nexus.DNS.Types,
                        Nexus.DNS.Types.DomainName,
                        Nexus.DNS.Types.NatInt32
+                       Nexus.DNS.ZoneBuilder
   build-depends:       base == 4.*,
                        async,
                        attoparsec,
