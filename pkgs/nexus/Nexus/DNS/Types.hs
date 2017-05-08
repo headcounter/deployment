@@ -44,6 +44,7 @@ instance SC.Migrate Zone where
     type MigrateFrom Zone = Zone_v0
     migrate oldZone = Zone
         { zoneDomain  = migrateFQDN $ zone_v0_FQDN oldZone
+        , zoneTTL     = 0
         , zoneSOA     = SOARecord
             { soaPrimary     = head nameservers
             , soaEmail       = email
@@ -68,6 +69,7 @@ instance SC.Migrate Zone where
 -- | This represents a zone file typically used in BIND or NSD.
 data Zone = Zone
     { zoneDomain  :: DomainName       -- ^ The FQDN of the zone file
+    , zoneTTL     :: Word32           -- ^ The default time-to-live in seconds
     , zoneSOA     :: SOARecord        -- ^ The Start of Authority record
     , zoneRecords :: [ResourceRecord] -- ^ All the resource records of the zone
     } deriving (Show, Typeable, Generic)
