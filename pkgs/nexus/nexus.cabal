@@ -21,6 +21,7 @@ library
                        bytestring,
                        cereal,
                        iproute,
+                       lens,
                        network,
                        safecopy,
                        stm,

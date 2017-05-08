@@ -1,5 +1,5 @@
 { mkDerivation, async, attoparsec, base, bytestring, cereal, iproute
-, network, stdenv, safecopy, stm, template-haskell, text, transformers
+, lens, network, stdenv, safecopy, stm, template-haskell, text, transformers
 , unix
 }:
 
@@ -20,7 +20,7 @@ in mkDerivation {
   version = "0.1.0.0";
   src = ./.;
   libraryHaskellDepends = [
-    attoparsec async base bytestring cereal iproute network safecopy stm
+    attoparsec async base bytestring cereal iproute lens network safecopy stm
     systemd template-haskell text
   ];
   testHaskellDepends = [

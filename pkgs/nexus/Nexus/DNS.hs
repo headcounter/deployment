@@ -9,6 +9,7 @@ module Nexus.DNS
     , updateRecords
     ) where
 
+import Control.Lens ((%~))
 import Data.Data (Data(toConstr))
 import Data.Function (on)
 import Data.List (unionBy)
@@ -19,31 +20,31 @@ import Nexus.DNS.Types
 --   <https://www.ripe.net/publications/docs/ripe-203>.
 mkSOA :: DomainName -> DomainName -> SOARecord
 mkSOA primary email = SOARecord
-    { soaPrimary     = primary
-    , soaEmail       = email
-    , soaSerial      = 0
-    , soaRefresh     = 86400
-    , soaRetry       = 7200
-    , soaExpire      = 3600000
-    , soaNXDomainTTL = 172800
+    { _soaPrimary     = primary
+    , _soaEmail       = email
+    , _soaSerial      = 0
+    , _soaRefresh     = 86400
+    , _soaRetry       = 7200
+    , _soaExpire      = 3600000
+    , _soaNXDomainTTL = 172800
     }
 
 -- | Create a SOA record that's tailored for short-lived or frequently updated
 --   zones.
 mkTinySOA :: DomainName -> DomainName -> SOARecord
 mkTinySOA primary email = (mkSOA primary email)
-    { soaRefresh     = 60
-    , soaRetry       = 60
-    , soaExpire      = 14400
-    , soaNXDomainTTL = 0
+    { _soaRefresh     = 60
+    , _soaRetry       = 60
+    , _soaExpire      = 14400
+    , _soaNXDomainTTL = 0
     }
 
 -- | Create a 'ResourceRecord' for the zone's $ORIGIN and with the default TTL.
 mkRR :: Record -> ResourceRecord
 mkRR record = ResourceRecord
-    { rrName   = Origin
-    , rrTTL    = Nothing
-    , rrRecord = record
+    { _rrName   = Origin
+    , _rrTTL    = Nothing
+    , _rrRecord = record
     }
 
 -- | Update the records of a 'Zone' that have the same 'rrName' as the ones
@@ -51,9 +52,8 @@ mkRR record = ResourceRecord
 --
 -- If a record doesn't exist in the 'Zone' it's added.
 updateRecords :: [ResourceRecord] -> Zone -> Zone
-updateRecords newRRs zone = zone
-    { zoneSOA = (zoneSOA zone) { soaSerial = soaSerial (zoneSOA zone) + 1 }
-    , zoneRecords = unionBy ((==) `on` match) newRRs $ zoneRecords zone
-    }
+updateRecords newRRs =
+    (zoneSOA . soaSerial %~ succ) . (zoneRecords %~ updateRecs)
   where
-    match rr = (rrName rr, toConstr $ rrRecord rr)
+    updateRecs = unionBy ((==) `on` match) newRRs
+    match rr = (_rrName rr, toConstr $ _rrRecord rr)
