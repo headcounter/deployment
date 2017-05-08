@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- | Module for manipulating/writing DNS zone files.
 module Nexus.DNS
     ( module Nexus.DNS.Types
@@ -5,11 +6,12 @@ module Nexus.DNS
     , mkSOA
     , mkTinySOA
     , mkRR
+    , mkZone
 
     , updateRecords
     ) where
 
-import Control.Lens ((%~))
+import Control.Lens ((%~), (^..))
 import Data.Data (Data(toConstr))
 import Data.Function (on)
 import Data.List (unionBy)
@@ -46,6 +48,28 @@ mkRR record = ResourceRecord
     , _rrTTL    = Nothing
     , _rrRecord = record
     }
+
+-- | Create a new 'Zone' with the same default values as in `mkSOA`.
+mkZone :: DomainName       -- ^ The FQDN of the zone
+       -> DomainName       -- ^ The email address of the zone owner
+       -> [ResourceRecord] -- ^ Initial resource records. The first
+                           --   'Nameserver' entry will be used for the primary
+                           --   nameserver of the @SOA@ record. If there is no
+                           --   such entry, it will be @ns1.FQDN@.
+       -> Zone
+mkZone fqdn email records = Zone
+    { _zoneDomain  = fqdn
+    , _zoneTTL     = _soaNXDomainTTL soa
+    , _zoneSOA     = soa
+    , _zoneRecords = records
+    }
+  where
+    nsRecs = records ^.. traverse . rrRecord . _Nameserver
+    primary = head $ nsRecs ++ [FullDomain $ mappend fqdn "ns1"]
+    mkPrimary (FullDomain x) = x
+    mkPrimary (SubDomain x) = mappend fqdn x
+    mkPrimary Origin = fqdn
+    soa = mkSOA (mkPrimary primary) email
 
 -- | Update the records of a 'Zone' that have the same 'rrName' as the ones
 --   specified in the first argument and increment the serial by one.

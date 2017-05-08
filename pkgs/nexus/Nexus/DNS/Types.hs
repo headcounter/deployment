@@ -9,6 +9,7 @@ module Nexus.DNS.Types
     , DomainName
 
     , Record(..)
+    , AsRecord(..)
 
     , ResourceRecord(..)
     , HasResourceRecord(..)
@@ -20,7 +21,7 @@ module Nexus.DNS.Types
     , HasZone(..)
     ) where
 
-import Control.Lens (makeClassy, makePrisms)
+import Control.Lens (makeClassy, makeClassyPrisms)
 import Data.Data (Data(..))
 import Data.Maybe (catMaybes)
 import Data.String (IsString(..))
@@ -133,7 +134,8 @@ makeClassy ''ResourceRecord
 -- | Lenses for 'SOARecord'
 makeClassy ''SOARecord
 
-makePrisms ''Record
+-- | Prisms for 'Record'
+makeClassyPrisms ''Record
 
 -- | Obsolete version of 'Zone' for safecopy migrations.
 data Zone_v0 = Zone_v0
