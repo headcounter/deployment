@@ -13,7 +13,7 @@ library
   exposed-modules:     Nexus.DNS,
                        Nexus.Socket
   other-modules:       Nexus.DNS.Types,
-                       Nexus.DNS.Types.DomainName,
+                       Nexus.DNS.Types.Domain,
                        Nexus.DNS.Types.NatInt32
                        Nexus.DNS.ZoneBuilder
   build-depends:       base == 4.*,

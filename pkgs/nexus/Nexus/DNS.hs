@@ -23,7 +23,7 @@ import Nexus.DNS.ZoneBuilder
 
 -- | Create a SOA record with some defaults as recommended by
 --   <https://www.ripe.net/publications/docs/ripe-203>.
-mkSOA :: DomainName -> DomainName -> SOARecord
+mkSOA :: RRName -> RRName -> SOARecord
 mkSOA primary email = SOARecord
     { _soaPrimary     = primary
     , _soaEmail       = email
@@ -36,7 +36,7 @@ mkSOA primary email = SOARecord
 
 -- | Create a SOA record that's tailored for short-lived or frequently updated
 --   zones.
-mkTinySOA :: DomainName -> DomainName -> SOARecord
+mkTinySOA :: RRName -> RRName -> SOARecord
 mkTinySOA primary email = (mkSOA primary email)
     { _soaRefresh     = 60
     , _soaRetry       = 60
@@ -53,8 +53,8 @@ mkRR record = ResourceRecord
     }
 
 -- | Create a new 'Zone' with the same default values as in `mkSOA`.
-mkZone :: DomainName       -- ^ The FQDN of the zone
-       -> DomainName       -- ^ The email address of the zone owner
+mkZone :: FQDN             -- ^ The FQDN of the zone
+       -> FQDN             -- ^ The email address of the zone owner
        -> [ResourceRecord] -- ^ Initial resource records. The first
                            --   'Nameserver' entry will be used for the primary
                            --   nameserver of the @SOA@ record. If there is no
@@ -68,11 +68,8 @@ mkZone fqdn email records = Zone
     }
   where
     nsRecs = records ^.. traverse . rrRecord . _Nameserver
-    primary = head $ nsRecs ++ [FullDomain $ mappend fqdn "ns1"]
-    mkPrimary (FullDomain x) = x
-    mkPrimary (SubDomain x) = mappend fqdn x
-    mkPrimary Origin = fqdn
-    soa = mkSOA (mkPrimary primary) email
+    primary = head $ nsRecs ++ [mappend (fromFQDN fqdn) "ns1"]
+    soa = mkSOA primary (fromFQDN email)
 
 -- | Update the records of a 'Zone' that have the same 'rrName' as the ones
 --   specified in the first argument and increment the serial by one.

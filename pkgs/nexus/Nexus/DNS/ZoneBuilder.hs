@@ -7,11 +7,6 @@ import Data.Text.Encoding (encodeUtf8Builder)
 
 import Nexus.DNS.Types
 
-renderDomain :: Domain -> Builder
-renderDomain (FullDomain fqdn) = byteString $ toZoneString fqdn
-renderDomain (SubDomain fqdn)  = byteString $ toByteString fqdn
-renderDomain Origin            = char7 '@'
-
 renderRType :: String -> [Builder] -> Builder
 renderRType _ []     = mempty
 renderRType t (b:bs) = string7 t <> char7 ' ' <> b
@@ -20,13 +15,13 @@ renderRType t (b:bs) = string7 t <> char7 ' ' <> b
 
 renderSOA :: SOARecord -> Builder
 renderSOA soa = string7 "@ IN " <> renderRType "SOA"
-    [ byteString . toZoneString $ _soaPrimary soa
-    , byteString . toZoneString $ _soaEmail soa
-    , word32Dec                 $ _soaSerial soa
-    , word32Dec  . fromIntegral $ _soaRefresh soa
-    , word32Dec  . fromIntegral $ _soaRetry soa
-    , word32Dec  . fromIntegral $ _soaExpire soa
-    , word32Dec                 $ _soaNXDomainTTL soa
+    [ renderDomain             $ _soaPrimary soa
+    , renderDomain             $ _soaEmail soa
+    , word32Dec                $ _soaSerial soa
+    , word32Dec . fromIntegral $ _soaRefresh soa
+    , word32Dec . fromIntegral $ _soaRetry soa
+    , word32Dec . fromIntegral $ _soaExpire soa
+    , word32Dec                $ _soaNXDomainTTL soa
     ]
 
 renderRecord :: Record -> Builder
