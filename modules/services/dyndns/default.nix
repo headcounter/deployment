@@ -8,10 +8,9 @@ let
     name = "dyndns";
     source = ./dyndns.hs;
 
-    ghcflags = [ "-O2" "-Wall" "-fno-warn-orphans" ];
+    ghcflags = [ "-O2" "-Wall" ];
     buildDepends = [
-      "acid-state" "cereal-text" "iproute" "stm" "wai" "warp"
-      "yaml" pkgs.headcounter.nexus
+      "acid-state" "stm" "wai" "warp" "yaml" pkgs.headcounter.nexus
     ];
   };
 
