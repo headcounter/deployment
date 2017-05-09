@@ -26,9 +26,9 @@ renderSOA soa = string7 "@ IN " <> renderRType "SOA"
 
 renderRecord :: Record -> Builder
 renderRecord (IPv4Address ip) =
-    renderRType "A" [string7 $ show ip]
+    renderRType "A" [byteString $ ip4toByteString ip]
 renderRecord (IPv6Address ip) =
-    renderRType "AAAA" [string7 $ show ip]
+    renderRType "AAAA" [byteString $ ip6toByteString ip]
 renderRecord (TextRecord text) =
     renderRType "TXT" [encodeUtf8Builder text]
 renderRecord (CanonicalName domain) =

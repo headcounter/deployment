@@ -14,7 +14,8 @@ library
                        Nexus.Socket
   other-modules:       Nexus.DNS.Types,
                        Nexus.DNS.Types.Domain,
-                       Nexus.DNS.Types.NatInt32
+                       Nexus.DNS.Types.IpAddr,
+                       Nexus.DNS.Types.NatInt32,
                        Nexus.DNS.ZoneBuilder
   build-depends:       base == 4.*,
                        async,

@@ -2,11 +2,9 @@
 {-# LANGUAGE DeriveGeneric, DeriveDataTypeable, TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving #-}
 module Nexus.DNS.Types
-    ( IPv4
-    , IPv6
-
+    ( module Nexus.DNS.Types.Domain
+    , module Nexus.DNS.Types.IpAddr
     , module Nexus.DNS.Types.NatInt32
-    , module Nexus.DNS.Types.Domain
 
     , Record(..)
     , AsRecord(..)
@@ -24,19 +22,17 @@ module Nexus.DNS.Types
 import Control.Lens (makeClassy, makeClassyPrisms)
 import Data.Data (Data(..))
 import Data.Maybe (catMaybes)
-import Data.String (IsString(..))
 import Data.Typeable (Typeable)
 import Data.Word (Word16, Word32)
 import GHC.Generics (Generic)
 
-import qualified Data.IP as IP
 import qualified Data.SafeCopy as SC
-import qualified Data.Serialize as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 
-import Nexus.DNS.Types.NatInt32
 import Nexus.DNS.Types.Domain
+import Nexus.DNS.Types.IpAddr
+import Nexus.DNS.Types.NatInt32
 
 -- | This represents a zone file typically used in BIND or NSD.
 data Zone = Zone
@@ -45,36 +41,6 @@ data Zone = Zone
     , _zoneSOA     :: SOARecord        -- ^ The Start of Authority record
     , _zoneRecords :: [ResourceRecord] -- ^ All the resource records of the zone
     } deriving (Show, Typeable, Generic)
-
--- | An IP version 4 address
-newtype IPv4 = IPv4 IP.IPv4
-    deriving (Show, Eq, Bounded, Enum, Data, Typeable, Generic)
-
-instance SC.SafeCopy IPv4 where
-    putCopy (IPv4 i) = SC.contain . SC.safePut $ IP.fromIPv4 i
-    getCopy = SC.contain $ fmap (IPv4 . IP.toIPv4) SC.safeGet
-
-instance S.Serialize IPv4 where
-    put (IPv4 i) = S.put $ IP.fromIPv4 i
-    get = fmap (IPv4 . IP.toIPv4) S.get
-
-instance IsString IPv4 where
-    fromString = IPv4 . fromString
-
--- | An IP version 6 address
-newtype IPv6 = IPv6 IP.IPv6
-    deriving (Show, Eq, Bounded, Enum, Data, Typeable, Generic)
-
-instance SC.SafeCopy IPv6 where
-    putCopy (IPv6 i) = SC.contain . SC.safePut $ IP.fromIPv6 i
-    getCopy = SC.contain $ fmap (IPv6 . IP.toIPv6) SC.safeGet
-
-instance S.Serialize IPv6 where
-    put (IPv6 i) = S.put $ IP.fromIPv6 i
-    get = fmap (IPv6 . IP.toIPv6) S.get
-
-instance IsString IPv6 where
-    fromString = IPv6 . fromString
 
 -- | The DNS record type and its data as an ADT.
 data Record
