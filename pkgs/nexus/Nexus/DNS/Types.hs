@@ -1,6 +1,6 @@
 -- | Module for manipulating/writing DNS zone files.
 {-# LANGUAGE DeriveGeneric, DeriveDataTypeable, TypeFamilies #-}
-{-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving, DeriveAnyClass #-}
 module Nexus.DNS.Types
     ( module Nexus.DNS.Types.Domain
     , module Nexus.DNS.Types.IpAddr
@@ -22,6 +22,8 @@ module Nexus.DNS.Types
 import Control.Lens (makeClassy, makeClassyPrisms)
 import Data.Data (Data(..))
 import Data.Maybe (catMaybes)
+import Data.Serialize (Serialize)
+import Data.Serialize.Text ()
 import Data.Typeable (Typeable)
 import Data.Word (Word16, Word32)
 import GHC.Generics (Generic)
@@ -40,7 +42,7 @@ data Zone = Zone
     , _zoneTTL     :: Word32           -- ^ The default time-to-live in seconds
     , _zoneSOA     :: SOARecord        -- ^ The Start of Authority record
     , _zoneRecords :: [ResourceRecord] -- ^ All the resource records of the zone
-    } deriving (Show, Typeable, Generic)
+    } deriving (Show, Serialize, Typeable, Generic)
 
 -- | The DNS record type and its data as an ADT.
 data Record
@@ -53,7 +55,7 @@ data Record
     | Nameserver     RRName                      -- ^ @NS@ record
     | Pointer        RRName                      -- ^ @PTR@ record
     | ServiceLocator Word16 Word16 Word16 RRName -- ^ @SRV@ record
-    deriving (Show, Data, Typeable, Generic)
+    deriving (Show, Data, Serialize, Typeable, Generic)
 
 -- | A DNS resource record with the most common fields.
 --
@@ -66,7 +68,7 @@ data ResourceRecord = ResourceRecord
     , _rrTTL   :: Maybe Word32 -- ^ The time-to-live in seconds or the zone-wide
                                --   default if 'Nothing'
     , _rrRecord :: Record      -- ^ The record type and data
-    } deriving (Show, Typeable, Generic)
+    } deriving (Show, Serialize, Typeable, Generic)
 
 -- | The Start of Authority record.
 data SOARecord = SOARecord {
@@ -86,7 +88,7 @@ data SOARecord = SOARecord {
     _soaExpire      :: NatInt32,
     -- | The caching time for NXDOMAIN errors
     _soaNXDomainTTL :: Word32
-} deriving (Show, Typeable, Generic)
+} deriving (Show, Serialize, Typeable, Generic)
 
 -- | Lenses for 'Zone'
 makeClassy ''Zone
