@@ -10,7 +10,8 @@ let
 
     ghcflags = [ "-O2" "-Wall" ];
     buildDepends = [
-      "acid-state" "stm" "wai" "warp" "yaml" pkgs.headcounter.nexus
+      "acid-state" "cereal-text" "stm" "wai" "warp" "yaml"
+      pkgs.headcounter.nexus
     ];
   };
 

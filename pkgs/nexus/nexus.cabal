@@ -22,7 +22,6 @@ library
                        attoparsec,
                        bytestring,
                        cereal,
-                       cereal-text,
                        iproute,
                        lens,
                        network,

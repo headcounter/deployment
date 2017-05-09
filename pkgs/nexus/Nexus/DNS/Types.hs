@@ -20,10 +20,10 @@ module Nexus.DNS.Types
     ) where
 
 import Control.Lens (makeClassy, makeClassyPrisms)
+import Data.ByteString (ByteString)
 import Data.Data (Data(..))
 import Data.Maybe (catMaybes)
 import Data.Serialize (Serialize)
-import Data.Serialize.Text ()
 import Data.Typeable (Typeable)
 import Data.Word (Word16, Word32)
 import GHC.Generics (Generic)
@@ -48,7 +48,7 @@ data Zone = Zone
 data Record
     = IPv4Address    IPv4                        -- ^ @A@ record
     | IPv6Address    IPv6                        -- ^ @AAAA@ record
-    | TextRecord     T.Text                      -- ^ @TXT@ record
+    | TextRecord     ByteString                  -- ^ @TXT@ record
     | CanonicalName  RRName                      -- ^ @CNAME@ record
     | DelegationName RRName                      -- ^ @DNAME@ record
     | MailExchange   Word16 RRName               -- ^ @MX@ record

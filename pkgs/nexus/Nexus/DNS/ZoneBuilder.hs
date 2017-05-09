@@ -1,9 +1,14 @@
+{-# LANGUAGE TupleSections #-}
 -- | A module for rendering 'Zone' data.
 module Nexus.DNS.ZoneBuilder (renderZone) where
 
+import Data.Char (ord)
+import Data.ByteString (ByteString)
 import Data.ByteString.Builder
 import Data.Monoid ((<>))
-import Data.Text.Encoding (encodeUtf8Builder)
+import Data.Word (Word8)
+
+import qualified Data.ByteString.Builder.Prim as BP
 
 import Nexus.DNS.Types
 
@@ -24,13 +29,29 @@ renderSOA soa = string7 "@ IN " <> renderRType "SOA"
     , word32Dec                $ _soaNXDomainTTL soa
     ]
 
+renderTXT :: ByteString -> Builder
+renderTXT txt =
+    char7 '"' <> BP.primMapByteStringBounded escape txt <> char7 '"'
+  where
+    escape :: BP.BoundedPrim Word8
+    escape = BP.condB (== c '\\') (fixed2 (c '\\', c '\\')) $
+             BP.condB (== c '"')  (fixed2 (c '\\', c '"')) $
+             BP.condB isPrintable (BP.liftFixedToBounded BP.word8)
+             decEsc
+
+    isPrintable x = x >= 32 && x <= 126
+    c = fromIntegral . ord
+    boundedW8 = BP.liftFixedToBounded BP.word8
+    fixed2 x = BP.liftFixedToBounded $ const x BP.>$< BP.word8 BP.>*< BP.word8
+    decEsc = (c '\\',) BP.>$< boundedW8 BP.>*< BP.word8Dec
+
 renderRecord :: Record -> Builder
 renderRecord (IPv4Address ip) =
     renderRType "A" [byteString $ ip4toByteString ip]
 renderRecord (IPv6Address ip) =
     renderRType "AAAA" [byteString $ ip6toByteString ip]
 renderRecord (TextRecord text) =
-    renderRType "TXT" [encodeUtf8Builder text]
+    renderRType "TXT" [renderTXT text]
 renderRecord (CanonicalName domain) =
     renderRType "CNAME" [renderDomain domain]
 renderRecord (DelegationName domain) =
