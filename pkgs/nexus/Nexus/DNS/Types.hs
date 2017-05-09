@@ -150,8 +150,8 @@ instance SC.Migrate Zone where
         { _zoneDomain  = migrateFQDN $ zone_v0_FQDN oldZone
         , _zoneTTL     = 0
         , _zoneSOA     = SOARecord
-            { _soaPrimary     = fromFQDN $ head nameservers
-            , _soaEmail       = fromFQDN email
+            { _soaPrimary     = toRRName $ head nameservers
+            , _soaEmail       = toRRName email
             , _soaSerial      = zone_v0_Serial oldZone
             , _soaRefresh     = 60
             , _soaRetry       = 60
@@ -159,7 +159,7 @@ instance SC.Migrate Zone where
             , _soaNXDomainTTL = 0
             }
         , _zoneRecords = fmap (ResourceRecord Origin Nothing) $
-            (Nameserver . fromFQDN <$> nameservers) ++ addrRRs
+            (Nameserver . toRRName <$> nameservers) ++ addrRRs
         }
       where
         oldFqdnToBS = TE.encodeUtf8 . T.intercalate (T.singleton '.')

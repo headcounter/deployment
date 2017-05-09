@@ -59,8 +59,8 @@ class (SC.SafeCopy a, Serialize a, IsString a, Monoid a) => Domain a where
     --   argument.
     toFQDN :: a -> FQDN -> FQDN
 
-    -- | Convert a 'FQDN' to a 'Domain'.
-    fromFQDN :: FQDN -> a
+    -- | Convert a 'Domain' to a 'RRName'.
+    toRRName :: a -> RRName
 
 -- | A fully qualified domain name.
 newtype FQDN = FQDN [ByteString]
@@ -94,7 +94,7 @@ instance Domain FQDN where
         | otherwise = Just . FQDN $ take (length x - length root) x
 
     toFQDN = const
-    fromFQDN = id
+    toRRName (FQDN x) = Absolute $ fmap encodeRRPart x
 
 data RRPart = Wildcard | Label ByteString
     deriving (Eq, Show, Ord, Data, Typeable, Generic)
@@ -145,7 +145,7 @@ instance Domain RRName where
     toFQDN (Relative x) (FQDN root) = FQDN $ fmap decodeRRPart x <> root
     toFQDN (Absolute x) _           = FQDN $ fmap decodeRRPart x
 
-    fromFQDN (FQDN x) = Absolute $ fmap encodeRRPart x
+    toRRName = id
 
 renderRRPart :: RRPart -> Builder
 renderRRPart Wildcard = char7 '*'
