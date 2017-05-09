@@ -15,9 +15,11 @@ module Nexus.DNS
     , updateRecords
 
     , renderZone
+    , checkZone
     ) where
 
-import Control.Lens ((%~), (^..))
+import Control.Lens ((%~), (^.), (^..))
+import Data.ByteString.Char8 (unpack)
 import Data.Data (Data(toConstr))
 import Data.Function (on)
 import Data.List (unionBy)
@@ -109,3 +111,15 @@ updateRecords newRRs =
   where
     updateRecs = unionBy ((==) `on` match) newRRs
     match rr = (_rrName rr, toConstr $ _rrRecord rr)
+
+-- | Check whether the zone and its records are valid.
+--
+-- Returns 'Nothing' if everything is fine or 'Just' with an error string.
+checkZone :: Zone -> Maybe String
+checkZone z =
+    case nameservers of
+         [] -> Just $ "No nameservers found for " ++ show domain ++ "."
+         _  -> Nothing
+  where
+    domain = unpack $ toByteString $ z ^. zoneDomain
+    nameservers = z ^. zoneRecords ^.. traverse . rrRecord . _Nameserver
