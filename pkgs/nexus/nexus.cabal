@@ -11,6 +11,7 @@ cabal-version:       >=1.10
 library
   ghc-options:         -Wall
   exposed-modules:     Nexus.DNS,
+                       Nexus.Process,
                        Nexus.Socket
   other-modules:       Nexus.DNS.Types,
                        Nexus.DNS.Types.Domain,
@@ -25,6 +26,7 @@ library
                        iproute,
                        lens,
                        network,
+                       process,
                        safecopy,
                        stm,
                        systemd,

@@ -43,14 +43,13 @@ import Network.Wai (Application, responseLBS, queryString)
 import qualified Network.Wai.Handler.Warp as Warp
 
 import System.Environment (getArgs, getProgName)
-import System.Exit (exitFailure, ExitCode(..))
-import System.IO (stderr, hClose)
+import System.Exit (exitFailure)
+import System.IO (stderr)
 import System.IO.Error (eofErrorType)
-
-import qualified System.Process as P
 
 import qualified Nexus.Socket as NS
 import qualified Nexus.DNS as DNS
+import qualified Nexus.Process as P
 
 data UpdateInfo = UpdateInfo
     { uiUsername :: T.Text
@@ -267,28 +266,11 @@ logBS = BC.hPutStr stderr . BC.concat
 updateZoneFile :: FilePath -> DNS.FQDN -> BL.ByteString -> IO ()
 updateZoneFile cmd zone zoneData = do
     logBSLn ["Updating zone ", DNS.toByteString zone, "..."]
-    exitCode <- bracket (P.createProcess procCmd) cleanup process
-    case exitCode of
-         ExitSuccess -> logBSLn
-            ["Updating of zone ", DNS.toByteString zone, " done."]
-         ExitFailure code -> logBSLn
-            [ "Failed to update zone ", DNS.toByteString zone
-            , " with exit code ", BC.pack $ show code, "."
-            ]
-  where
-    procCmd = (P.proc cmd [BC.unpack $ DNS.toByteString zone]) {
-        P.std_in = P.CreatePipe,
-        P.close_fds = True
-    }
-    cleanup (Just i, _, _, p) = do
-        hClose i
-        P.terminateProcess p
-    cleanup _ = error "This should never happen"
-    process (Just i, _, _, p) = do
-        BL.hPutStrLn i zoneData
-        hClose i
-        P.waitForProcess p
-    process _ = error "This should never happen"
+    P.pipeToStdin cmd [DNS.toByteString zone] zoneData
+        (logBSLn ["Updating of zone ", DNS.toByteString zone, " done."])
+        (\code -> logBSLn [ "Failed to update zone ", DNS.toByteString zone
+                  , " with exit code ", BC.pack $ show code, "."
+                  ])
 
 slaveZoneUpdater :: FilePath -> ZoneQueue -> IO ()
 slaveZoneUpdater cmd zoneQueue = forever $
