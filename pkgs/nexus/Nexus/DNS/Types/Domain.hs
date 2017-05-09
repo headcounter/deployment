@@ -182,20 +182,15 @@ constrainLen s | BC.length s > 63 = fail "label must be 63 characters or less"
 
 label :: Parser ByteString
 label = do
-    lstr <- BC.cons <$> letterLC <*> labelLDH <?> "label"
+    first <- letterLC <|> char '_' <?> "letter-or-underscore"
+    lstr <- BC.cons <$> pure first <*> labelLDH <?> "label"
     constrainLen lstr
 
 domain :: Parser FQDN
 domain = FQDN <$> label `sepBy1` char '.'
 
-rrpartFull :: Parser ByteString
-rrpartFull = do
-    first <- letterLC <|> char '_'
-    lstr <- BC.cons <$> pure first <*> labelLDH <?> "label"
-    constrainLen lstr
-
 rrpart :: Parser RRPart
-rrpart = (Wildcard <$ string "*") <|> (Label <$> rrpartFull)
+rrpart = (Wildcard <$ string "*") <|> (Label <$> label)
 
 rrname :: Parser RRName
 rrname = Origin <$ char '@'
