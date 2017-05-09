@@ -6,6 +6,8 @@ module Nexus.DNS.Types.Domain
     ( FQDN
     , RRName(Origin)
     , Domain(..)
+
+    , emailToFQDN
     ) where
 
 import Control.Applicative
@@ -199,6 +201,16 @@ rrname :: Parser RRName
 rrname = Origin <$ char '@'
      <|> Absolute <$> rrpart `sepBy` char '.' <* char '.'
      <|> Relative <$> rrpart `sepBy1` char '.'
+
+email :: Parser FQDN
+email = fmap FQDN . (:) <$> label <* char '@' <*> label `sepBy1` char '.'
+
+-- | Parse an email address and turn it into a 'FQDN'.
+--
+-- This basically works like `parseDomain` but expects an @\@@ after the first
+-- label.
+emailToFQDN :: ByteString -> Either String FQDN
+emailToFQDN = parseOnly (email <* endOfInput)
 
 SC.deriveSafeCopy 0 'SC.base ''FQDN
 SC.deriveSafeCopy 0 'SC.base ''RRPart
