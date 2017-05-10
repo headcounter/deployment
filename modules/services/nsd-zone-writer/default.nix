@@ -24,6 +24,7 @@ let
       #include <pwd.h>
       #include <stdio.h>
       #include <stdlib.h>
+      #include <string.h>
       #include <sys/types.h>
       #include <unistd.h>
 
@@ -41,12 +42,18 @@ let
             cat = "${pkgs.coreutils}/bin/cat";
             touch = "${pkgs.coreutils}/bin/touch";
             stat = "${pkgs.coreutils}/bin/stat";
+            rm = "${pkgs.coreutils}/bin/rm";
             inherit baseDir;
-          }}", NULL, NULL
+          }}", NULL, NULL, NULL
         };
 
-        if (argc != 2) {
-          fprintf(stderr, "Usage: %s FQDN\n", argv[0]);
+        if (argc == 3 && strncmp(argv[1], "--delete", 9) == 0) {
+          execargv[5] = "--delete";
+          execargv[6] = argv[2];
+        } else if (argc == 2) {
+          execargv[5] = argv[1];
+        } else {
+          fprintf(stderr, "Usage: %s [--delete] FQDN\n", argv[0]);
           fputs("  Zone data is read from stdin.\n", stderr);
           return EXIT_FAILURE;
         }
@@ -62,7 +69,6 @@ let
           return EXIT_FAILURE;
         }
 
-        execargv[5] = argv[1];
         execve("${pkgs.stdenv.shell}", execargv, emptyenv);
         return EXIT_SUCCESS;
       }

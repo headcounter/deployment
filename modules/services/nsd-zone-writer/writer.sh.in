@@ -1,4 +1,11 @@
-fqdn="$1"
+if [ $# -eq 2 -a "$1" = "--delete" ]; then
+    fqdn="$2"
+    delete=1
+else
+    fqdn="$1"
+    delete=0
+fi
+
 umask 0027
 zonefile="@baseDir@/$fqdn.zone"
 
@@ -12,6 +19,17 @@ if [ -e "$zonefile" ]; then
 else
     oldMTime=0
     exists=0
+fi
+
+if [ $delete -eq 1 ]; then
+    if [ $exists -eq 1 ]; then
+        @ctrl@ delzone "$fqdn"
+        @rm@ -f "$zonefile"
+        exit 0
+    else
+        echo "Zone file $zonefile doesn't exist." >&2
+        exit 1
+    fi
 fi
 
 zonedata="$(@cat@)"
