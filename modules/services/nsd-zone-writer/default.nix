@@ -31,6 +31,7 @@ let
       int main(int argc, char *argv[]) {
         uid_t curuid;
         struct passwd *pw;
+        const char *fqdn;
         char *emptyenv[] = { NULL };
         char *execargv[] = {
           argv[0], "-e", "-p", "--", "${pkgs.substituteAll {
@@ -49,12 +50,27 @@ let
 
         if (argc == 3 && strncmp(argv[1], "--delete", 9) == 0) {
           execargv[5] = "--delete";
-          execargv[6] = argv[2];
+          fqdn = execargv[6] = argv[2];
         } else if (argc == 2) {
-          execargv[5] = argv[1];
+          fqdn = execargv[5] = argv[1];
         } else {
           fprintf(stderr, "Usage: %s [--delete] FQDN\n", argv[0]);
           fputs("  Zone data is read from stdin.\n", stderr);
+          return EXIT_FAILURE;
+        }
+
+        while (*fqdn != '\0') {
+          if (
+            (*fqdn >= 'a' && *fqdn <= 'z') ||
+            (*fqdn >= 'A' && *fqdn <= 'Z') ||
+            (*fqdn >= '0' && *fqdn <= '9') ||
+            *fqdn == '.' || *fqdn == '-' ||
+            *fqdn == '_'
+          ) {
+            fqdn++;
+            continue;
+          }
+          fprintf(stderr, "Invalid character '%c' in FQDN.\n", *fqdn);
           return EXIT_FAILURE;
         }
 
