@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, hclib, ... }:
 
 let
   inherit (lib) mkOption mkEnableOption mkIf mkMerge mkDefault types;
@@ -13,39 +13,6 @@ let
       "acid-state" "cereal-text" "stm" "wai" "warp" "yaml"
       pkgs.headcounter.nexus
     ];
-  };
-
-  mkListenerOption = desc: defHost: defPort: mkOption {
-    type = types.listOf (types.submodule {
-      options.host = mkOption {
-        type = types.str;
-        example = "::";
-        description = ''
-          Hostname, IPv4 or IPv6 address to listen for ${desc}.
-        '';
-      };
-
-      options.port = mkOption {
-        type = types.int;
-        default = defPort;
-        description = "Port to listen for ${desc}.";
-      };
-
-      options.device = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        example = "tun1000";
-        description = "The network device to bind the slave sockets to.";
-      };
-    });
-
-    default = lib.singleton { host = defHost; };
-    example = [
-      { host = "localhost"; }
-      { host = "1.2.3.4"; port = 666; device = "eth0"; }
-    ];
-
-    description = "Hosts/Ports/Devices to listen for ${desc}.";
   };
 
   credentialOptions = { name, ... }: {
@@ -136,30 +103,6 @@ let
     nsHosts = map mkNS cfg.master.nameservers;
   in lib.concatStringsSep "\n" (lib.singleton "nameservers:" ++ nsHosts);
 
-  mkSocket = { name, description, service ? "${name}.service", fdname }: lcfg: {
-    inherit name;
-    value = let
-      isV6 = builtins.match ".*:.*" lcfg.host != null;
-      host = if isV6 then "[${lcfg.host}]" else lcfg.host;
-      hostPort = "${host}:${toString lcfg.port}";
-    in {
-      description = "${description} (${hostPort})";
-      wantedBy = let
-        devUnit = "sys-subsystem-net-devices-${lcfg.device}.device";
-        target = if lcfg.device == null then "sockets.target" else devUnit;
-      in lib.singleton target;
-      requiredBy = [ service ];
-      socketConfig = {
-        FreeBind = true;
-        Service = service;
-        FileDescriptorName = fdname;
-        ListenStream = hostPort;
-      } // lib.optionalAttrs (lcfg.device != null) {
-        BindToDevice = lcfg.device;
-      };
-    };
-  };
-
   mkYamlSlave = scfg: let
     attrs = [
       "host: ${yamlStr scfg.host}"
@@ -179,12 +122,13 @@ let
         ${lib.concatMapStringsSep "\n  " mkYamlSlave cfg.master.slaves}
     '';
 
-    systemd.sockets = builtins.listToAttrs (lib.imap (n: mkSocket {
-      name = "dyndns-master-http-${toString n}";
+    systemd.sockets = hclib.mkSocketConfig {
+      namePrefix = "dyndns-master-http";
       description = "Dyndns HTTP Socket For Master";
-      service = "dyndns-master.service";
-      fdname = "http";
-    }) cfg.master.http);
+      service = "dyndns-master";
+      fdName = "http";
+      config = cfg.master.http;
+    };
 
     users.users.dyndns = mkIf (cfg.master.user == "dyndns") {
       uid = 2022;
@@ -218,12 +162,13 @@ let
       writeZoneCommand: ${yamlStr cfg.slave.zoneCommand}
     '';
 
-    systemd.sockets = builtins.listToAttrs (lib.imap (n: mkSocket {
-      name = "dyndns-slave-${toString n}";
+    systemd.sockets = hclib.mkSocketConfig {
+      namePrefix = "dyndns-slave";
       description = "Dyndns Socket For Master Connections";
-      service = "dyndns-slave.service";
-      fdname = "master";
-    }) cfg.slave.master);
+      service = "dyndns-slave";
+      fdName = "master";
+      config = cfg.slave.master;
+    };
 
     users.users.dyndns = mkIf (cfg.slave.user == "dyndns") {
       description = "Dynamic DNS Slave User";
@@ -255,7 +200,7 @@ in {
 
   options.headcounter.services.dyndns.master = {
     enable = mkEnableOption "Headcounter dynamic DNS master service";
-    http = mkListenerOption "incoming HTTP connections" "::" 3000;
+    http = hclib.mkListenerOption "incoming HTTP connections" "::" 3000;
 
     slaves = mkOption {
       type = types.listOf (types.submodule {
@@ -339,7 +284,7 @@ in {
 
   options.headcounter.services.dyndns.slave = {
     enable = mkEnableOption "Headcounter dynamic DNS slave service";
-    master = mkListenerOption "incoming master connections" "::" 6000;
+    master = hclib.mkListenerOption "incoming master connections" "::" 6000;
 
     useNSD = mkOption {
       type = types.bool;
