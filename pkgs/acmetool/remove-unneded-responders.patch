@@ -1,0 +1,150 @@
+diff --git a/cmd/acmetool/main.go b/cmd/acmetool/main.go
+index 59d4ec2..a32d715 100644
+--- a/cmd/acmetool/main.go
++++ b/cmd/acmetool/main.go
+@@ -13,15 +13,12 @@ import (
+ 	"github.com/hlandau/acme/acmeapi/acmeutils"
+ 	"github.com/hlandau/acme/hooks"
+ 	"github.com/hlandau/acme/interaction"
+-	"github.com/hlandau/acme/redirector"
+-	"github.com/hlandau/acme/responder"
+ 	"github.com/hlandau/acme/storage"
+ 	"github.com/hlandau/acme/storageops"
+ 	"github.com/hlandau/dexlogconfig"
+ 	"github.com/hlandau/xlog"
+ 	"gopkg.in/alecthomas/kingpin.v2"
+ 	"gopkg.in/hlandau/easyconfig.v1/adaptflag"
+-	"gopkg.in/hlandau/service.v2"
+ 	"gopkg.in/square/go-jose.v1"
+ 	"gopkg.in/yaml.v2"
+ )
+@@ -160,8 +157,6 @@ func main() {
+ 		cmdUnwant()
+ 	case "quickstart":
+ 		cmdQuickstart()
+-	case "redirector":
+-		cmdRunRedirector()
+ 	case "test-notify":
+ 		cmdRunTestNotify()
+ 	case "import-key":
+@@ -366,42 +361,6 @@ func cmdUnwant() {
+ 	}
+ }
+ 
+-func cmdRunRedirector() {
+-	rpath := *redirectorPathFlag
+-	if rpath == "" {
+-		// redirector process is internet-facing and must never touch private keys
+-		storage.Neuter()
+-		rpath = determineWebroot()
+-	}
+-
+-	service.Main(&service.Info{
+-		Name:          "acmetool",
+-		Description:   "acmetool HTTP redirector",
+-		DefaultChroot: rpath,
+-		NewFunc: func() (service.Runnable, error) {
+-			return redirector.New(redirector.Config{
+-				Bind:          ":80",
+-				ChallengePath: rpath,
+-				ChallengeGID:  *redirectorGIDFlag,
+-				ReadTimeout:   *redirectorReadTimeout,
+-				WriteTimeout:  *redirectorWriteTimeout,
+-			})
+-		},
+-	})
+-}
+-
+-func determineWebroot() string {
+-	s, err := storage.NewFDB(*stateFlag)
+-	log.Fatale(err, "storage")
+-
+-	webrootPaths := s.DefaultTarget().Request.Challenge.WebrootPaths
+-	if len(webrootPaths) > 0 {
+-		return webrootPaths[0]
+-	}
+-
+-	return responder.StandardWebrootPath
+-}
+-
+ func cmdRunTestNotify() {
+ 	ctx := &hooks.Context{
+ 		HooksDir: *hooksFlag,
+diff --git a/storageops/reconcile.go b/storageops/reconcile.go
+index aefff4e..6507f24 100644
+--- a/storageops/reconcile.go
++++ b/storageops/reconcile.go
+@@ -2,7 +2,6 @@
+ package storageops
+ 
+ import (
+-	"bytes"
+ 	"crypto"
+ 	"crypto/rand"
+ 	"crypto/x509"
+@@ -11,7 +10,6 @@ import (
+ 	"fmt"
+ 	"github.com/hlandau/acme/acmeapi"
+ 	"github.com/hlandau/acme/acmeapi/acmeendpoints"
+-	"github.com/hlandau/acme/acmeapi/acmeutils"
+ 	"github.com/hlandau/acme/hooks"
+ 	"github.com/hlandau/acme/responder"
+ 	"github.com/hlandau/acme/solver"
+@@ -414,22 +412,6 @@ func (r *reconcile) determineNecessaryAuthorizations(names []string, a *storage.
+ 	return neededs
+ }
+ 
+-func generateHookPEM(info *responder.TLSSNIChallengeInfo) (string, error) {
+-	b := bytes.Buffer{}
+-
+-	err := acmeutils.SaveCertificates(&b, info.Certificate)
+-	if err != nil {
+-		return "", err
+-	}
+-
+-	err = acmeutils.SavePrivateKey(&b, info.Key)
+-	if err != nil {
+-		return "", err
+-	}
+-
+-	return b.String(), nil
+-}
+-
+ func (r *reconcile) obtainAuthorization(name string, a *storage.Account, targetFilename string, trc *storage.TargetRequestChallenge) error {
+ 	cl := r.getClientForAccount(a)
+ 
+@@ -447,17 +429,6 @@ func (r *reconcile) obtainAuthorization(name string, a *storage.Account, targetF
+ 
+ 	startHookFunc := func(challengeInfo interface{}) error {
+ 		switch v := challengeInfo.(type) {
+-		case *responder.HTTPChallengeInfo:
+-			_, err := hooks.ChallengeHTTPStart(ctx, name, targetFilename, v.Filename, v.Body)
+-			return err
+-		case *responder.TLSSNIChallengeInfo:
+-			hookPEM, err := generateHookPEM(v)
+-			if err != nil {
+-				return err
+-			}
+-
+-			_, err = hooks.ChallengeTLSSNIStart(ctx, name, targetFilename, v.Hostname1, v.Hostname2, hookPEM)
+-			return err
+ 		case *responder.DNSChallengeInfo:
+ 			installed, err := hooks.ChallengeDNSStart(ctx, name, targetFilename, v.Body)
+ 			if err == nil && !installed {
+@@ -471,16 +442,6 @@ func (r *reconcile) obtainAuthorization(name string, a *storage.Account, targetF
+ 
+ 	stopHookFunc := func(challengeInfo interface{}) error {
+ 		switch v := challengeInfo.(type) {
+-		case *responder.HTTPChallengeInfo:
+-			return hooks.ChallengeHTTPStop(ctx, name, targetFilename, v.Filename, v.Body)
+-		case *responder.TLSSNIChallengeInfo:
+-			hookPEM, err := generateHookPEM(v)
+-			if err != nil {
+-				return err
+-			}
+-
+-			_, err = hooks.ChallengeTLSSNIStop(ctx, name, targetFilename, v.Hostname1, v.Hostname2, hookPEM)
+-			return err
+ 		case *responder.DNSChallengeInfo:
+ 			uninstalled, err := hooks.ChallengeDNSStop(ctx, name, targetFilename, v.Body)
+ 			if err == nil && !uninstalled {
