@@ -4,16 +4,13 @@ with lib;
 
 let
   hydraSrc = let
-    rev = "fd754d678e691ddb32fd702186135f8a3291cb13";
+    rev = "941665044e8682ddcf70ab8a621948a2515c4a44";
   in overrideDerivation ((import <nixpkgs> {}).fetchFromGitHub {
     repo = "hydra";
     owner = "NixOS";
     inherit rev;
-    sha256 = "0mlgv6dggmknn6483d8xp10z6cwf8vmp5x8ga7s80jrzv10i5ivh";
+    sha256 = "1vxyqzp15r0xxn9kp260ypaslfrhd80dy4010zf3vwraygsmy5vc";
   }) (drv: {
-    postFetch = (drv.postFetch or "") + ''
-      patch -p1 -d "$out" < "${./hydra-build.patch}"
-    '';
     inherit rev;
     revCount = 2374;
   });
