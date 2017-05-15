@@ -2,6 +2,7 @@ package;
 
 import hase.display.Animation;
 import hase.display.Symbol;
+import hase.geom.Raster;
 
 class Digit extends hase.display.Sprite
 {
@@ -14,13 +15,13 @@ class Digit extends hase.display.Sprite
         this.digit = 0;
         this.final_digit = 0;
 
-        this.set_ascii([
+        this.set_ascii(Raster.from_2d_array([
             mkrow(" ".code, "_".code, " ".code, 0, 9, 0),
             mkrow("|".code, "-".code, "|".code, 1, 8, 1),
             mkrow("|".code, "0".code, "|".code, 1, 8, 1),
             mkrow("|".code, "-".code, "|".code, 1, 8, 1),
             mkrow(" ".code, "~".code, " ".code, 0, 9, 0),
-        ]);
+        ], new Symbol(0)));
     }
 
     public function switch_to(digit:Int)
@@ -205,6 +206,8 @@ class Headcounter implements hase.Application
         };
 #end
     }
+
+    public inline function on_keypress(k:hase.input.Key):Void {}
 
     public function update(td:Float):Void {}
 }

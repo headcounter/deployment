@@ -3,8 +3,6 @@
 with lib;
 
 let
-  mainSite = pkgs.headcounter.site;
-
   unzervaltIPv4 = nodes.unzervalt.config.networking.privateIPv4;
   parsifalIPv4 = config.headcounter.imperativeContainers.parsifal.localAddress;
   hydraIPv4 = nodes.taalo.config.networking.p2pTunnels.ssh.ultron.localIPv4;
@@ -171,7 +169,7 @@ in {
         )))
       # http://redmine.lighttpd.net/issues/1268
       } else $HTTP["url"] =~ "" {
-        server.document-root = "${mainSite.html}"
+        server.document-root = "${pkgs.headcounter.site}"
       }
     '' ++ optionals (hasAttr "unzervalt" nodes) (genIPv46VHosts misc ([{
       socketConfig = ''
