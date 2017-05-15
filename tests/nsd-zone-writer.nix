@@ -1,12 +1,13 @@
 import ./make-test.nix ({ lib, ... }: {
   name = "nsd-zone-writer";
 
-  machine = {
+  machine = { pkgs, ... }: {
     services.nsd = {
       enable = true;
       interfaces = lib.mkForce [];
       zones."dummy.".data = "@ SOA ns.dummy noc.dummy ( 1 1h 1h 1h 1h )\n";
     };
+    environment.systemPackages = [ pkgs.bind.dnsutils ];
     headcounter.nsd-zone-writer = {
       enable = true;
       allowedUsers = [ "alice" ];
@@ -30,9 +31,11 @@ import ./make-test.nix ({ lib, ... }: {
   in ''
     sub checkZone ($) {
       my ($fqdn) = @_;
-      my $out = $machine->succeed('host test.'.$fqdn.' 127.0.0.1');
+      my $out = $machine->succeed(
+        'dig +noall +answer @127.0.0.1 test.'.$fqdn.' a'
+      );
       chomp $out;
-      $out =~ /^test\.\Q$fqdn\E\s+A\s+\Q1.2.3.4\E$/
+      $out =~ /^test\.\Q$fqdn.\E\s+\d+\s+IN\s+A\s+\Q1.2.3.4\E$/
         or die "Zone for $fqdn not available (output: '$out')!";
     }
 
