@@ -222,8 +222,8 @@ in stdenv.mkDerivation {
     mkdir -p "$out/share/xmppoke"
     cp -vt "$out/share/xmppoke/" schema.pg.sql
 
-    makeWrapper "${lua}/bin/lua $out/share/lua/${lua.luaversion}/poke.lua" \
-      "$out/bin/xmppoke" \
+    makeWrapper "${lua}/bin/lua" "$out/bin/xmppoke" \
+      --add-flags "$out/share/lua/${lua.luaversion}/poke.lua" \
       --set LUA_PATH "${pathString}" \
       --set LUA_CPATH "${cPathString}"
   '';
