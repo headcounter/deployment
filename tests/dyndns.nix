@@ -135,24 +135,34 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
   in ''
     my %dnsReplies;
 
+    sub getRecord {
+      my ($type, $fqdn, $ns) = @_;
+      my $cmd = '${pkgs.bind.dnsutils}/bin/dig +norecurse +noall +answer '
+              . '@'.$ns.' '.$fqdn.' '.$type;
+      my ($status, $out) = $client->execute($cmd);
+      chomp $out;
+      $client->log("out is: ".$out);
+      my $ret = ($out eq "" || $status != 0) ? 1 : 0;
+      my @splitted = split /\s+/, $out;
+      return ($ret, \@splitted);
+    };
+
     sub expectDNS {
       my ($type, $fqdn, $expect, $eserial) = @_;
       my $uctype = uc $type;
-      my $addr = uc $expect;
+      my $addr = lc $expect;
       for my $ns ("ns1.example.org", "ns2.example.org", "ns3.example.org") {
-        my $soaCmd = "host -r -t soa $fqdn $ns 2> /dev/null | grep serial";
         my $msg = "waiting for $uctype of $fqdn to point to $addr on $ns";
         $client->nest($msg, sub {
           Machine::retry sub {
-            my ($soaStatus, $soaOut) = $client->execute($soaCmd);
+            my ($soaStatus, $soaOut) = getRecord("SOA", $fqdn, $ns);
             return 0 if $soaStatus != 0;
-            chomp $soaOut;
-            my $serial = $1 if $soaOut =~ /^\s*(\d+)\s*;/ or return 0;
+            my $serial = $soaOut->[6];
             $client->log("SOA serial is: $serial");
-            my ($status, $out) = $client->execute("host -t $type $fqdn $ns");
+            my ($status, $out) = getRecord($type, $fqdn, $ns);
             return 0 if $status != 0;
-            chomp $out;
-            my ($rfqdn, $rtype, $raddr) = split /\s+/, $out;
+            my ($rfqdn, $rtype, $raddr) = ($out->[0], $out->[3], $out->[4]);
+            $rfqdn =~ s/\.$//;
             return 0 if exists $dnsReplies{"$ns $uctype $fqdn"} and
               $dnsReplies{"$ns $uctype $fqdn"} eq "$serial $out";
             return 0 if $serial < $eserial;
@@ -201,7 +211,7 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     }}
 
     expectDNS("a", "alice.example.org", "1.2.3.4", 1);
-    expectDNS("aaaa", "alice.example.org", "1:2:3:0:0:0:0:4", 1);
+    expectDNS("aaaa", "alice.example.org", "1:2:3::4", 1);
 
     ${dynTest {
       fail = true;
@@ -230,7 +240,7 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     }}
 
     expectDNS("a", "bob.example.org", "9.9.9.9", 1);
-    expectDNS("aaaa", "bob.example.org", "abcd:0:0:0:0:0:0:ef", 1);
+    expectDNS("aaaa", "bob.example.org", "abcd::ef", 1);
 
     ${dynTest {
       username = "alice";
@@ -239,7 +249,7 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
       ip6addr = "12:34::56";
     }}
 
-    expectDNS("aaaa", "alice.example.org", "12:34:0:0:0:0:0:56", 2);
+    expectDNS("aaaa", "alice.example.org", "12:34::56", 2);
     expectDNS("a", "alice.example.org", "1.2.3.4", 2);
 
     ${dynTest {
@@ -250,7 +260,7 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     }}
 
     expectDNS("a", "alice2.example.org", "9.8.7.6", 1);
-    $client->fail("host -t aaaa alice2.example.org");
+    $client->succeed("host -t aaaa alice2.example.org | grep -q 'has no'");
 
     $client->succeed(
       'for i in $(seq 20); do'.
@@ -272,7 +282,7 @@ in import ./make-test.nix ({ pkgs, lib, ... }: {
     }}
 
     expectDNS("a", "bob.example.org", "2.2.2.2", 22);
-    expectDNS("aaaa", "bob.example.org", "666:0:0:0:0:0:0:14", 22);
+    expectDNS("aaaa", "bob.example.org", "666::14", 22);
 
     $nameserver1->succeed('systemctl restart dyndns-slave.service');
     $nameserver2->succeed('systemctl restart dyndns-slave.service');
