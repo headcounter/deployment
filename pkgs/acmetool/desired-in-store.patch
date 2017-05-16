@@ -1,0 +1,76 @@
+diff --git a/fdb/fdb.go b/fdb/fdb.go
+index f617fdc..46027e1 100644
+--- a/fdb/fdb.go
++++ b/fdb/fdb.go
+@@ -566,7 +566,12 @@ func (c *Collection) Openl(name string) (ReadStream, error) {
+ }
+ 
+ func (c *Collection) open(name string, allowSymlinks bool) (ReadStream, error) {
+-	fi, err := os.Lstat(filepath.Join(c.db.path, c.name, name))
++	dbpath := filepath.Join(c.db.path, c.name, name)
++	if filepath.IsAbs(c.name) {
++		dbpath = filepath.Join(c.name, name)
++	}
++
++	fi, err := os.Lstat(dbpath)
+ again:
+ 	if err != nil {
+ 		return nil, err
+@@ -580,7 +585,7 @@ again:
+ 			return nil, ErrIsLink
+ 		}
+ 
+-		fi, err = os.Stat(filepath.Join(c.db.path, c.name, name))
++		fi, err = os.Stat(dbpath)
+ 		goto again
+ 
+ 	case os.ModeDir:
+@@ -589,7 +594,7 @@ again:
+ 		return nil, fmt.Errorf("unknown file type")
+ 	}
+ 
+-	f, err := os.Open(filepath.Join(c.db.path, c.name, name))
++	f, err := os.Open(dbpath)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -777,7 +782,11 @@ func (c *Collection) WriteLink(name string, target Link) error {
+ }
+ 
+ func (c *Collection) ListAll() ([]string, error) {
+-	ms, err := filepath.Glob(filepath.Join(c.db.path, c.name, "*"))
++	dbglob := filepath.Join(c.db.path, c.name, "*")
++	if filepath.IsAbs(c.name) {
++		dbglob = filepath.Join(c.name, "*")
++	}
++	ms, err := filepath.Glob(dbglob)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+diff --git a/storage/storage-fdb.go b/storage/storage-fdb.go
+index f7784aa..263e4f0 100644
+--- a/storage/storage-fdb.go
++++ b/storage/storage-fdb.go
+@@ -191,7 +191,6 @@ func init() {
+ var storePermissions = []fdb.Permission{
+ 	{Path: ".", DirMode: 0755, FileMode: 0644},
+ 	{Path: "accounts", DirMode: 0700, FileMode: 0600},
+-	{Path: "desired", DirMode: 0755, FileMode: 0644},
+ 	{Path: "live", DirMode: 0755, FileMode: 0644},
+ 	{Path: "certs", DirMode: 0755, FileMode: 0644},
+ 	{Path: "certs/*/haproxy", DirMode: 0700, FileMode: 0600}, // hack for HAProxy
+@@ -564,7 +563,13 @@ func (s *fdbStore) loadTargets() error {
+ 	s.loadRSAKeySize()
+ 
+ 	// targets
+-	c := s.db.Collection("desired")
++	desiredDir, found := os.LookupEnv("ACME_DESIRED_DIR")
++
++	if !found {
++		desiredDir = "desired"
++	}
++
++	c := s.db.Collection(desiredDir)
+ 
+ 	desiredKeys, err := c.List()
+ 	if err != nil {

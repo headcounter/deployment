@@ -17,8 +17,12 @@ in buildGoPackage rec {
     sha256 = "1b7jybm5kxmypmhyx05kh65vxdqx7z8sarfs04v6sg2j0h6c2mig";
   };
 
-  # This patch removes all the references to non-DNS responders.
-  patches = [ ./remove-unneded-responders.patch ];
+  patches = [
+    # This patch removes all the references to non-DNS responders.
+    ./remove-unneded-responders.patch
+    # Allow to put the desired dir into the store.
+    ./desired-in-store.patch
+  ];
 
   # Remove the actual files that are non-DNS responders.
   postPatch = ''
