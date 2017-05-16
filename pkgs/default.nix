@@ -15,6 +15,8 @@ let
     mongooseimTests = callPackage ./mongooseim/tests {};
     spectrum2 = callPackage ./spectrum2 {};
 
+    acmetool = callPackage ./acmetool {};
+
     site = callPackage ./site {};
 
     erlangPackages = callPackage ./erlang-packages.nix {
