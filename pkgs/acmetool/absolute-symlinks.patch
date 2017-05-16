@@ -1,0 +1,53 @@
+diff --git a/fdb/fdb.go b/fdb/fdb.go
+index f617fdc..5c1f618 100644
+--- a/fdb/fdb.go
++++ b/fdb/fdb.go
+@@ -263,12 +263,7 @@ func (db *DB) conformPermissions() error {
+ 				return err
+ 			}
+ 
+-			if filepath.IsAbs(l) {
+-				return fmt.Errorf("database symlinks must not have absolute targets: %v: %v", path, l)
+-			}
+-
+-			ll := filepath.Join(filepath.Dir(path), l)
+-			ll, err = filepath.Abs(ll)
++            ll, err := filepath.Abs(l)
+ 			if err != nil {
+ 				return err
+ 			}
+@@ -757,12 +752,8 @@ func (c *Collection) WriteLink(name string, target Link) error {
+ 
+ 	from := filepath.Join(c.db.path, c.name, name)
+ 	to := filepath.Join(c.db.path, target.Target)
+-	toRel, err := filepath.Rel(filepath.Dir(from), to)
+-	if err != nil {
+-		return err
+-	}
+ 
+-	tmpName, err := tempSymlink(toRel, filepath.Join(c.db.path, "tmp"))
++	tmpName, err := tempSymlink(to, filepath.Join(c.db.path, "tmp"))
+ 	if err != nil {
+ 		return err
+ 	}
+diff --git a/storage/storage-fdb.go b/storage/storage-fdb.go
+index f7784aa..6ecec08 100644
+--- a/storage/storage-fdb.go
++++ b/storage/storage-fdb.go
+@@ -14,6 +14,7 @@ import (
+ 	"io"
+ 	"io/ioutil"
+ 	"os"
++	"path/filepath"
+ 	"strings"
+ 	"time"
+ )
+@@ -129,7 +130,7 @@ func (s *fdbStore) loadPreferred() error {
+ 			return err
+ 		}
+ 
+-		certID := link.Target[6:]
++		certID := filepath.Base(link.Target)
+ 		cert := s.CertificateByID(certID)
+ 		if cert == nil {
+ 			// This should never happen because fdb checks symlinks, though maybe if

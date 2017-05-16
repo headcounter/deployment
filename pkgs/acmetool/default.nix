@@ -22,6 +22,8 @@ in buildGoPackage rec {
     ./remove-unneded-responders.patch
     # Allow to put the desired dir into the store.
     ./desired-in-store.patch
+    # Only use absolute symlinks.
+    ./absolute-symlinks.patch
   ];
 
   # Remove the actual files that are non-DNS responders.
