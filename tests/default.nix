@@ -8,6 +8,7 @@ let
     inherit pkgs system;
   } // args);
 in {
+  acme = callTest ./acme.nix {};
   code-reload = callTest ./code-reload {};
   dyndns = callTest ./dyndns.nix {};
   mongooseim = callTest ./mongooseim {};

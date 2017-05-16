@@ -4,6 +4,7 @@
   ./config/erlang-inet
   ./config/vhosts.nix
   ./config/imperative-containers.nix
+  ./services/acme
   ./services/dyndns
   ./services/epmd
   ./services/lighttpd.nix
