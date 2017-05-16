@@ -351,7 +351,7 @@ in {
       };
 
       boulder-init-softhsm = {
-        description = "Boulder ACME Init (SoftHSM";
+        description = "Boulder ACME Init (SoftHSM)";
         environment.SOFTHSM_CONF = softHsmConf;
         serviceConfig.Type = "oneshot";
         serviceConfig.RemainAfterExit = true;
