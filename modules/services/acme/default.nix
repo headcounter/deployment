@@ -23,6 +23,24 @@ let
         certificate for.
       '';
     };
+
+    reloads = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = ''
+        The service units to reload, without the <literal>.service</literal>
+        suffix.
+      '';
+    };
+
+    restarts = mkOption {
+      type = types.listOf types.str;
+      default = [];
+      description = ''
+        The service units to restart, without the <literal>.service</literal>
+        suffix.
+      '';
+    };
   };
 
   validator = pkgs.headcounter.compileHaskell {
@@ -56,6 +74,10 @@ let
     acmetool-quickstart-rsa-key-size = cfg.key.size;
     acmetool-quickstart-ecdsa-curve = cfg.key.curve;
   };
+
+  mkPathUnitName = domain: "acme-${builtins.hashString "sha256" domain}";
+  mkPathUnit = domain: lib.const "${mkPathUnitName domain}.path";
+  pathUnits = lib.mapAttrsToList mkPathUnit cfg.domains;
 
 in {
   options.headcounter.services.acme = {
@@ -172,8 +194,9 @@ in {
 
       systemd.mounts = lib.singleton {
         description = "SSL Certificate Directory";
-        requires = [ "acme.service" ];
+        requires = lib.singleton "acme.service" ++ pathUnits;
         after = [ "acme.service" "acme-setperms.service" ];
+        before = pathUnits;
         what = "${cfg.stateDir}/live";
         where = certDir;
         type = "none";
@@ -185,79 +208,107 @@ in {
         where = certDir;
       };
 
-      systemd.services.acme-setperms = {
-        description = "Set Permissions On ACME Certificates";
-        requiredBy = [ "acme.service" ];
-        after = [ "acme.service" ];
-        serviceConfig.Type = "oneshot";
-        script = let
-          inherit (lib) escapeShellArg;
-          setPerms = domain: { users, ... }: let
-            perms = lib.concatMapStringsSep "," (u: "u:${u}:r") users;
-            mkFile = x: escapeShellArg "${cfg.stateDir}/live/${domain}/${x}";
-            files = map mkFile [ "cert" "chain" "fullchain" "privkey" ];
-            setfacl = lib.escapeShellArg "${pkgs.acl.bin}/bin/setfacl";
-            setPerm = f: "${setfacl} -L -b -m ${escapeShellArg perms} ${f}";
-          in lib.concatMapStringsSep "\n" setPerm files;
-        in lib.concatStringsSep "\n" (lib.mapAttrsToList setPerms cfg.domains);
-      };
+      systemd.services = {
+        acme-init = {
+          description = "Initialize ACME State Directory";
+          requiredBy = [ "acme.service" ];
+          before = [ "acme.service" ];
+          unitConfig.ConditionPathExists = "!${cfg.stateDir}";
+          serviceConfig.Type = "oneshot";
+          script = ''
+            mkdir -m 0711 -p ${lib.escapeShellArg cfg.stateDir}
+            chown acme:acme ${lib.escapeShellArg cfg.stateDir}
+          '';
+        };
 
-      systemd.services.acme-init = {
-        description = "Initialize ACME State Directory";
-        requiredBy = [ "acme.service" ];
-        before = [ "acme.service" ];
-        unitConfig.ConditionPathExists = "!${cfg.stateDir}";
-        serviceConfig.Type = "oneshot";
-        script = ''
-          mkdir -m 0711 -p ${lib.escapeShellArg cfg.stateDir}
-          chown acme:acme ${lib.escapeShellArg cfg.stateDir}
-        '';
-      };
+        acme = {
+          description = "Update ACME Certificates";
 
-      systemd.services.acme = {
-        description = "Update ACME Certificates";
+          after = [ "network.target" "network-online.target" ];
+          wants = [ "network-online.target" ];
 
-        after = [ "network.target" "network-online.target" ];
-        wants = [ "network-online.target" ];
+          path = lib.mkForce [];
 
-        path = lib.mkForce [];
+          serviceConfig = {
+            Type = "oneshot";
+            PrivateTmp = true;
+            ExecStart = "${acmetool}/bin/acmetool reconcile --batch";
+            User = "acme";
+            Group = "acme";
+            WorkingDirectory = cfg.stateDir;
+            # While we have patched out everything that might want to listen,
+            # let's make sure this is really the case.
+            SystemCallFilter = "~listen";
+          };
 
-        serviceConfig.Type = "oneshot";
-        serviceConfig.PrivateTmp = true;
-        serviceConfig.ExecStart = "${acmetool}/bin/acmetool reconcile --batch";
-        serviceConfig.User = "acme";
-        serviceConfig.Group = "acme";
-        serviceConfig.WorkingDirectory = cfg.stateDir;
-        # While we have patched out everything that might want to listen, let's
-        # make sure this is really the case.
-        serviceConfig.SystemCallFilter = "~listen";
+          preStart = ''
+            ${pkgs.coreutils}/bin/mkdir -p conf
+            ${pkgs.coreutils}/bin/cat \
+              "${pkgs.writeText "responses.json" responses}" \
+              > conf/responses
+            ${pkgs.coreutils}/bin/cat > conf/perm <<EOF
+            . 0644 0751
+            keys 0600 0711
+            EOF
+          '';
 
-        preStart = ''
-          ${pkgs.coreutils}/bin/mkdir -p conf
-          ${pkgs.coreutils}/bin/cat \
-            "${pkgs.writeText "responses.json" responses}" \
-            > conf/responses
-          ${pkgs.coreutils}/bin/cat > conf/perm <<EOF
-          . 0644 0751
-          keys 0600 0711
-          EOF
-        '';
+          environment.ACME_STATE_DIR = cfg.stateDir;
+          environment.ACME_HOOKS_DIR = hooks;
 
-        environment.ACME_STATE_DIR = cfg.stateDir;
-        environment.ACME_HOOKS_DIR = hooks;
+          environment.ACME_DESIRED_DIR = let
+            mkDesired = name: attrs: let
+              contents = lib.escapeShellArg (builtins.toJSON attrs);
+            in "echo -n ${contents} > \"$out\"/${lib.escapeShellArg name}";
+            domains = lib.mapAttrsToList (name: dcfg: mkDesired name {
+              satisfy.names = lib.singleton name ++ dcfg.otherDomains;
+            }) cfg.domains;
+          in pkgs.runCommand "acme-desired" {} ''
+            mkdir "$out"
+            ${lib.concatStringsSep "\n" domains}
+          '';
+        };
 
-        environment.ACME_DESIRED_DIR = let
-          mkDesired = name: attrs: let
-            contents = lib.escapeShellArg (builtins.toJSON attrs);
-          in "echo -n ${contents} > \"$out\"/${lib.escapeShellArg name}";
-          domains = lib.mapAttrsToList (name: dcfg: mkDesired name {
-            satisfy.names = lib.singleton name ++ dcfg.otherDomains;
-          }) cfg.domains;
-        in pkgs.runCommand "acme-desired" {} ''
-          mkdir "$out"
-          ${lib.concatStringsSep "\n" domains}
-        '';
-      };
+        acme-setperms = {
+          description = "Set Permissions On ACME Certificates";
+          requiredBy = [ "acme.service" ];
+          after = [ "acme.service" ];
+          serviceConfig.Type = "oneshot";
+          script = let
+            inherit (lib) escapeShellArg;
+            unlines = lib.concatStringsSep "\n";
+            setPerms = domain: { users, ... }: let
+              perms = lib.concatMapStringsSep "," (u: "u:${u}:r") users;
+              mkFile = x: escapeShellArg "${cfg.stateDir}/live/${domain}/${x}";
+              files = map mkFile [ "cert" "chain" "fullchain" "privkey" ];
+              setfacl = lib.escapeShellArg "${pkgs.acl.bin}/bin/setfacl";
+              setPerm = f: "${setfacl} -L -b -m ${escapeShellArg perms} ${f}";
+            in unlines (map setPerm files);
+          in unlines (lib.mapAttrsToList setPerms cfg.domains);
+        };
+
+      } // lib.mapAttrs' (domain: dcfg: {
+        name = mkPathUnitName domain;
+        value = let
+          mkUnit = name: lib.escapeShellArg "${name}.service";
+          mkUnitList = lib.concatMapStringsSep " " mkUnit;
+          maybeDo = action: units: lib.optionalString (units != []) ''
+            systemctl ${action} ${mkUnitList units}
+          '';
+        in {
+          description = "Reload/Restart Services For ACME Domain ${domain}";
+          after = [ "acme-setperms.service" ];
+          script = maybeDo "restart" dcfg.restarts
+                 + maybeDo "reload"  dcfg.reloads;
+        };
+      }) cfg.domains;
+
+      systemd.paths = lib.mapAttrs' (domain: lib.const {
+        name = mkPathUnitName domain;
+        value = {
+          description = "Notifications For ACME Domain ${domain}";
+          pathConfig.PathChanged = "${certDir}/${domain}";
+        };
+      }) cfg.domains;
 
       systemd.timers.acme = {
         description = "Hourly Update Check For ACME Certificates";

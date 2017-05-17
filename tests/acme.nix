@@ -56,7 +56,10 @@ import ./make-test.nix {
 
     resolver = ../modules/testing/resolver.nix;
 
-    client = common;
+    client = { pkgs, ... }: {
+      imports = [ common ];
+      environment.systemPackages = [ pkgs.openssl ];
+    };
 
     webserver = { lib, pkgs, ssl, nodes, ... }: {
       imports = [ common ];
@@ -98,7 +101,10 @@ import ./make-test.nix {
 
       headcounter.services.acme.enable = true;
       headcounter.services.acme.handlerAddress = "dns";
-      headcounter.services.acme.domains."example.com".users = [ "twistd" ];
+      headcounter.services.acme.domains."example.com" = {
+        users = [ "twistd" ];
+        restarts = [ "twistd" ];
+      };
     };
   };
 
@@ -116,5 +122,48 @@ import ./make-test.nix {
 
     $client->waitForUnit("multi-user.target");
     $client->succeed('curl https://example.com/ >&2');
+
+    my $newdateUnix = $client->succeed('date +%s --date "80 days"');
+    chomp $newdateUnix;
+    my $newdate = $client->succeed('date +%m%d%H%M%Y --date @'.$newdateUnix);
+    chomp $newdate;
+
+    $log->nest("fast-forward time to now + 80 days", sub {
+      $_->execute('date '.$newdate) foreach values %vms;
+    });
+
+    $ca->succeed('systemctl restart boulder*');
+
+    $log->nest("wait for ACME reissuance", sub {
+      my $getTwistdStartTime =
+        'systemctl show -p ExecMainStartTimestampMonotonic twistd.service';
+
+      my $twistdStartTime = $webserver->succeed($getTwistdStartTime);
+
+      $webserver->execute('systemctl start acme.service');
+
+      $webserver->nest("wait until twistd has restarted", sub {
+        Machine::retry sub {
+          return 1
+            if $webserver->succeed($getTwistdStartTime) ne $twistdStartTime;
+        };
+      });
+      $webserver->waitForOpenPort(443);
+    });
+
+    $client->succeed('curl https://example.com/ >&2');
+
+    my $issuanceUnix = $client->succeed(
+      'fetched="$(echo | openssl s_client -connect example.com:443)" && '.
+      'parsed="$(echo "$fetched" | openssl x509 -noout -dates)" && '.
+      'mangled="$(echo "$parsed" | sed -ne "s/notBefore=//p")" && '.
+      'date --date "$mangled" +%s'
+    );
+
+    my $issuance = $client->succeed('date --date @'.$issuanceUnix);
+    chomp $issuance;
+
+    $issuanceUnix > $newdateUnix - 7200
+      or die "Certificate is too old ($issuance)";
   '';
 }
