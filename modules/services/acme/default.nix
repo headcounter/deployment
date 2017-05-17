@@ -54,11 +54,13 @@ let
     name = "acme-hooks";
     executable = true;
     destination = "/main.hook";
-    text = ''
+    text = let
+      dev = lib.optionalString (cfg.handlerDevice != null) cfg.handlerDevice;
+    in ''
       #!${pkgs.stdenv.shell} -e
       exec ${lib.escapeShellArg validator} --client \
         ${lib.escapeShellArg cfg.handlerAddress} ${toString cfg.handlerPort} \
-        "$@"
+        ${lib.escapeShellArg dev} "$@"
     '';
   };
 
@@ -114,7 +116,15 @@ in {
       type = hclib.types.port;
       default = 9178;
       description = ''
-        Port where the DNS challenge handler will accept connections.
+        TCP Port where the DNS challenge handler is reachable.
+      '';
+    };
+
+    handlerDevice = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        Network device to use for connecting to the DNS challenge handler.
       '';
     };
 
@@ -208,6 +218,11 @@ in {
         where = certDir;
       };
 
+      headcounter.conditions.acme.connectable = {
+        address = cfg.handlerAddress;
+        port = cfg.handlerPort;
+      };
+
       systemd.services = {
         acme-init = {
           description = "Initialize ACME State Directory";
@@ -239,6 +254,8 @@ in {
             # While we have patched out everything that might want to listen,
             # let's make sure this is really the case.
             SystemCallFilter = "~listen";
+          } // lib.optionalAttrs (cfg.handlerDevice != null) {
+            AmbientCapabilities = [ "CAP_NET_RAW" ];
           };
 
           preStart = ''
@@ -266,6 +283,10 @@ in {
             mkdir "$out"
             ${lib.concatStringsSep "\n" domains}
           '';
+        } // lib.optionalAttrs (cfg.handlerDevice != null) {
+          bindsTo = [
+            "sys-subsystem-net-devices-${cfg.handlerDevice}.device"
+          ];
         };
 
         acme-setperms = {

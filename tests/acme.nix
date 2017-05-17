@@ -17,13 +17,14 @@ import ./make-test.nix {
     };
 
   in {
-    dns = { config, lib, nodes, ... }: {
+    dns = { config, pkgs, lib, nodes, ... }: {
+      environment.systemPackages = [ pkgs.socat ];
       services.nsd.enable = true;
       services.nsd.interfaces = lib.mkForce []; # all interfaces
       headcounter.services.acme.dnsHandler = {
         enable = true;
         fqdn = "ns.example.com";
-        listen = lib.singleton { host = "0.0.0.0"; };
+        listen = lib.singleton { host = "10.0.0.2"; device = "tun0"; };
       };
       services.nsd.zones."example.com.".data = let
         webserverIp = nodes.webserver.config.networking.primaryIPAddress;
@@ -61,8 +62,10 @@ import ./make-test.nix {
       environment.systemPackages = [ pkgs.openssl ];
     };
 
-    webserver = { lib, pkgs, ssl, nodes, ... }: {
+    webserver = { pkgs, ssl, nodes, ... }: {
       imports = [ common ];
+
+      environment.systemPackages = [ pkgs.socat ];
 
       networking.extraHosts = let
         caIp = nodes.ca.config.networking.primaryIPAddress;
@@ -100,7 +103,8 @@ import ./make-test.nix {
       };
 
       headcounter.services.acme.enable = true;
-      headcounter.services.acme.handlerAddress = "dns";
+      headcounter.services.acme.handlerAddress = "10.0.0.2";
+      headcounter.services.acme.handlerDevice = "tun0";
       headcounter.services.acme.domains."example.com" = {
         users = [ "twistd" ];
         restarts = [ "twistd" ];
@@ -117,6 +121,15 @@ import ./make-test.nix {
     $resolver->waitForUnit("bind.service");
     $dns->waitForUnit("nsd.service");
     $ca->waitForUnit("boulder.service");
+
+    # Intentionally provoke race conditions
+    $webserver->waitForUnit("twistd.service");
+
+    $webserver->nest('establish tunnel to nameserver', sub {
+      $webserver->succeed('socat TCP-LISTEN:1111 TUN:10.0.0.1/8,up &');
+      $webserver->waitUntilSucceeds('netstat -ntl | grep -q ":1111\\>"');
+      $dns->succeed('socat TCP:webserver:1111 TUN:10.0.0.2/24,up &');
+    });
 
     $webserver->waitForOpenPort(443);
 

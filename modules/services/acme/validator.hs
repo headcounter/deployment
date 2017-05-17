@@ -76,14 +76,16 @@ parseClientArgs _ = Nothing
 realMain :: [String] -> IO ()
 realMain ("--server" : cmd : ns) =
     NS.serve Nothing . server $ ServerConfig cmd (fromString <$> ns)
-realMain ("--client" : host : port : rest) =
+realMain ("--client" : host : port : device : rest) =
     case parseClientArgs rest of
          Nothing  -> exitWith (ExitFailure 42)
-         Just cmd -> NS.connect host port Nothing handler
+         Just cmd -> NS.connect host port maybeDevice handler
                where handler conn = do
                          True <- NS.send conn cmd
                          Just Sync <- NS.recv conn
                          return ()
+  where
+    maybeDevice = if device == "" then Nothing else Just device
 realMain _ = do
     prog <- getProgName
     hPutStrLn stderr $ "Usage: " ++ prog ++ " --server COMMAND"
