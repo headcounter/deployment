@@ -13,17 +13,14 @@
       mkNsdZoneNames = zones: map addDot (lib.attrNames zones);
       mkBindZoneNames = zones: map (zone: addDot zone.name) zones;
       getZones = cfg: mkNsdZoneNames cfg.services.nsd.zones
-                     ++ mkBindZoneNames cfg.services.bind.zones;
+                   ++ mkBindZoneNames cfg.services.bind.zones;
 
       getZonesForNode = attrs: {
         ip = attrs.config.networking.primaryIPAddress;
-        zones = getZones attrs.config;
+        zones = lib.filter (zone: zone != ".") (getZones attrs.config);
       };
 
-      notMyself = attrs: attrs.config.networking.hostName
-                      != config.networking.hostName;
-      otherNodes = lib.filterAttrs (lib.const notMyself) nodes;
-      zoneInfo = lib.mapAttrsToList (lib.const getZonesForNode) otherNodes;
+      zoneInfo = lib.mapAttrsToList (lib.const getZonesForNode) nodes;
 
     in pkgs.writeText "fake-root.zone" ''
       $TTL 3600
