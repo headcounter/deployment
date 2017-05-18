@@ -22,6 +22,28 @@
 
       zoneInfo = lib.mapAttrsToList (lib.const getZonesForNode) nodes;
 
+      # All of the zones that are subdomains of existing zones.
+      # For example if there is only "example.com" the following zones would be
+      # 'subZones':
+      #
+      #  * foo.example.com.
+      #  * bar.example.com.
+      #
+      # While the following would *not* be 'subZones':
+      #
+      #  * example.com.
+      #  * com.
+      #
+      subZones = let
+        allZones = lib.concatMap (zi: zi.zones) zoneInfo;
+        isSubZoneOf = z1: z2: lib.hasSuffix z2 z1 && z1 != z2;
+      in lib.filter (z: lib.any (isSubZoneOf z) allZones) allZones;
+
+      # All the zones without 'subZones'.
+      filteredZoneInfo = map (zi: zi // {
+        zones = lib.filter (x: !lib.elem x subZones) zi.zones;
+      }) zoneInfo;
+
     in pkgs.writeText "fake-root.zone" ''
       $TTL 3600
       . IN SOA ns.fakedns. admin.fakedns. ( 1 3h 1h 1w 1d )
@@ -32,7 +54,7 @@
         ${lib.concatMapStrings (zone: ''
         ${zone} IN NS ns${toString num}.fakedns.
         '') zones}
-      '') (lib.filter (zi: zi.zones != []) zoneInfo)}
+      '') (lib.filter (zi: zi.zones != []) filteredZoneInfo)}
     '';
   };
 }
