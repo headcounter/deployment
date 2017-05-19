@@ -62,8 +62,13 @@ import ./make-test.nix {
       environment.systemPackages = [ pkgs.openssl ];
     };
 
-    webserver = { pkgs, ssl, nodes, ... }: {
+    webserver = { lib, pkgs, ssl, nodes, ... }: {
       imports = [ common ];
+
+      users.users.attacker = {
+        isNormalUser = true;
+        description = "Attacker";
+      };
 
       environment.systemPackages = [ pkgs.socat ];
 
@@ -84,7 +89,7 @@ import ./make-test.nix {
           };
           docroot = pkgs.runCommand "docroot" {} ''
             mkdir "$out"
-            echo hello world > "$out/index.html"
+            echo hello twistd > "$out/index.html"
           '';
         in {
           User = "twistd";
@@ -102,17 +107,48 @@ import ./make-test.nix {
         };
       };
 
+      headcounter.services.lighttpd.enable = true;
+      headcounter.services.lighttpd.virtualHosts = lib.singleton {
+        type = "static";
+        on = "www.example.com";
+        docroot = pkgs.runCommand "docroot" {} ''
+          mkdir "$out"
+          echo hello lighty > "$out/index.html"
+        '';
+        socket = ":444";
+
+        socketConfig = ''
+          ssl.engine    = "enable"
+          ssl.use-sslv2 = "disable"
+          ssl.use-sslv3 = "disable"
+          ssl.pemfile = "${ssl."example.com".full}"
+        '';
+      };
+
       headcounter.services.acme.enable = true;
       headcounter.services.acme.handlerAddress = "10.0.0.2";
       headcounter.services.acme.handlerDevice = "tun0";
       headcounter.services.acme.domains."example.com" = {
         users = [ "twistd" ];
-        restarts = [ "twistd" ];
+        restarts = [ "twistd" "lighttpd" ];
+        otherDomains = [ "www.example.com" ];
       };
     };
   };
 
   testScript = ''
+    sub checkperms {
+      $webserver->nest("check permissions of private keys", sub {
+        my $files = $webserver->succeed(
+          'find /var/lib/acme \( -name full -o -name privkey \) -print'
+        );
+        chomp $files;
+        for my $file (split /\n/, $files) {
+          $webserver->fail('su -c \'cat "'.$file.'"\' attacker >&2');
+        }
+      });
+    }
+
     $resolver->start;
     $dns->start;
     $ca->start;
@@ -132,9 +168,16 @@ import ./make-test.nix {
     });
 
     $webserver->waitForOpenPort(443);
+    $webserver->waitForOpenPort(444);
 
     $client->waitForUnit("multi-user.target");
-    $client->succeed('curl https://example.com/ >&2');
+
+    $client->succeed(
+      'curl https://example.com/ | grep -q "hello twistd"',
+      'curl https://www.example.com:444/ | grep -q "hello lighty"'
+    );
+
+    checkperms;
 
     my $newdateUnix = $client->succeed('date +%s --date "80 days"');
     chomp $newdateUnix;
@@ -162,21 +205,29 @@ import ./make-test.nix {
         };
       });
       $webserver->waitForOpenPort(443);
+      $webserver->waitForOpenPort(444);
     });
 
-    $client->succeed('curl https://example.com/ >&2');
-
-    my $issuanceUnix = $client->succeed(
-      'fetched="$(echo | openssl s_client -connect example.com:443)" && '.
-      'parsed="$(echo "$fetched" | openssl x509 -noout -dates)" && '.
-      'mangled="$(echo "$parsed" | sed -ne "s/notBefore=//p")" && '.
-      'date --date "$mangled" +%s'
+    $client->succeed(
+      'curl https://example.com/ | grep -q "hello twistd"',
+      'curl https://www.example.com:444/ | grep -q "hello lighty"'
     );
 
-    my $issuance = $client->succeed('date --date @'.$issuanceUnix);
-    chomp $issuance;
+    for my $host ("example.com:443", "www.example.com:444") {
+      my $issuanceUnix = $client->succeed(
+        'fetched="$(echo | openssl s_client -connect '.$host.')" && '.
+        'parsed="$(echo "$fetched" | openssl x509 -noout -dates)" && '.
+        'mangled="$(echo "$parsed" | sed -ne "s/notBefore=//p")" && '.
+        'date --date "$mangled" +%s'
+      );
 
-    $issuanceUnix > $newdateUnix - 7200
-      or die "Certificate is too old ($issuance)";
+      my $issuance = $client->succeed('date --date @'.$issuanceUnix);
+      chomp $issuance;
+
+      $issuanceUnix > $newdateUnix - 7200
+        or die "Certificate is too old ($issuance)";
+    }
+
+    checkperms;
   '';
 }

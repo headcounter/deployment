@@ -56,8 +56,18 @@ let
     destination = "/main.hook";
     text = let
       dev = lib.optionalString (cfg.handlerDevice != null) cfg.handlerDevice;
+      cat = lib.escapeShellArg "${pkgs.coreutils}/bin/cat";
     in ''
       #!${pkgs.stdenv.shell} -e
+      if [ "$1" = live-updated ]; then
+        umask 0077
+        while read name; do
+          certdir=${lib.escapeShellArg "${cfg.stateDir}/live/"}"$name"
+          ${cat} "$certdir/privkey" "$certdir/fullchain" > "$certdir/full"
+        done
+        exit 0
+      fi
+
       exec ${lib.escapeShellArg validator} --client \
         ${lib.escapeShellArg cfg.handlerAddress} ${toString cfg.handlerPort} \
         ${lib.escapeShellArg dev} "$@"
@@ -198,6 +208,7 @@ in {
       _module.args.ssl = lib.mapAttrs (domain: dcfg: {
         cert = "${certDir}/${domain}/cert";
         chain = "${certDir}/${domain}/chain";
+        full = "${certDir}/${domain}/full";
         fullchain = "${certDir}/${domain}/fullchain";
         privkey = "${certDir}/${domain}/privkey";
       }) cfg.domains;
@@ -266,6 +277,7 @@ in {
             ${pkgs.coreutils}/bin/cat > conf/perm <<EOF
             . 0644 0751
             keys 0600 0711
+            certs/*/full 0600 0711
             EOF
           '';
 
@@ -300,10 +312,10 @@ in {
             setPerms = domain: { users, ... }: let
               perms = lib.concatMapStringsSep "," (u: "u:${u}:r") users;
               mkFile = x: escapeShellArg "${cfg.stateDir}/live/${domain}/${x}";
-              files = map mkFile [ "cert" "chain" "fullchain" "privkey" ];
+              files = [ "cert" "chain" "full" "fullchain" "privkey" ];
               setfacl = lib.escapeShellArg "${pkgs.acl.bin}/bin/setfacl";
               setPerm = f: "${setfacl} -L -b -m ${escapeShellArg perms} ${f}";
-            in unlines (map setPerm files);
+            in unlines (map (x: setPerm (mkFile x)) files);
           in unlines (lib.mapAttrsToList setPerms cfg.domains);
         };
 
