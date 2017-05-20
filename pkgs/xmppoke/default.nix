@@ -53,6 +53,12 @@ let
     };
 
     postPatch = ''
+      sed -i -e '/^local unbound_config/ {
+        c local unbound_config = { \
+          ["options"] = {"module-config:", "iterator"} \
+        };
+      }' net.unbound.lua
+
       rm util.lunbound.lua
       sed -i -re 's/(require *")util\.(lunbound")/\1\2/' *.lua
     '';
