@@ -143,14 +143,6 @@ in {
     '';
   };
 
-  options.headcounter.vhostDefaultDevice = mkOption {
-    default = "eth0";
-    type = types.str;
-    description = ''
-      Default network device to use for all vhosts.
-    '';
-  };
-
   options.headcounter.useSnakeOil = mkOption {
     type = types.bool;
     default = false;
@@ -160,8 +152,21 @@ in {
     '';
   };
 
+  options.headcounter.internalNetConfig = mkOption {
+    type = types.attrs;
+    default = {};
+    internal = true;
+    description = ''
+      An attrset of options from <option>networking.interfaces</option> in
+      order to be passed along to our network simulation module in
+      <filename>../testing/network.nix</filename>.
+    '';
+  };
+
   config = mkIf (cfg.vhosts != {}) (mkMerge [
-    { networking.interfaces = netConfig; }
+    { networking.interfaces = netConfig;
+      headcounter.internalNetConfig = netConfig;
+    }
     (mkIf cfg.useSnakeOil {
       systemd.services = {
         inject-keys = {

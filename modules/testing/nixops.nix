@@ -208,10 +208,6 @@ in {
 
     networking.privateIPv4 = config.networking.primaryIPAddress;
     networking.publicIPv4 = config.networking.primaryIPAddress;
-    deployment.hetzner = {
-      # TODO: Use the same networks as Hetzner does here...
-      mainIPv4  = lib.mkForce config.networking.primaryIPAddress;
-    };
 
     headcounter.nixops.snakeoilKeypair = let
       name = "vpn-${config.networking.hostName}";

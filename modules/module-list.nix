@@ -2,8 +2,9 @@
   ./core.nix
   ./config/conditions.nix
   ./config/erlang-inet
-  ./config/vhosts.nix
   ./config/imperative-containers.nix
+  ./config/ipaddr.nix
+  ./config/vhosts.nix
   ./services/acme
   ./services/dyndns
   ./services/epmd

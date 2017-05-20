@@ -53,7 +53,7 @@ in {
 
   networking.nat = {
     enable = true;
-    externalInterface = "eth0";
+    externalInterface = config.headcounter.mainDevice;
   };
 
   # XXX: Factor out!

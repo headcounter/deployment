@@ -11,7 +11,9 @@ in {
 
   ultron = { pkgs, lib, config, ... }: mkMachine {
     imports = [ ./machines/ultron ];
-    deployment.hetzner.mainIPv4 = "5.9.105.142";
+    headcounter.mainIPv4 = "5.9.105.142";
+    headcounter.mainIPv6 = "2a01:4f8:162:4187::";
+
     deployment.encryptedLinksTo = [ "dugee" "gussh" ];
 
     deployment.hetzner.partitions = ''
@@ -36,7 +38,8 @@ in {
     inherit (config.networking.p2pTunnels.ssh) ultron;
   in mkMachine {
     imports = [ ./hydra.nix ];
-    deployment.hetzner.mainIPv4 = "188.40.96.202";
+    headcounter.mainIPv4 = "188.40.96.202";
+    headcounter.mainIPv6 = "2a01:4f8:100:726f::";
 
     fileSystems."/".options = [
       "autodefrag" "space_cache" "compress=lzo" "noatime"
@@ -70,22 +73,25 @@ in {
 
   benteflork = mkMachine {
     imports = [ ./hydra-slave.nix ];
-    deployment.hetzner.mainIPv4 = "144.76.202.147";
+    headcounter.mainIPv4 = "144.76.202.147";
+    headcounter.mainIPv6 = "2a01:4f8:200:8392::";
   };
 
-  dugee = { lib, ... }: mkMachine {
+  dugee = { config, lib, ... }: mkMachine {
     imports = [ ./dns-server.nix ];
-    deployment.hetzner.mainIPv4 = "78.46.182.124";
+    headcounter.mainIPv4 = "78.46.182.124";
+    headcounter.mainIPv6 = "2a01:4f8:d13:3009::2";
     networking.localCommands = lib.mkAfter ''
-      ip -6 addr add 2a01:4f8:d13:3009::2 dev eth0
+      ip -6 addr add 2a01:4f8:d13:3009::2 dev ${config.headcounter.mainDevice}
     '';
   };
 
-  gussh = { lib, ... }: mkMachine {
+  gussh = { config, lib, ... }: mkMachine {
     imports = [ ./dns-server.nix ];
-    deployment.hetzner.mainIPv4 = "78.47.142.38";
+    headcounter.mainIPv4 = "78.47.142.38";
+    headcounter.mainIPv6 = "2a01:4f8:d13:5308::2";
     networking.localCommands = lib.mkAfter ''
-      ip -6 addr add 2a01:4f8:d13:5308::2 dev eth0
+      ip -6 addr add 2a01:4f8:d13:5308::2 dev ${config.headcounter.mainDevice}
     '';
   };
 
