@@ -50,9 +50,14 @@ let
   clientCiphers = mkCiphers (aes128fs ++ aes256fs ++ tlsv1 ++ legacy);
   serverCiphers = mkCiphers aes256fs;
 
+  isXmppVHost = attrs: attrs.isXMPP && attrs.fqdn != null;
+  xmppVHosts = filterAttrs (const isXmppVHost) config.headcounter.vhosts;
+
 in {
-  # XXX: Refactor me!
-  config.users.extraUsers.mongoose.extraGroups = [ "keys" ];
+  config.headcounter.services.acme.domains = mapAttrs' (const (vhost: {
+    name = head vhost.ssl.domains;
+    value.users = [ "mongoose" ];
+  })) xmppVHosts;
 
   config.headcounter.services.mongooseim = {
     enable = true;
@@ -78,8 +83,8 @@ in {
 
       s2s.domainCerts = mapAttrs' (name: domain: {
         name = domain.fqdn;
-        value = domain.ssl.privateKey.path;
-      }) (filterAttrs (_: d: d.fqdn != null) config.headcounter.vhosts);
+        value = domain.ssl.allInOne;
+      }) xmppVHosts;
 
       listeners = flatten (mapAttrsToList (name: domain: let
         mkAddr = module: attrs: [
@@ -89,12 +94,11 @@ in {
 
         mkC2S = isLegacy: mkAddr "ejabberd_c2s" ({
           port = if isLegacy then 5223 else 5222;
-          options = (optionalAttrs (domain.ssl.privateKey != null) {
-            certfile = domain.ssl.privateKey.path;
-          }) // {
+          options = {
             access.atom = "c2s";
             shaper = "c2s_shaper";
             ciphers = concatStringsSep ":" clientCiphers;
+            certfile = domain.ssl.allInOne;
             protocol_options = [ "no_sslv2" "no_sslv3" ];
           } // (if isLegacy then {
             tls.flag = true;
@@ -120,11 +124,10 @@ in {
             shaper = "s2s_shaper";
             ciphers = concatStringsSep ":" serverCiphers;
             protocol_options = [ "no_sslv2" "no_sslv3" ];
-          } // optionalAttrs (domain.ssl.privateKey != null) {
-            certfile = domain.ssl.privateKey.path;
+            certfile = domain.ssl.allInOne;
           };
         };
-      in c2s ++ s2s ++ cowboy) config.headcounter.vhosts) /* ++ [
+      in c2s ++ s2s ++ cowboy) xmppVHosts) /* ++ [
         FIXME: ejabberd_service doesn't exist anymore in MongooseIM!
 
         { port = 5280;

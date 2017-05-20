@@ -1,100 +1,135 @@
-{ pkgs, lib, options, config, ... }:
+{ pkgs, lib, config, ssl, ... }:
 
 with lib;
 
 let
   cfg = config.headcounter;
+  inherit (config.headcounter) mainDevice;
 
-  domainSubmodule.options = {
-    fqdn = mkOption {
-      default = null;
-      example = "example.com";
-      type = types.nullOr (types.uniq types.string);
-      description = ''
-        The fully qualified domain name.
-      '';
-    };
+  # XXX: Parse the domain names and figure out the *real* root.
+  getRootDomain = dcfg: head dcfg.ssl.domains;
+  getOtherDomains = dcfg: tail dcfg.ssl.domains;
 
-    ipv4 = mkOption {
-      default = null;
-      type = types.nullOr types.string;
-      description = ''
-        IPv4 address to use for this domain.
-      '';
-    };
-
-    ipv4prefix = mkOption {
-      default = 29;
-      type = types.int;
-      description = ''
-        IPv4 subnet prefix length in bits.
-      '';
-    };
-
-    ipv6 = mkOption {
-      default = null;
-      type = types.nullOr types.string;
-      description = ''
-        IPv6 address to use for this domain.
-      '';
-    };
-
-    ipv6prefix = mkOption {
-      default = 64;
-      type = types.int;
-      description = ''
-        IPv6 subnet prefix length in bits.
-      '';
-    };
-
-    device = mkOption {
-      default = config.headcounter.vhostDefaultDevice;
-      type = types.string;
-      description = ''
-        Network device to assign this virtual host to. By default it's the
-        device set by <option>headcounter.vhostDefaultDevice</option>.
-      '';
-    };
-
-    ssl = {
-      privateKey = mkOption {
+  domainSubmodule = { config, ... }: {
+    options = {
+      fqdn = mkOption {
         default = null;
-        type = types.nullOr types.string;
+        example = "example.com";
+        type = types.nullOr (types.uniq types.str);
         description = ''
-          The PEM-encoded private key as a string value.
+          The fully qualified domain name.
         '';
-        apply = key: if (key == null) then null else {
-          path = "/run/keys/${getPrivkeyFilename key}";
-          value = key;
+      };
+
+      ipv4 = mkOption {
+        default = null;
+        type = types.nullOr types.str;
+        description = ''
+          IPv4 address to use for this domain.
+        '';
+      };
+
+      ipv4prefix = mkOption {
+        default = 29;
+        type = types.int;
+        description = ''
+          IPv4 subnet prefix length in bits.
+        '';
+      };
+
+      ipv6 = mkOption {
+        default = null;
+        type = types.nullOr types.str;
+        description = ''
+          IPv6 address to use for this domain.
+        '';
+      };
+
+      ipv6prefix = mkOption {
+        default = 64;
+        type = types.int;
+        description = ''
+          IPv6 subnet prefix length in bits.
+        '';
+      };
+
+      device = mkOption {
+        default = mainDevice;
+        type = types.str;
+        description = ''
+          Network device to assign this virtual host to. By default it's the
+          device set by <option>headcounter.mainDevice</option>.
+        '';
+      };
+
+      isXMPP = mkOption {
+        default = false;
+        type = types.bool;
+        description = ''
+          Whether this virtual host is to be used as an XMPP node.
+        '';
+      };
+
+      ssl = {
+        domains = mkOption {
+          type = types.listOf types.str;
+          default = optional (config.fqdn != null) config.fqdn;
+          description = ''
+            Domains for which to get SSL certificates for, defaulting to only
+            the value specified in <option>fqdn</option> if not null.
+
+            The domains specified here are only valid if they share a common
+            root domain.
+          '';
+        };
+
+        privateKey = mkOption {
+          type = types.path;
+          description = ''
+            The path to the PEM-encoded private key.
+          '';
+        };
+
+        certificate = mkOption {
+          type = types.path;
+          description = ''
+            Path to the X.509 public certificate file.
+          '';
+        };
+
+        chain = mkOption {
+          type = types.path;
+          description = ''
+            Path to the X.509 intermediate chain.
+          '';
+        };
+
+        fullChain = mkOption {
+          type = types.path;
+          description = ''
+            The <option>certificate</option> and <option>chain</option> in one
+            file.
+          '';
+        };
+
+        allInOne = mkOption {
+          type = types.path;
+          description = ''
+            The <option>fullChain</option> and the <option>privateKey</option>
+            in one file.
+          '';
         };
       };
+    };
 
-      publicKey = mkOption {
-        default = null;
-        type = types.nullOr types.string;
-        description = ''
-          The X.509 public certificate as a string value.
-        '';
-        apply = key: if (key == null) then null else {
-          path = pkgs.writeText "pubkey.pem";
-          value = key;
-        };
-      };
-
-      intermediateCert = mkOption {
-        default = null;
-        type = types.nullOr types.string;
-        description = ''
-          Intermediate X.509 certificate chain of the CA as a string value.
-        '';
-        apply = val: if (val != null)
-          then pkgs.writeText "intermediate.pem" val
-          else null;
-      };
+    config = mkIf (config.ssl.domains != []) {
+      ssl.privateKey  = ssl.${getRootDomain config}.privkey;
+      ssl.certificate = ssl.${getRootDomain config}.certificate;
+      ssl.chain       = ssl.${getRootDomain config}.chain;
+      ssl.fullChain   = ssl.${getRootDomain config}.fullchain;
+      ssl.allInOne    = ssl.${getRootDomain config}.full;
     };
   };
-
-  getPrivkeyFilename = key: "ssl-${builtins.hashString "sha256" key}.key";
 
   mkNetConfig = name: netcfg: {
     ${netcfg.device} = {
@@ -114,41 +149,20 @@ let
     zipper = vals: if isList (head vals) then flatten vals else merge vals;
   in merge (mapAttrsToList mkNetConfig cfg.vhosts);
 
-  generatedKeys = let
-    hasPrivKey = name: attrs: attrs.ssl.privateKey != null;
-    getPrivkey = name: attrs: with attrs.ssl; {
-      name = getPrivkeyFilename privateKey.value;
-      value.text = let
-        mkImCert = import (pkgs.runCommand "intermediate.nix" {} ''
-          cat > "$out" <<NIX
-          '''
-          $(cat "${intermediateCert}")
-          '''
-          NIX
-        '');
-        imcert = optionalString (intermediateCert != null) mkImCert;
-        mkval = attr: optionalString (attr != null) attr.value;
-      in mkval publicKey + imcert + privateKey.value;
-      # XXX: Add an isXMPP option or something like that.
-      value.group = "mongoose";
-      value.permissions = "0640";
-    };
-  in mapAttrs' getPrivkey (filterAttrs hasPrivKey cfg.vhosts);
+  acmeConfig = let
+    mkAcmeConfig = const (attrs: {
+      name = getRootDomain attrs;
+      value.otherDomains = getOtherDomains attrs;
+    });
+    filterCfg = filterAttrs (const (attrs: attrs.fqdn != null));
+  in mapAttrs' mkAcmeConfig (filterCfg cfg.vhosts);
+
 in {
   options.headcounter.vhosts = mkOption {
     default = {};
     type = types.attrsOf (types.submodule domainSubmodule);
     description = ''
       Domains/virtual host configuration.
-    '';
-  };
-
-  options.headcounter.useSnakeOil = mkOption {
-    type = types.bool;
-    default = false;
-    internal = true;
-    description = ''
-      Use snakeoil certificates for testing purposes.
     '';
   };
 
@@ -163,32 +177,9 @@ in {
     '';
   };
 
-  config = mkIf (cfg.vhosts != {}) (mkMerge [
-    { networking.interfaces = netConfig;
-      headcounter.internalNetConfig = netConfig;
-    }
-    (mkIf cfg.useSnakeOil {
-      systemd.services = {
-        inject-keys = {
-          description = "Inject Snakeoil Keys";
-          wantedBy = [ "keys.target" ];
-          before = [ "keys.target" ];
-          unitConfig.DefaultDependencies = false;
-          serviceConfig.Type = "oneshot";
-          serviceConfig.RemainAfterExit = true;
-          script = ''
-            mkdir -p /run/keys -m 0750
-            chown root:keys /run/keys
-          '' + concatStrings (mapAttrsToList (name: value: ''
-            cp "${pkgs.writeText name value.text}" "/run/keys/${name}"
-            chmod 640 "/run/keys/${name}"
-            chown root:keys "/run/keys/${name}"
-          '') generatedKeys);
-        };
-      };
-    })
-    (optionalAttrs (options ? deployment) {
-      deployment.keys = generatedKeys;
-    })
-  ]);
+  config = mkIf (cfg.vhosts != {}) {
+    networking.interfaces = netConfig;
+    headcounter.internalNetConfig = netConfig;
+    headcounter.services.acme.domains = acmeConfig;
+  };
 }

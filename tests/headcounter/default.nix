@@ -21,7 +21,6 @@ let
         inherit (import ../../network.nix) resources;
       };
     } // lib.optionalAttrs (node == "ultron") {
-      headcounter.useSnakeOil = true;
       virtualisation.memorySize = 2048;
     };
   }) (builtins.removeAttrs (import ../../network.nix) [
@@ -29,7 +28,26 @@ let
   ]);
 
   # Common config for *all* nodes in the deployment.
-  commonConfig = ../../modules/testing/network.nix;
+  commonConfig = { config, lib, nodes, ... }: {
+    imports = [ ../../modules/testing/network.nix ];
+
+    nixpkgs.config.packageOverrides = super: {
+      cacert = super.cacert.overrideDerivation (drv: {
+        installPhase = (drv.installPhase or "") + ''
+          cat "${nodes.ca.config.headcounter.snakeOilCaCert}" \
+            >> "$out/etc/ssl/certs/ca-bundle.crt"
+        '';
+      });
+    };
+
+    networking.nameservers = lib.mkForce [
+      nodes.resolver.config.networking.primaryIPAddress
+    ];
+
+    networking.extraHosts = let
+      caIp = nodes.ca.config.networking.primaryIPAddress;
+    in "${caIp} acme-v01.api.letsencrypt.org letsencrypt.org";
+  };
 
   makeHeadcounterTest = maybeExpr: import ../make-test.nix ({ lib, ... }: let
     isDirect = builtins.isFunction maybeExpr || builtins.isAttrs maybeExpr;
@@ -45,6 +63,14 @@ let
     name = "headcounter-${attrs.name}";
 
     nodes = nodes // {
+      # Support node needed for representing the letsencrypt CA.
+      ca = { nodes, lib, ... }: {
+        imports = [ ../../modules/testing/letsencrypt.nix commonConfig ];
+        networking.nameservers = lib.mkForce [
+          nodes.resolver.config.networking.primaryIPAddress
+        ];
+      };
+
       # A dummy DNS root resolver.
       resolver = { pkgs, lib, ... }: {
         imports = [ ../../modules/testing/resolver.nix commonConfig ];
@@ -84,7 +110,13 @@ let
     in ''
       my $out = $ENV{'out'};
 
-      $resolver->waitForUnit("bind.service");
+      $log->nest("start up ACME infrastructure", sub {
+        $resolver->start;
+        $ca->start;
+
+        $resolver->waitForUnit("bind.service");
+        $ca->waitForUnit("boulder.service");
+      });
 
       $log->nest("start up DNS servers", sub {
         $dugee->start;

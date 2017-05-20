@@ -42,6 +42,8 @@
       @ IN NS ${secondaryDNS}.
       @ IN MX 10 mailfresser.de.
 
+      _acme-challenge IN NS ${primaryDNS}.
+
       ${text}
     '';
 

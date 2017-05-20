@@ -37,8 +37,7 @@ vhost:
 
   testScript = { nodes, ... }: let
     inherit (nodes.ultron.config.headcounter.vhosts.${vhost}) fqdn;
-    inherit (import ../../../ssl/snakeoil.nix fqdn) rootCAFile;
-    pokeOpts = "--cafile=${rootCAFile} --delay=0";
+    pokeOpts = "--cafile=/etc/ssl/certs/ca-bundle.crt --delay=0";
 
     resultSql = "SELECT sr.total_score, sr.grade, tr.type"
               + "  FROM srv_results sr, test_results tr"

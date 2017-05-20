@@ -77,8 +77,19 @@ in {
     headcounter.mainIPv6 = "2a01:4f8:200:8392::";
   };
 
-  dugee = { config, lib, ... }: mkMachine {
+  dugee = { nodes, config, lib, ... }: mkMachine {
     imports = [ ./dns-server.nix ];
+    headcounter.services.acme.dnsHandler = let
+      myself = config.networking.hostName;
+      tunnel = nodes.ultron.config.networking.p2pTunnels.ssh.${myself};
+    in {
+      enable = true;
+      fqdn = "ns1.headcounter.org";
+      listen = lib.singleton {
+        host = tunnel.remoteIPv4;
+        device = "tun${toString tunnel.remoteTunnel}";
+      };
+    };
     headcounter.mainIPv4 = "78.46.182.124";
     headcounter.mainIPv6 = "2a01:4f8:d13:3009::2";
     networking.localCommands = lib.mkAfter ''

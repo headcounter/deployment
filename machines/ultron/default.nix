@@ -25,9 +25,7 @@ let
         ssl.engine  = "enable"
         ssl.use-sslv2 = "disable"
         ssl.use-sslv3 = "disable"
-        ssl.pemfile = "${vhost.ssl.privateKey.path}"
-      '' + optionalString (vhost.ssl.intermediateCert != null) ''
-        ssl.ca-file = "${vhost.ssl.intermediateCert}"
+        ssl.pemfile = "${vhost.ssl.allInOne}"
       '';
 
       inherit configuration;
@@ -85,6 +83,15 @@ in {
         "CiIN9EClp2uuMtfH1pLCAI3ttvf"
       ])
     ];
+  };
+
+  headcounter.services.acme = let
+    inherit (config.networking.p2pTunnels.ssh) dugee;
+  in {
+    enable = true;
+    email = "ssladmin@headcounter.org";
+    handlerAddress = dugee.remoteIPv4;
+    handlerDevice = "tun${toString dugee.localTunnel}";
   };
 
   headcounter.services.dyndns.master = {
