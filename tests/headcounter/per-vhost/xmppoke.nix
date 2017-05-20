@@ -47,8 +47,11 @@ vhost:
     $client->waitForUnit("network.target");
 
     $client->nest("check availability", sub {
-      $client->succeed("ping -c1 ${fqdn} >&2");
-      $client->succeed("nc -z ${fqdn} 5222");
+      my $srvreply = $client->succeed("host -t srv _xmpp-server._tcp.${fqdn}");
+      $srvreply =~ /has SRV record(?:\s+\S+){3}\s+(\S+)\.$/m;
+      my $srvfqdn = $1;
+      $client->succeed("ping -c1 $srvfqdn >&2");
+      $client->succeed("nc -z $srvfqdn 5222");
     });
 
     $client->waitForUnit("postgresql.service");
