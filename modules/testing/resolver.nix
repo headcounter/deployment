@@ -6,6 +6,7 @@
 {
   services.bind.enable = true;
   services.bind.cacheNetworks = lib.mkForce [ "any" ];
+  services.bind.forwarders = lib.mkForce [];
   services.bind.zones = lib.singleton {
     name = ".";
     file = let
