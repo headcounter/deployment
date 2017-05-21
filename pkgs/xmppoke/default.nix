@@ -54,9 +54,7 @@ let
 
     postPatch = ''
       sed -i -e '/^local unbound_config/ {
-        c local unbound_config = { \
-          ["options"] = {"module-config:", "iterator"} \
-        };
+        c local unbound_config = {["resolvconf"] = true};
       }' net.unbound.lua
 
       rm util.lunbound.lua
