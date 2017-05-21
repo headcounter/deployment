@@ -56,7 +56,7 @@ vhost:
 
     $client->waitForUnit("postgresql.service");
 
-    subtest "xmppoke", sub {
+    $client->nest("xmppoke", sub {
       $client->succeed("xmppoke ${pokeOpts} --mode=client '${fqdn}' >&2");
       $client->succeed("xmppoke ${pokeOpts} --mode=server '${fqdn}' >&2");
 
@@ -90,6 +90,6 @@ vhost:
         open TOUCH_FAILED, ">>$out/nix-support/failed";
         close TOUCH_FAILED;
       }
-    };
+    });
   '';
 }
