@@ -9,7 +9,6 @@
 
     torservers = {
       fqdn = "torservers.net";
-      ssl.domains = [ "jabber.torservers.net" ];
       ipv4 = "78.47.32.130";
       ipv6 = "2a01:4f8:162:4187::2";
       isXMPP = true;
