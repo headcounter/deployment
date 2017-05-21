@@ -71,8 +71,38 @@ let
         ];
       };
 
+      torservers = { pkgs, ... }: {
+        imports = [ commonConfig ];
+
+        headcounter.mainIPv4 = "81.7.6.108";
+        headcounter.mainIPv6 = "2a02:180:a:25:5::1";
+
+        nixpkgs.config.packageOverrides = super: {
+          pythonPackages = (super.python.override {
+            packageOverrides = self: super: {
+              requests2 = super.requests2.overrideDerivation (drv: {
+                postPatch = (drv.postPatch or "") + ''
+                  cat "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
+                    > requests/cacert.pem
+                '';
+              });
+            };
+          }).pkgs;
+        };
+
+        services.nginx.enable = true;
+        services.nginx.virtualHosts."torservers.net" = {
+          enableACME = true;
+          forceSSL = true;
+          root = pkgs.runCommand "torservers-docroot" {} ''
+            mkdir "$out"
+            echo "torservers.net site" > "$out/index.html"
+          '';
+        };
+      };
+
       # A dummy DNS root resolver.
-      resolver = { pkgs, lib, ... }: {
+      resolver = { nodes, pkgs, lib, ... }: {
         imports = [ ../../modules/testing/resolver.nix commonConfig ];
         # Extra zone for torservers.net that we don't control.
         services.bind.zones = lib.singleton {
@@ -83,8 +113,13 @@ let
             )
             @ IN NS ns.fakedns.
 
+            @ IN A    ${nodes.torservers.config.headcounter.mainIPv4}
+            @ IN AAAA ${nodes.torservers.config.headcounter.mainIPv6}
+
             jabber IN NS ns1.headcounter.org.
             jabber IN NS ns2.headcounter.org.
+
+            _acme-challenge IN NS ns1.headcounter.org.
 
             _xmpp-server._tcp IN SRV 0 0 5269 jabber
             _xmpp-client._tcp IN SRV 0 0 5222 jabber
@@ -116,6 +151,13 @@ let
 
         $resolver->waitForUnit("bind.service");
         $ca->waitForUnit("boulder.service");
+      });
+
+      $log->nest("start up torservers.net", sub {
+        $torservers->waitForUnit("acme-certificates.target");
+        $torservers->succeed(
+          'curl https://torservers.net | grep -qF "torservers.net site"'
+        );
       });
 
       $log->nest("start up DNS servers", sub {
