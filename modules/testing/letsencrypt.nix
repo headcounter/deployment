@@ -94,8 +94,8 @@ let
   boulder = let
     owner = "letsencrypt";
     repo = "boulder";
-    rev = "hotfixes/2017-02-01";
-    version = "20170201";
+    rev = "9866abab8962a591f06db457a4b84c518cc88243";
+    version = "20170510";
 
   in pkgs.buildGoPackage rec {
     name = "${repo}-${version}";
@@ -103,10 +103,14 @@ let
     src = pkgs.fetchFromGitHub {
       name = "${name}-src";
       inherit rev owner repo;
-      sha256 = "01nvdizq38jzcmixshxlfzgdsmd6vimqnp3fi9agx2s1sdkgzfvh";
+      sha256 = "170m5cjngbrm36wi7wschqw8jzs7kxpcyzmshq3pcrmcpigrhna1";
     };
 
     postPatch = ''
+      # compat for go < 1.8
+      sed -i -e 's/time\.Until(\([^)]\+\))/\1.Sub(time.Now())/' \
+        test/ocsp/helper/helper.go
+
       find test -type f -exec sed -i -e '/libpkcs11-proxy.so/ {
         s,/usr/local,${pkcs11-proxy},
       }' {} +
@@ -205,6 +209,10 @@ let
         *.json
       if grep 4000 *.json; then exit 1; fi
 
+      # Change all ports from 1909X to 909X, because the 1909X range of ports is
+      # allocated by startservers.py in order to intercept gRPC communication.
+      sed -i -e 's/\<1\(909[0-9]\)\>/\1/' *.json
+
       # Patch out all additional issuer certs
       jq '. + {ca: (.ca + {Issuers:
         [.ca.Issuers[] | select(.CertFile == "test/test-ca.pem")]
@@ -243,9 +251,7 @@ let
     firstServicesNoSelf = lib.remove "boulder-${name}.service" firstServices;
     additionalAfter = firstServicesNoSelf ++ map mkSrvName (attrs.after or []);
     needsPort = attrs ? waitForPort;
-    inits = map (n: "boulder-init-${n}.service") [
-      "rabbitmq" "mysql" "softhsm"
-    ];
+    inits = map (n: "boulder-init-${n}.service") [ "mysql" "softhsm" ];
     portWaiter = {
       name = "boulder-${name}";
       value = {
@@ -293,14 +299,11 @@ in {
     networking.extraHosts = "127.0.0.1 ${toString [
       "sa.boulder" "ra.boulder" "wfe.boulder" "ca.boulder" "va.boulder"
       "publisher.boulder" "ocsp-updater.boulder" "admin-revoker.boulder"
-      "boulder" "boulder-mysql" "boulder-rabbitmq" wfeDomain
+      "boulder" "boulder-mysql" wfeDomain
     ]}";
 
     services.mysql.enable = true;
     services.mysql.package = pkgs.mariadb;
-
-    services.rabbitmq.enable = true;
-    services.rabbitmq.port = 5673;
 
     services.nginx.enable = true;
     services.nginx.recommendedProxySettings = true;
@@ -328,16 +331,6 @@ in {
         serviceConfig.ExecStart = let
           softhsmLib = "${softhsm}/lib/softhsm/libsofthsm.so";
         in "${pkcs11-proxy}/bin/pkcs11-daemon ${softhsmLib}";
-      };
-
-      boulder-init-rabbitmq = {
-        description = "Boulder ACME Init (RabbitMQ)";
-        after = [ "rabbitmq.service" ];
-        serviceConfig.Type = "oneshot";
-        serviceConfig.RemainAfterExit = true;
-        serviceConfig.WorkingDirectory = boulderSource;
-        path = commonPath;
-        script = "rabbitmq-setup -server amqp://localhost:5673";
       };
 
       boulder-init-mysql = {

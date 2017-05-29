@@ -188,7 +188,10 @@ import ./make-test.nix {
       $_->execute('date '.$newdate) foreach values %vms;
     });
 
-    $ca->succeed('systemctl restart boulder*');
+    $ca->succeed('systemctl stop boulder*');
+    $ca->succeed('systemctl start boulder*');
+    $ca->succeed('systemctl start boulder');
+    $ca->waitForUnit("boulder.service");
 
     $log->nest("wait for ACME reissuance", sub {
       my $getTwistdStartTime =
