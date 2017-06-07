@@ -602,7 +602,7 @@ in {
     in concatLists patterns;
 
     domain_certfile.multi = mapAttrsToList (domain: certfile: {
-      extuple = [ domain certfile ];
+      extuple = [ { binary = domain; } certfile ];
     }) config.s2s.domainCerts;
 
     access.multi = let
