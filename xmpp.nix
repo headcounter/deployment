@@ -57,6 +57,7 @@ in {
   config.headcounter.services.acme.domains = mapAttrs' (const (vhost: {
     name = head vhost.ssl.domains;
     value.users = [ "mongoose" ];
+    value.reloads = [ "mongooseim" ];
   })) xmppVHosts;
 
   config.headcounter.services.mongooseim = {
