@@ -155,7 +155,7 @@ let
 
       $log->nest("start up torservers.net", sub {
         $torservers->waitForUnit("acme-certificates.target");
-        $torservers->succeed(
+        $torservers->waitUntilSucceeds(
           'curl https://torservers.net | grep -qF "torservers.net site"'
         );
       });
