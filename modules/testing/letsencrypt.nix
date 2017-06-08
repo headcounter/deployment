@@ -280,6 +280,7 @@ let
       environment.PKCS11_PROXY_SOCKET = "tcp://127.0.0.1:5657";
       serviceConfig.WorkingDirectory = boulderSource;
       serviceConfig.ExecStart = "${boulder}/bin/${name} ${attrs.args or ""}";
+      serviceConfig.Restart = "on-failure";
     };
   }) components;
 
