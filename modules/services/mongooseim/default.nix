@@ -222,8 +222,6 @@ in {
           maybeDbUnit = optional (dbType != null) dbUnit;
         in [ "network.target" "fs.target" "keys.target" ] ++ maybeDbUnit;
 
-        reloadIfChanged = true;
-
         preStart = ''
           ln -sfn "$(readlink -f "${cfg.package}")" "${gcRoot}"
         '';
