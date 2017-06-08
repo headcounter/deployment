@@ -29,7 +29,7 @@ vhost:
     };
 
     environment.systemPackages = [
-      patchedPoke pkgs.headcounter.xmppokeReport
+      patchedPoke pkgs.headcounter.xmppokeReport pkgs.openssl
     ];
   };
 
@@ -46,15 +46,49 @@ vhost:
   in ''
     $client->waitForUnit("network.target");
 
+    my $srvfqdn;
+
     $client->nest("check availability", sub {
       my $srvreply = $client->succeed("host -t srv _xmpp-server._tcp.${fqdn}");
       $srvreply =~ /has SRV record(?:\s+\S+){3}\s+(\S+)\.$/m;
-      my $srvfqdn = $1;
+      $srvfqdn = $1;
       $client->succeed("ping -c1 $srvfqdn >&2");
       $client->succeed("nc -z $srvfqdn 5222");
     });
 
     $client->waitForUnit("postgresql.service");
+
+    $client->nest("force ACME certificate renewal", sub {
+      my $newdateUnix = $client->succeed('date +%s --date "80 days"');
+      chomp $newdateUnix;
+      my $newdate = $client->succeed('date +%m%d%H%M%Y --date @'.$newdateUnix);
+      chomp $newdate;
+
+      $log->nest("fast-forward time to now + 80 days", sub {
+        $_->execute('date '.$newdate) foreach values %vms;
+      });
+
+      $ca->succeed('systemctl restart boulder*');
+
+      $ultron->execute('systemctl start acme.service');
+
+      $client->waitUntilSucceeds(
+        'echo | openssl s_client -connect '.$srvfqdn.':5223'
+      );
+
+      my $issuanceUnix = $client->succeed(
+        'fetched="$(echo | openssl s_client -connect '.$srvfqdn.':5223)" && '.
+        'parsed="$(echo "$fetched" | openssl x509 -noout -dates)" && '.
+        'mangled="$(echo "$parsed" | sed -ne "s/notBefore=//p")" && '.
+        'date --date "$mangled" +%s'
+      );
+
+      my $issuance = $client->succeed('date --date @'.$issuanceUnix);
+      chomp $issuance;
+
+      $issuanceUnix > $newdateUnix - 7200
+        or die "Certificate is too old ($issuance)";
+    });
 
     $client->nest("xmppoke", sub {
       $client->succeed("xmppoke ${pokeOpts} --mode=client '${fqdn}' >&2");
