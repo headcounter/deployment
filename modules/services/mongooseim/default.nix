@@ -240,7 +240,7 @@ in {
         serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl ${progName}"
                                 + " -args_file ${serverArgsFile}";
 
-        serviceConfig.ExecReload = "@${codeReloader} mongooseim-code-reload";
+        serviceConfig.ExecReload = "${ctlTool} reload_cluster";
 
         serviceConfig.ExecStop = "@${ctlTool} mongooseim-stop stop";
       };
