@@ -393,16 +393,11 @@ let
     # max_connections to be 129.
     services.postgresql.extraConfig = "max_connections = 129";
 
-    services.postgresql.initialScript = pkgs.writeText "initial.sql" ''
-      CREATE ROLE mongooseim WITH LOGIN PASSWORD 'test';
-      CREATE DATABASE mongooseim;
-      \c mongooseim
-      \i ${pkgs.headcounter.mongooseim.mainAppDir}/priv/pg.sql
-      GRANT USAGE ON SCHEMA public TO mongooseim;
-      GRANT SELECT, INSERT, UPDATE, DELETE
-         ON ALL TABLES IN SCHEMA public TO mongooseim;
-      GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO mongooseim;
-    '';
+    headcounter.postgresql.databases.mongooseim = {
+      users.mongooseim.password = "test";
+      schemaFile = "${pkgs.headcounter.mongooseim.mainAppDir}/priv/pg.sql";
+      neededBy = [ "mongooseim.service" ];
+    };
   };
 
   inherit (import ./lib.nix {
