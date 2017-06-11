@@ -54,13 +54,21 @@ let
   xmppVHosts = filterAttrs (const isXmppVHost) config.headcounter.vhosts;
 
 in {
-  config.headcounter.services.acme.domains = mapAttrs' (const (vhost: {
+  headcounter.services.acme.domains = mapAttrs' (const (vhost: {
     name = head vhost.ssl.domains;
     value.users = [ "mongoose" ];
     value.reloads = [ "mongooseim" ];
   })) xmppVHosts;
 
-  config.headcounter.services.mongooseim = {
+  headcounter.postgresql.databases.mongooseim = {
+    users.mongooseim = {
+      password = hclib.getcred [ "xmpp" "dbpasswd" ] "verysecure";
+    };
+    schemaFile = "${pkgs.headcounter.mongooseim.mainAppDir}/priv/pg.sql";
+    neededBy = [ "mongooseim.service" ];
+  };
+
+  headcounter.services.mongooseim = {
     enable = true;
     settings = {
       hosts = [
@@ -144,6 +152,11 @@ in {
           options.password = "TODO";
         }
       ] */;
+
+      odbc = {
+        type = "pgsql";
+        password = hclib.getcred [ "xmpp" "dbpasswd" ] "verysecure";
+      };
 
       modules = {
         /* FIXME: Not supported yet in MongooseIM
@@ -266,6 +279,9 @@ in {
         private.options.access.atom = "public";
 
         bosh.enable = true;
+
+        mam_meta.enable = true;
+        mam_meta.options.backend.atom = "odbc";
 
         muc.enable = true;
         muc.options = {
