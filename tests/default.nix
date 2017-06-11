@@ -11,9 +11,10 @@ in {
   acme = callTest ./acme.nix {};
   code-reload = callTest ./code-reload {};
   dyndns = callTest ./dyndns.nix {};
+  hclib = pkgs.callPackage ./hclib.nix {};
+  headcounter = callTest ./headcounter {};
   mongooseim = callTest ./mongooseim {};
   nsd-zone-writer = callTest ./nsd-zone-writer.nix {};
-  headcounter = callTest ./headcounter {};
   postfix = callTest ./postfix.nix {};
-  hclib = pkgs.callPackage ./hclib.nix {};
+  postgresql = callTest ./postgresql.nix {};
 }

@@ -4,6 +4,7 @@
   ./config/erlang-inet
   ./config/imperative-containers.nix
   ./config/ipaddr.nix
+  ./config/postgresql.nix
   ./config/vhosts.nix
   ./services/acme
   ./services/dyndns
