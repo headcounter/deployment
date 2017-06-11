@@ -18,6 +18,13 @@ let
   enabledBackendDeps = concatMap getErlDeps storageBackends;
   backendErlangDeps = map (dep: erlangPackages.${dep}) enabledBackendDeps;
 
+  internalVersion = "2.1.8+mim-${self.version}";
+
+  relativeMainAppDir = let
+    hash = builtins.head (builtins.match "([^-]*).*" (baseNameOf self));
+    hashVer = "${hash}_${internalVersion}";
+  in "lib/ejabberd-${hashVer}";
+
   self = buildErlang rec {
     name = "mongooseim";
     version = "2.0.1";
@@ -106,18 +113,16 @@ let
     installPhase = ''
       cp -a "rel/${name}" "$out"
 
-      hashver="$(basename "$out" | cut -d- -f1)_2.1.8+mim-${version}"
-      mainAppDir="$out/lib/ejabberd-$hashver"
+      intVer=${stdenv.lib.escapeShellArg internalVersion}
+      hashVer="$(basename "$out" | cut -d- -f1)_$intVer"
+      mainAppDir="$out/lib/ejabberd-$hashVer"
       if [ ! -d "$mainAppDir" ]; then
         echo "$mainAppDir does not exist!" >&2
         exit 1
       fi
-
-      mkdir "$out/nix-support"
-      echo -n "$mainAppDir" > "$out/nix-support/main-app-dir"
     '';
 
-    passthru.mainAppDir = builtins.readFile "${self}/nix-support/main-app-dir";
+    passthru.mainAppDir = "${self}/${relativeMainAppDir}";
 
     meta = {
       homepage = "https://www.erlang-solutions.com/products/"
