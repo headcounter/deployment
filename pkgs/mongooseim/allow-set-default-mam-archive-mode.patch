@@ -1,0 +1,35 @@
+diff --git a/apps/ejabberd/src/mod_mam.erl b/apps/ejabberd/src/mod_mam.erl
+index c56a7704..34eeaead 100644
+--- a/apps/ejabberd/src/mod_mam.erl
++++ b/apps/ejabberd/src/mod_mam.erl
+@@ -448,7 +448,9 @@ handle_set_prefs_result({error, Reason},
+ handle_get_prefs(ArcJID=#jid{}, IQ=#iq{}) ->
+     Host = server_host(ArcJID),
+     ArcID = archive_id_int(Host, ArcJID),
+-    Res = get_prefs(Host, ArcID, ArcJID, always),
++    DefOpt = gen_mod:get_module_opt(Host, mod_mam_meta, pm_archive_mode,
++                                    always),
++    Res = get_prefs(Host, ArcID, ArcJID, DefOpt),
+     handle_get_prefs_result(Res, IQ).
+ 
+ handle_get_prefs_result({DefaultMode, AlwaysJIDs, NeverJIDs}, IQ) ->
+@@ -677,7 +679,9 @@ is_interesting(LocJID, RemJID) ->
+     is_interesting(Host, LocJID, RemJID, ArcID).
+ 
+ is_interesting(Host, LocJID, RemJID, ArcID) ->
+-    case get_behaviour(Host, ArcID, LocJID, RemJID, always) of
++    DefOpt = gen_mod:get_module_opt(Host, mod_mam_meta, pm_archive_mode,
++                                    always),
++    case get_behaviour(Host, ArcID, LocJID, RemJID, DefOpt) of
+         always -> true;
+         never  -> false;
+         roster -> is_jid_in_user_roster(LocJID, RemJID)
+@@ -698,7 +702,7 @@ archive_size(Host, ArcID, ArcJID=#jid{}) ->
+ 
+ 
+ -spec get_behaviour(ejabberd:server(), archive_id(), LocJID :: ejabberd:jid(),
+-    RemJID :: ejabberd:jid(), Default :: 'always') -> atom().
++    RemJID :: ejabberd:jid(), Default :: archive_behaviour()) -> atom().
+ get_behaviour(Host, ArcID,
+               LocJID=#jid{},
+               RemJID=#jid{}, DefaultBehaviour) ->

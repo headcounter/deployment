@@ -39,7 +39,7 @@ let
     patches = [
       ./reltool.patch ./journald.patch ./systemd.patch
       ./s2s-listener-certfile.patch ./pgsql-disable-escape-string-warning.patch
-      ./tls-fixes.patch
+      ./tls-fixes.patch ./allow-set-default-mam-archive-mode.patch
     ];
 
     prePatch = ''
