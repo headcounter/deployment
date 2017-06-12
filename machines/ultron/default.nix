@@ -111,7 +111,8 @@ in {
   services.postgresql = {
     enable = true;
     extraConfig = ''
-      listen_addresses = '${taaloTunnel.remoteIPv4}'
+      listen_addresses = '${taaloTunnel.remoteIPv4}, 127.0.0.1, ::1'
+      max_connections = 400
     '';
     authentication = mkAfter ''
       host hydra all ${taaloTunnel.localIPv4}/32 trust

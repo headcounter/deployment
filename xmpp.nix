@@ -281,7 +281,15 @@ in {
         bosh.enable = true;
 
         mam_meta.enable = true;
-        mam_meta.options.backend.atom = "odbc";
+        mam_meta.options = {
+          backend.atom = "odbc";
+          host = "conference.headcounter.org";
+          user_prefs_store.atom = "mnesia";
+          odbc_message_format.atom = "internal";
+          pm_archive_mode.atom = "never";
+          pm = {};
+          muc = {};
+        };
 
         muc.enable = true;
         muc.options = {
