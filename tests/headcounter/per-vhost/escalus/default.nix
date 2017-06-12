@@ -19,6 +19,9 @@ vhost:
 
     toradmin.host = "torservers.net";
     toradmin.password = "torservers dedicated admin";
+
+    alice.password = "123456";
+    bob.password = "654321";
   };
 
   mkTestConfig = hclib: fqdn: let
