@@ -43,6 +43,16 @@ let
         '';
       };
     };
+
+    options.custom = {
+      command = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          Wait until the specified command succeeds.
+        '';
+      };
+    };
   };
 
   checkInet = pkgs.headcounter.compileC {
@@ -120,8 +130,16 @@ let
     '';
   };
 
+  checkCommand = command: pkgs.writeScript "check-command.sh" ''
+    #!${pkgs.stdenv.shell} -e
+    cmd=${lib.escapeShellArg command}
+    while ! ${pkgs.stdenv.shell} -e -c "$cmd" &> /dev/null; do
+      ${pkgs.coreutils}/bin/sleep 1
+    done
+  '';
+
   mkService = prefix: name: cfg: command: {
-    name = "condition-${prefix}-${name}.service";
+    name = "condition-${prefix}-${name}";
     value = {
       inherit (cfg) description;
       requiredBy = [ "${name}.service" ];
@@ -165,6 +183,10 @@ in {
       { condition = cfg.bindable.address;
         prefix = "bind";
         command = [ checkInet "-bind" cfg.bindable.address ];
+      }
+      { condition = cfg.custom.command;
+        prefix = "command";
+        command = lib.singleton (checkCommand cfg.custom.command);
       }
     ]) config.headcounter.conditions;
   };
