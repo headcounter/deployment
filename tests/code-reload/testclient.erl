@@ -41,7 +41,11 @@ handle_call(login, _, #state{config = Config} = State) ->
     Users = escalus_config:get_config(escalus_users, Config),
     Login = fun(Name) ->
         UserSpec = escalus_users:get_options(Config, Name),
-        {Name, escalus_client:start(Config, UserSpec, <<"test">>)}
+        try
+            {Name, escalus_client:start(Config, UserSpec, <<"test">>)}
+        catch error:{assertion_failed, assert, is_iq_result, _, _} ->
+            {Name, {error, login_failure}}
+        end
     end,
     ConnectedUsers = lists:map(Login, proplists:get_keys(Users)),
     CheckLoggedIn = fun(C) ->

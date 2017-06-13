@@ -187,12 +187,21 @@ in {
     subtest "change code", sub {
       ${switchToServer newServerCodeBuild}
 
-      assertTestClient("check_connections", "still_connected");
+      # XXX: Change this to "still_connected" after MongooseIM 2.1.0:
+      assertTestClient("check_connections", "not_connected_anymore");
+      # XXX: Remove this line after MongooseIM 2.1.0:
+      assertTestClient("login", "logged_in");
       assertTestClient("adhoc_ping", "pang");
 
       $new_code_uptime = sendTestClientCommand("get_uptime");
 
-      assertUptime($reverted_config_uptime, $new_code_uptime);
+      # XXX: Make sure to use the following after MongooseIM 2.1.0:
+      # assertUptime($reverted_config_uptime, $new_code_uptime);
+      # ... and remove the following:
+      die "old server uptime is $reverted_config_uptime seconds, ".
+          "but new uptime is $new_code_uptime seconds, which indicates ".
+          "that the server has not restarted!"
+          if $reverted_config_uptime < $new_code_uptime;
     };
 
     subtest "stop server", sub {
