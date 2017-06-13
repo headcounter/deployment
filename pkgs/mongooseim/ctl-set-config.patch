@@ -1,0 +1,34 @@
+diff --git a/apps/ejabberd/src/ejabberd_admin.erl b/apps/ejabberd/src/ejabberd_admin.erl
+index 41e9105b..ce208e3c 100644
+--- a/apps/ejabberd/src/ejabberd_admin.erl
++++ b/apps/ejabberd/src/ejabberd_admin.erl
+@@ -31,6 +31,7 @@
+          %% Server
+          status/0,
+          send_service_message_all_mucs/2,
++         set_config/1,
+          %% Accounts
+          register/3, unregister/2,
+          registered_users/1,
+@@ -142,6 +143,10 @@ commands() ->
+                         desc = "Reload configuration file on the current node",
+                         module = ejabberd_config, function = reload_local,
+                         args = [], result = {res, restuple}},
++     #ejabberd_commands{name = set_config, tags = [server],
++                        desc = "Set the configuration file to path.",
++                        module = ?MODULE, function = set_config,
++                        args = [{path, string}], result = {res, rescode}},
+      #ejabberd_commands{name = reload_cluster, tags = [server],
+                         desc = "Reload configuration file in the cluster",
+                         module = ejabberd_config, function = reload_cluster,
+@@ -289,6 +294,10 @@ send_service_message_all_mucs(Subject, AnnouncementText) ->
+       end,
+       ?MYHOSTS).
+ 
++-spec set_config(ConfigFile :: file:name()) -> ok.
++set_config(ConfigFile) ->
++    application:set_env(ejabberd, config, ConfigFile).
++
+ %%%
+ %%% Account management
+ %%%

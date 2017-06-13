@@ -40,30 +40,19 @@ let
     -smp
   '';
 
-  erlCall = code: ''
-    "${pkgs.erlang}/bin/erl_call" \
-      -sname ${shErlEsc erlAtom cfg.nodeName} \
-      -c ${shErlEsc erlAtom cfg.cookie} \
-      -a ${shErlEsc id code}
-  '';
-
   codeReloader = pkgs.writeScript "mongooseim-code-reload" ''
     #!${pkgs.stdenv.shell}
     old_release="$(readlink -f "${gcRoot}")"
     new_release="$(readlink -f "${cfg.package}")"
 
     if [ "$old_release" != "$new_release" ]; then
-      # TODO! This obviously is NOT going to work:
-      # cd "$new_release"
-      # ${pkgs.rebar}/bin/rebar generate-upgrade \
-      #   "previous_release=$old_release" \
-      #   "target-dir=/tmp/upgrade"
-      exit 1
+      # TODO: Wait until MongooseIM 2.1.0 and use relx.
+      exec systemctl restart mongooseim
+    else
+      echo "Reloading configuration file:" >&2
+      "${ctlTool}" set_config ${escapeShellArg cfgFile}
+      "${ctlTool}" reload_cluster >&2
     fi
-
-    echo "Reloading configuration file:" >&2
-    ${erlCall "application set_env [ejabberd, config, ${erlString cfgFile}]"}
-    "${ctlTool}" reload_local >&2
   '';
 
   defaultCfgFile = let
@@ -226,6 +215,8 @@ in {
           ln -sfn "$(readlink -f "${cfg.package}")" "${gcRoot}"
         '';
 
+        reloadIfChanged = true;
+
         environment.EMU = "beam";
         environment.PROGNAME = progName;
 
@@ -240,7 +231,7 @@ in {
         serviceConfig.ExecStart = "@${pkgs.erlang}/bin/erl ${progName}"
                                 + " -args_file ${serverArgsFile}";
 
-        serviceConfig.ExecReload = "${ctlTool} reload_cluster";
+        serviceConfig.ExecReload = "@${codeReloader} mongooseim-code-reload";
 
         serviceConfig.ExecStop = "@${ctlTool} mongooseim-stop stop";
       };

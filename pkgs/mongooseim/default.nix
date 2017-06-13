@@ -37,7 +37,7 @@ let
     };
 
     patches = [
-      ./reltool.patch ./journald.patch ./systemd.patch
+      ./reltool.patch ./journald.patch ./systemd.patch ./ctl-set-config.patch
       ./s2s-listener-certfile.patch ./pgsql-disable-escape-string-warning.patch
       ./tls-fixes.patch ./allow-set-default-mam-archive-mode.patch
     ];
