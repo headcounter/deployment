@@ -65,10 +65,9 @@ in {
       dbi = "dbi:Pg:dbname=hydra;user=hydra;host=${ultron.remoteIPv4}";
     };
 
-    headcounter.conditions.hydra-init.connectable = {
-      address = ultron.remoteIPv4;
-      inherit (nodes.ultron.config.services.postgresql) port;
-    };
+    headcounter.conditions.hydra-init.custom.command = ''
+      ${pkgs.postgresql}/bin/psql -h ${ultron.remoteIPv4} hydra hydra -c ""
+    '';
   };
 
   benteflork = mkMachine {

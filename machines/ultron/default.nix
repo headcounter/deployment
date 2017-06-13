@@ -123,9 +123,9 @@ in {
     '';
   };
 
-  headcounter.conditions.postgresql.bindable = {
-    address = taaloTunnel.remoteIPv4;
-  };
+  headcounter.postgresql.databases.hydra.users.hydra.isOwner = true;
+
+  headcounter.conditions.postgresql.bindable.address = taaloTunnel.remoteIPv4;
 
   headcounter.services.lighttpd = {
     enable = true;
