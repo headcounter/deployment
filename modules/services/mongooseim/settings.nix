@@ -272,20 +272,21 @@ in {
       }));
       default = optionals (!hostSpecific) [
         { port = 5280;
-          module = "mod_bosh";
-          options.num_acceptors = 10;
+          http.enable = true;
+          http.modules = [
+            { path = "/http-bind";
+              handler = "mod_bosh";
+            }
+            { path = "/ws-xmpp";
+              handler = "mod_websockets";
+            }
+          ];
         }
         { port = 5222;
           module = "ejabberd_c2s";
           options.access.atom = "c2s";
           options.shaper.atom = "c2s_shaper";
           options.max_stanza_size = 65536;
-        }
-        { port = 5288;
-          type = "ws";
-          module = "mod_websockets";
-          options.host = "localhost";
-          options.prefix = "/ws-xmpp";
         }
         { port = 5269;
           module = "ejabberd_s2s_in";
