@@ -220,7 +220,7 @@ let
       else toString value);
     mkEntry = name: value: "${escape name} =${mkVal value}";
     final = lib.concatStringsSep "\n" (lib.mapAttrsToList mkEntry cfg.config);
-  in pkgs.writeText "postfix.cf" final;
+  in pkgs.writeText "postfix.cf" "${final}\n";
 
   # Generate listener options for a socket according to the type of the
   # service.
