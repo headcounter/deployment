@@ -11,31 +11,31 @@ vhost:
     outsider.password = "truly secure, no?";
     outsider.shouldExist = false;
 
-    admin.host = "aszlig.net";
+    admin.server = "aszlig.net";
     admin.password = "big admin";
 
-    wallop.host = "aszlig.net";
+    wallop.server = "aszlig.net";
     wallop.password = "small wallop";
 
-    toradmin.host = "torservers.net";
+    toradmin.server = "torservers.net";
     toradmin.password = "torservers dedicated admin";
 
     alice.password = "123456";
     bob.password = "654321";
   };
 
-  mkTestConfig = hclib: fqdn: let
+  mkTestConfig = hclib: fqdn: realHost: let
     mkSpecVal = val: if lib.isString val then { binary = val; } else val;
     mkUser = name: spec: {
       username.binary = name;
-      server.binary = spec.host or fqdn;
-      host.binary = spec.server or fqdn;
+      server.binary = spec.server or fqdn;
+      host.binary = spec.host or realHost;
       starttls.atom = "required";
       auth_method.binary = "SCRAM-SHA-1";
     } // lib.mapAttrs (lib.const mkSpecVal) spec;
   in pkgs.writeText "test.config" ''
     {escalus_xmpp_server, escalus_mongooseim}.
-    {escalus_host, <<"${fqdn}">>}.
+    {escalus_host, <<"${realHost}">>}.
 
     {escalus_users, ${hclib.erlPropList (lib.mapAttrs mkUser users)}}.
   '';
@@ -71,9 +71,12 @@ in {
 
   nodes.client = { nodes, hclib, ... }: let
     inherit (nodes.ultron.config.headcounter.vhosts.${vhost}) fqdn;
+    realHost = if fqdn == "torservers.net" then "jabber.${fqdn}" else fqdn;
   in {
     virtualisation.memorySize = 1024;
-    environment.etc."headcounter/test.config".source = mkTestConfig hclib fqdn;
+    environment.etc."headcounter/test.config" = {
+      source = mkTestConfig hclib fqdn realHost;
+    };
   };
 
   excludeNodes = [ "taalo" "benteflork" "unzervalt" ];
