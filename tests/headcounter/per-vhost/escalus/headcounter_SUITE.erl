@@ -2,16 +2,26 @@
 -compile(export_all).
 
 -include_lib("escalus/include/escalus.hrl").
+-include_lib("escalus/include/escalus_xmlns.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("exml/include/exml_stream.hrl").
 
-all() ->
-    [{group, headcounter}].
+all() -> [{group, G} || G <- enabled_groups()].
+
+enabled_groups() ->
+    [headcounter | per_vhost_groups(os:getenv("FQDN"))].
 
 groups() ->
     [{headcounter, [sequence], [ensure_inband_reg_is_disabled,
                                 mam_no_store_by_default,
-                                mam_store_is_working]}].
+                                mam_store_is_working]},
+     {torservers, [sequence], [ensure_own_muc_service]}].
+
+-spec per_vhost_groups(string()) -> [atom()].
+per_vhost_groups("torservers.net") ->
+    [torservers];
+per_vhost_groups(_) ->
+    [].
 
 suite() ->
     escalus:suite().
@@ -102,5 +112,48 @@ mam_store_is_working(Config) ->
         escalus:assert(fun ?MODULE:is_mam_archived_message/2, [Msg1], M1),
         escalus:assert(fun ?MODULE:is_mam_archived_message/2, [Msg2], M2),
         escalus:assert(fun ?MODULE:is_mam_fin_message/1, M3),
+        ok
+    end).
+
+ensure_own_muc_service(Config) ->
+    escalus:story(Config, [{alice, 1}, {bob, 1}], fun(Alice, Bob) ->
+        Server = escalus_client:server(Alice),
+        escalus:send(Alice, escalus_stanza:service_discovery(Server)),
+        Response = escalus:wait_for_stanza(Alice),
+        MucHost = <<"conference.", Server/binary>>,
+        escalus:assert(has_service, [MucHost], Response),
+
+        Presence = escalus_stanza:presence(<<"available">>, [#xmlel{
+            name = <<"x">>,
+            attrs = [{<<"xmlns">>, <<"http://jabber.org/protocol/muc">>}]
+        }]),
+        Room = <<"test@", MucHost/binary>>,
+
+        RoomAlice = escalus_stanza:to(Presence, <<Room/binary, "/alice">>),
+        RoomBob = escalus_stanza:to(Presence, <<Room/binary, "/bob">>),
+
+        escalus:send(Alice, RoomAlice),
+        escalus:wait_for_stanza(Alice),
+
+        NoConfig = escalus_stanza:iq_set(?NS_MUC_OWNER, [#xmlel{
+            name = <<"x">>,
+            attrs = [{<<"xmlns">>, ?NS_DATA_FORMS},
+                     {<<"from">>, escalus_utils:get_jid(Alice)},
+                     {<<"type">>, <<"submit">>}]
+        }]),
+        escalus:send(Alice, escalus_stanza:to(NoConfig, Room)),
+
+        escalus:wait_for_stanzas(Alice, 2),
+        escalus:send(Bob, RoomBob),
+        % Skip presence of bob
+        escalus:wait_for_stanza(Alice),
+
+        escalus:wait_for_stanzas(Bob, 3),
+
+        Msg = <<"Hello bob!">>,
+        escalus:send(Alice, escalus_stanza:groupchat_to(Room, Msg)),
+
+        Received = escalus:wait_for_stanza(Bob),
+        escalus:assert(is_groupchat_message, [Msg], Received),
         ok
     end).

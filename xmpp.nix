@@ -53,6 +53,128 @@ let
   isXmppVHost = attrs: attrs.isXMPP && attrs.fqdn != null;
   xmppVHosts = filterAttrs (const isXmppVHost) config.headcounter.vhosts;
 
+  server_info = let
+    mkInfo = { modules ? { atom = "all"; }, field, value }: {
+      tuple = [
+        (if isList modules then map (m: { atom = m; }) modules
+                           else modules)
+        { binary = field; }
+        (singleton { binary = value; })
+      ];
+    };
+  in [
+    (mkInfo {
+      field = "abuse-addresses";
+      value = "mailto:abuse@headcounter.org";
+    })
+    (mkInfo {
+      modules = singleton "mod_disco";
+      field = "feedback-addresses";
+      value = "xmpp:main@conference.headcounter.org";
+    })
+    (mkInfo {
+      modules = [ "mod_disco" "mod_vcard" ];
+      field = "admin-addresses";
+      value = "xmpp:aszlig@aszlig.net";
+    })
+  ];
+
+  modules = {
+    adhoc.enable = true;
+    adhoc.options.access.atom = "public";
+
+    register.enable = true;
+    register.options = {
+      access.atom = "register";
+      welcome_message.tuple = [
+        "Welcome!"
+        "Welcome to the Headcounter Jabber Service. "
+        "For information about this Network, please visit "
+        "https://headcounter.org/"
+      ];
+    };
+
+    roster.enable = true;
+    roster.options = {
+      access.atom = "public";
+      versioning = true;
+      store_current_id = false;
+    };
+
+    pubsub.enable = true;
+    pubsub.options = {
+      access_create.atom = "pubsub_createnode";
+      max_items_node = 100;
+      plugins = map (plugin: { binary = plugin; }) [
+        "flat" "hometree" "pep"
+      ];
+      host = "pubsub.headcounter.org";
+    };
+
+    privacy.enable = true;
+    privacy.options.access.atom = "public";
+
+    admin_extra.enable = true;
+
+    caps.enable = true;
+
+    disco.enable = true;
+    disco.options = {
+      access.atom = "public";
+      inherit server_info;
+      extra_domains = map (base: { binary = "${base}.headcounter.org"; }) [
+        # TODO: Generate this based on available services!
+        "conference"
+      ];
+    };
+
+    vcard.enable = true;
+    vcard.options = {
+      access.atom = "public";
+      search = false;
+      host = "vjud.headcounter.org";
+    };
+
+    offline.options = {
+      access.atom = "public";
+      access_max_user_messages.atom = "max_user_offline_messages";
+    };
+
+    private.enable = true;
+    private.options.access.atom = "public";
+
+    bosh.enable = true;
+
+    mam_meta.enable = true;
+    mam_meta.options = {
+      backend.atom = "odbc";
+      host = "conference.headcounter.org";
+      user_prefs_store.atom = "mnesia";
+      odbc_message_format.atom = "internal";
+      pm_archive_mode.atom = "never";
+      pm = {};
+      muc = {};
+    };
+
+    muc.enable = true;
+    muc.options = {
+      access.atom = "muc";
+      access_create.atom = "muc";
+      access_persistent.atom = "muc";
+      access_admin.atom = "muc_admin";
+      host = "conference.headcounter.org";
+    };
+
+    ping.enable = true;
+    ping.options = {
+      send_pings = true;
+      ping_interval = 240;
+    };
+
+    last.enable = true;
+    last.options.access.atom = "public";
+  };
+
 in {
   headcounter.services.acme.domains = mapAttrs' (const (vhost: {
     name = head vhost.ssl.domains;
@@ -70,6 +192,40 @@ in {
 
   headcounter.services.mongooseim = {
     enable = true;
+
+    hostSettings."torservers.net" = {
+      modules = modules // {
+        disco.enable = true;
+        disco.options = {
+          access.atom = "public";
+          inherit server_info;
+          extra_domains = lib.singleton {
+            binary = "conference.torservers.net";
+          };
+        };
+
+        muc.enable = true;
+        muc.options = {
+          access.atom = "muc_torservers";
+          access_create.atom = "muc_torservers";
+          access_persistent.atom = "muc_torservers";
+          access_admin.atom = "muc_torservers_admin";
+          host = "conference.torservers.net";
+        };
+
+        mam_meta.enable = true;
+        mam_meta.options = {
+          backend.atom = "odbc";
+          host = "conference.torservers.net";
+          user_prefs_store.atom = "mnesia";
+          odbc_message_format.atom = "internal";
+          pm_archive_mode.atom = "never";
+          pm = {};
+          muc = {};
+        };
+      };
+    };
+
     settings = {
       hosts = [
         "headcounter.org"
@@ -136,179 +292,14 @@ in {
             certfile = domain.ssl.allInOne;
           };
         };
-      in c2s ++ s2s ++ cowboy) xmppVHosts) /* ++ [
-        FIXME: ejabberd_service doesn't exist anymore in MongooseIM!
-
-        { port = 5280;
-          address = "127.0.0.1";
-          module = "mod_bosh";
-          options.access.atom = "public";
-        }
-        { port = 5555;
-          address = "127.0.0.1";
-          module = "ejabberd_service";
-          options.access.atom = "public";
-          options.hosts = singleton "icq.headcounter.org";
-          options.password = "TODO";
-        }
-      ] */;
+      in c2s ++ s2s ++ cowboy) xmppVHosts);
 
       odbc = {
         type = "pgsql";
         password = hclib.getcred [ "xmpp" "dbpasswd" ] "verysecure";
       };
 
-      modules = {
-        /* FIXME: Not supported yet in MongooseIM
-        mod_announce.enable = true;
-        mod_announce.options.access.atom = "announce";
-
-        configure.enable = true;
-
-        irc.enable = true;
-        irc.options = {
-          access.atom = "public";
-          host = "irc.headcounter.org";
-        };
-
-        stats.enable = true;
-        stats.options.access.atom = "admin";
-
-        shared_roster.enable = true;
-
-        time.enable = true;
-        time.options.access.atom = public;
-
-        version.enable = true;
-        version.options = {
-          access.atom = "public";
-          show_os = false;
-        };
-
-        proxy65.enable = true;
-        proxy65.options = {
-          access.atom = "public";
-          shaper.atom = "ft_shaper";
-        };
-        */
-
-        adhoc.enable = true;
-        adhoc.options.access.atom = "public";
-
-        register.enable = true;
-        register.options = {
-          access.atom = "register";
-          welcome_message.tuple = [
-            "Welcome!"
-            "Welcome to the Headcounter Jabber Service. "
-            "For information about this Network, please visit "
-            "https://headcounter.org/"
-          ];
-        };
-
-        roster.enable = true;
-        roster.options = {
-          access.atom = "public";
-          versioning = true;
-          store_current_id = false;
-        };
-
-        pubsub.enable = true;
-        pubsub.options = {
-          access_create.atom = "pubsub_createnode";
-          max_items_node = 100;
-          plugins = map (plugin: { binary = plugin; }) [
-            "flat" "hometree" "pep"
-          ];
-        };
-
-        privacy.enable = true;
-        privacy.options.access.atom = "public";
-
-        admin_extra.enable = true;
-
-        caps.enable = true;
-
-        disco.enable = true;
-        disco.options = {
-          access.atom = "public";
-          server_info = let
-            mkInfo = { modules ? { atom = "all"; }, field, value }: {
-              tuple = [
-                (if isList modules then map (m: { atom = m; }) modules
-                                   else modules)
-                { binary = field; }
-                (singleton { binary = value; })
-              ];
-            };
-          in [
-            (mkInfo {
-              field = "abuse-addresses";
-              value = "mailto:abuse@headcounter.org";
-            })
-            (mkInfo {
-              modules = singleton "mod_disco";
-              field = "feedback-addresses";
-              value = "xmpp:main@conference.headcounter.org";
-            })
-            (mkInfo {
-              modules = [ "mod_disco" "mod_vcard" ];
-              field = "admin-addresses";
-              value = "xmpp:aszlig@aszlig.net";
-            })
-          ];
-          extra_domains = map (base: { binary = "${base}.headcounter.org"; }) [
-            # TODO: Generate this based on available services!
-            "conference"
-          ];
-        };
-
-        vcard.enable = true;
-        vcard.options = {
-          access.atom = "public";
-          search = false;
-          host = "vjud.headcounter.org";
-        };
-
-        offline.options = {
-          access.atom = "public";
-          access_max_user_messages.atom = "max_user_offline_messages";
-        };
-
-        private.enable = true;
-        private.options.access.atom = "public";
-
-        bosh.enable = true;
-
-        mam_meta.enable = true;
-        mam_meta.options = {
-          backend.atom = "odbc";
-          host = "conference.headcounter.org";
-          user_prefs_store.atom = "mnesia";
-          odbc_message_format.atom = "internal";
-          pm_archive_mode.atom = "never";
-          pm = {};
-          muc = {};
-        };
-
-        muc.enable = true;
-        muc.options = {
-          access.atom = "muc";
-          access_create.atom = "muc";
-          access_persistent.atom = "muc";
-          access_admin.atom = "muc_admin";
-          host = "conference.headcounter.org";
-        };
-
-        ping.enable = true;
-        ping.options = {
-          send_pings = true;
-          ping_interval = 240;
-        };
-
-        last.enable = true;
-        last.options.access.atom = "public";
-      };
+      inherit modules;
 
       shapers = {
         slow      = 500;
@@ -356,6 +347,7 @@ in {
         muc_torservers_admin = [
           { allow = true; match = "torservers_admin"; }
         ];
+        muc_torservers = [ { allow = true; } ];
         muc = [ { allow = true; } ];
         local = [ { allow = true; match = "local"; } ];
       };

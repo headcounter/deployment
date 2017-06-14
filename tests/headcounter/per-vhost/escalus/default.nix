@@ -35,7 +35,7 @@ vhost:
     } // lib.mapAttrs (lib.const mkSpecVal) spec;
   in pkgs.writeText "test.config" ''
     {escalus_xmpp_server, escalus_mongooseim}.
-    {escalus_host, <<"${realHost}">>}.
+    {escalus_host, ${hclib.erlBinary realHost}}.
 
     {escalus_users, ${hclib.erlPropList (lib.mapAttrs mkUser users)}}.
   '';
@@ -50,11 +50,12 @@ vhost:
     perlCmd = "$ultron->succeed('${lib.escape ["'"] shellCmd}');";
   in lib.optionalString shouldExist perlCmd;
 
-  testRunner = [
+  testRunner = fqdn: [
     "${pkgs.erlang}/bin/ct_run"
     "-noinput" "-noshell"
     "-config" "/etc/headcounter/test.config"
     "-ct_hooks" "ct_tty_hook" "[]"
+    "-env" "FQDN" fqdn
     "-logdir" "ct_report"
     "-dir" "test"
     "-erl_args"
@@ -90,6 +91,6 @@ in {
 
     ${(import ../../../mongooseim/lib.nix {
       inherit pkgs lib;
-    }).runCommonTests testRunner}
+    }).runCommonTests (testRunner fqdn)}
   '';
 }
