@@ -56,12 +56,19 @@ let
   '';
 
   defaultCfgFile = let
-    topLevel = cfg.settings.expression;
-    terms = topLevel // mapAttrs' (name: settings: {
+    filterExpr = fun: lib.filterAttrs (lib.const fun) cfg.settings.expression;
+    isFlag = attrs: attrs == { flag = true; };
+    flags = filterExpr isFlag;
+    nonFlags = filterExpr (attrs: !isFlag attrs);
+    flagTerms = lib.optionalString (flags != {}) (erlTermList flags);
+    topLevelTerms = erlTermList nonFlags;
+    hostTerms = erlTermList (mapAttrs' (name: settings: {
       name = "host_config";
       value.extuple = [ name settings.expression ];
-    }) cfg.hostSettings;
-  in pkgs.writeText "mongooseim.cfg" (erlTermList terms);
+    }) cfg.hostSettings);
+    maybeHostTerms = lib.optionalString (cfg.hostSettings != {}) hostTerms;
+    allTerms = flagTerms + topLevelTerms + maybeHostTerms;
+  in pkgs.writeText "mongooseim.cfg" allTerms;
 
 in {
   options.headcounter.services.mongooseim = {
