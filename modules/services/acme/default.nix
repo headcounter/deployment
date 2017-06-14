@@ -276,8 +276,8 @@ in {
               > conf/responses
             ${pkgs.coreutils}/bin/cat > conf/perm <<EOF
             . 0644 0751
-            keys 0600 0711
-            certs/*/full 0600 0711
+            keys 0640 0711
+            certs/*/full 0640 0711
             EOF
           '';
 
