@@ -6,6 +6,11 @@
     MaxRetentionSec=3month
   '';
 
+  headcounter.services.acme = {
+    key.type = "rsa";
+    key.size = 4096;
+  };
+
   nixpkgs.config.packageOverrides = super: let
     pkgs = super // self;
     self = {
