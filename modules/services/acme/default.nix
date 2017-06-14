@@ -80,11 +80,17 @@ let
   responses = builtins.toJSON {
     acme-enter-email = if cfg.email == null then "" else cfg.email;
     "acme-agreement:${tosUrl}" = true;
-    acmetool-quickstart-choose-server = directoryUrl;
-    acmetool-quickstart-choose-method = "hook";
-    acmetool-quickstart-key-type = cfg.key.type;
-    acmetool-quickstart-rsa-key-size = cfg.key.size;
-    acmetool-quickstart-ecdsa-curve = cfg.key.curve;
+  };
+
+  target = builtins.toJSON {
+    request.provider = directoryUrl;
+    request.key = {
+      type = cfg.key.type;
+    } // (if cfg.key.type == "rsa" then {
+      rsa-size = cfg.key.size;
+    } else {
+      ecdsa-curve = cfg.key.curve;
+    });
   };
 
   mkPathUnitName = domain: "acme-${builtins.hashString "sha256" domain}";
@@ -274,6 +280,9 @@ in {
             ${pkgs.coreutils}/bin/cat \
               "${pkgs.writeText "responses.json" responses}" \
               > conf/responses
+            ${pkgs.coreutils}/bin/cat \
+              "${pkgs.writeText "target.json" target}" \
+              > conf/target
             ${pkgs.coreutils}/bin/cat > conf/perm <<EOF
             . 0644 0751
             keys 0640 0711
