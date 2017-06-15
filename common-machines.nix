@@ -25,6 +25,10 @@ in {
     netrw
   ];
 
+  networking.extraHosts = ''
+    136.243.109.98 falayalaralfali
+  '';
+
   services.openntpd.enable = true;
 
   nix = {
