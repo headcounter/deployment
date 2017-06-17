@@ -26,6 +26,7 @@ let
         ssl.use-sslv2 = "disable"
         ssl.use-sslv3 = "disable"
         ssl.pemfile = "${vhost.ssl.allInOne}"
+        ssl.ca-file = "${vhost.ssl.fullChain}"
       '';
 
       inherit configuration;
