@@ -238,7 +238,7 @@ in {
 
       auth.options.password_format.atom = "scram";
       auth.options.scram_iterations = 65536;
-      auth.mechanisms = [ "scram" ];
+      auth.mechanisms = [ "plain" "digest" "scram" ];
 
       s2s.filterDefaultPolicy = "allow";
       s2s.useStartTLS = "required";
