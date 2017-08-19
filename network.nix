@@ -39,7 +39,7 @@ in {
   in mkMachine {
     imports = [ ./hydra.nix ];
     headcounter.mainIPv4 = "188.40.96.202";
-    headcounter.mainIPv6 = "2a01:4f8:100:726f::";
+    headcounter.mainIPv6 = "2a01:4f8:221:17c6::";
 
     fileSystems."/".options = [
       "autodefrag" "space_cache" "compress=lzo" "noatime"

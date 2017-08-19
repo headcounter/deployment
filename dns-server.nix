@@ -86,7 +86,7 @@
 
         ; Hosts of the new deployment
         taalo      IN A    188.40.96.202
-        taalo      IN AAAA 2a01:4f8:100:726f::
+        taalo      IN AAAA 2a01:4f8:221:17c6::
         benteflork IN A    144.76.202.147
         benteflork IN AAAA 2a01:4f8:200:8392::
         ultron     IN A    5.9.105.142
