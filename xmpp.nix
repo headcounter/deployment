@@ -244,6 +244,7 @@ in {
       s2s.filterDefaultPolicy = "allow";
       s2s.useStartTLS = "required";
       s2s.ciphers = serverCiphers;
+      s2s.certfile = xmppVHosts.headcounter.ssl.allInOne;
       s2s.outgoing.port = 5269;
       s2s.outgoing.addressFamilies = [ "ipv6" "ipv4" ];
 
