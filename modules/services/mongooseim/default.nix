@@ -228,6 +228,7 @@ in {
         environment.PROGNAME = progName;
 
         serviceConfig.Type = "notify";
+        serviceConfig.Restart = "on-failure";
         serviceConfig.NotifyAccess = "all";
         serviceConfig.User = "mongoose";
         serviceConfig.Group = "mongoose";
