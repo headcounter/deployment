@@ -124,7 +124,7 @@ let
       inherit server_info;
       extra_domains = map (base: { binary = "${base}.headcounter.org"; }) [
         # TODO: Generate this based on available services!
-        "conference"
+        "conference" "pubsub"
       ];
     };
 
@@ -199,9 +199,10 @@ in {
         disco.options = {
           access.atom = "public";
           inherit server_info;
-          extra_domains = lib.singleton {
-            binary = "conference.torservers.net";
-          };
+          extra_domains = [
+            { binary = "conference.torservers.net"; }
+            { binary = "pubsub.headcounter.org"; }
+          ];
         };
 
         muc.enable = true;
