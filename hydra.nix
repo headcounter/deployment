@@ -26,7 +26,9 @@ let
       # Make sure Hydra uses boehm with enableLargeConfig
       sed -i -e '/nix = .*;/ {
         c nix = nixUnstable.override { boehmgc = ${betterBoehm}; };
-      }' -e 's/boehmgc/${betterBoehm}/g' release.nix
+      }' -e 's/boehmgc/${betterBoehm}/g' \
+         -e 's/w3m\|guile/(&.override { boehmgc = ${betterBoehm}; })/g' \
+         release.nix
 
       # Workaround for poor-mans XSRF protection only taking into account
       # Hydras running on / but not subpaths.
