@@ -3,17 +3,43 @@
 with lib;
 
 let
-  hydraSrc = let
-    rev = "941665044e8682ddcf70ab8a621948a2515c4a44";
-  in overrideDerivation ((import <nixpkgs> {}).fetchFromGitHub {
-    repo = "hydra";
-    owner = "NixOS";
-    inherit rev;
-    sha256 = "1vxyqzp15r0xxn9kp260ypaslfrhd80dy4010zf3vwraygsmy5vc";
-  }) (drv: {
-    inherit rev;
-    revCount = 2374;
-  });
+  pkgsReimport = import <nixpkgs> {};
+
+  hydraSrc = pkgsReimport.stdenv.mkDerivation rec {
+    name = "hydra-source-${toString revCount}";
+
+    rev = "337a72ef4dc827848e073339da01e49ffbff1755";
+    revCount = 2455;
+
+    src = pkgsReimport.fetchFromGitHub {
+      repo = "hydra";
+      owner = "NixOS";
+      inherit rev;
+      sha256 = "06i9q9z748g8adbls651n4bjfila81c5m6av921d2mzhq7rjq17s";
+    };
+
+    phases = [ "unpackPhase" "patchPhase" "installPhase" ];
+
+    postPatch = let
+      betterBoehm = "(boehmgc.override { enableLargeConfig = true; })";
+    in ''
+      # Make sure Hydra uses boehm with enableLargeConfig
+      sed -i -e '/nix = .*;/ {
+        c nix = nixUnstable.override { boehmgc = ${betterBoehm}; };
+      }' -e 's/boehmgc/${betterBoehm}/g' release.nix
+
+      # Workaround for poor-mans XSRF protection only taking into account
+      # Hydras running on / but not subpaths.
+      sed -i -e '/#.*XSRF protection/ {
+        :l; n; /}/b
+        s!^\( *my *\$base * =\).*!\1 '\'''https://headcounter.org/'\''';!
+        /die\>.*\$base/d
+        bl
+      }' src/lib/Hydra/Controller/Root.pm
+    '';
+
+    installPhase = "cp -r . $out";
+  };
 
   hydraRelease = import "${hydraSrc}/release.nix" {
     inherit hydraSrc;
