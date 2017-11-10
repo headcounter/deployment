@@ -8,14 +8,14 @@ let
   hydraSrc = pkgsReimport.stdenv.mkDerivation rec {
     name = "hydra-source-${toString revCount}";
 
-    rev = "b828224fee451ad26e87cfe4eeb9c0704ee1062b";
+    rev = "2cdc84f34f4de647dd89c5ef503782a3a48ff623";
     revCount = 2462;
 
     src = pkgsReimport.fetchFromGitHub {
       repo = "hydra";
       owner = "NixOS";
       inherit rev;
-      sha256 = "05xv10ldsa1rahxbbgh5kwvl1dv4yvc8idczpifgb55fgqj8zazm";
+      sha256 = "1gcp22ldyc914aik4yhlzy60ym7z8513pvp0ag5637j44nz0rf7h";
     };
 
     phases = [ "unpackPhase" "patchPhase" "installPhase" ];
@@ -38,6 +38,9 @@ let
         /die\>.*\$base/d
         bl
       }' src/lib/Hydra/Controller/Root.pm
+
+      # https://github.com/NixOS/hydra/pull/517
+      sed -i -e "s/\\\''${LOGNAME/'''&/p" release.nix
     '';
 
     installPhase = "cp -r . $out";
