@@ -1,8 +1,8 @@
 package;
 
 import hase.display.Animation;
+import hase.display.Image;
 import hase.display.Symbol;
-import hase.geom.Raster;
 
 class Digit extends hase.display.Sprite
 {
@@ -15,13 +15,13 @@ class Digit extends hase.display.Sprite
         this.digit = 0;
         this.final_digit = 0;
 
-        this.set_ascii(Raster.from_2d_array([
+        this.set_ascii(Image.from_2d_array([
             mkrow(" ".code, "_".code, " ".code, 0, 9, 0),
             mkrow("|".code, "-".code, "|".code, 1, 8, 1),
             mkrow("|".code, "0".code, "|".code, 1, 8, 1),
             mkrow("|".code, "-".code, "|".code, 1, 8, 1),
             mkrow(" ".code, "~".code, " ".code, 0, 9, 0),
-        ], new Symbol(0)));
+        ]));
     }
 
     public function switch_to(digit:Int)
@@ -61,8 +61,6 @@ class Digit extends hase.display.Sprite
             this.roll("_".code, fsym, "_".code, 15, 11, 15);
         else
             this.roll("-".code, fsym, "-".code,  8, 11,  8);
-
-        this.set_dirty();
     }
 
     public override function update(td:Float):Void
@@ -198,13 +196,6 @@ class Headcounter implements hase.Application
         center.x = Std.int((this.root.width - center.width) / 2);
         center.y = Std.int((this.root.height - center.height) / 2);
         this.root.add_child(center);
-
-#if js
-        js.Browser.document.onclick = function(_) {
-            js.Browser.document.location.href =
-                "https://jabber.headcounter.org/";
-        };
-#end
     }
 
     public inline function on_keypress(k:hase.input.Key):Void {}

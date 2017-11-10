@@ -1,18 +1,22 @@
-{ stdenv, fetchFromGitHub, haxe }:
+{ stdenv, fetchFromGitHub, haxe, haxePackages }:
 
 let
-  hase = stdenv.mkDerivation {
+  hase = stdenv.mkDerivation rec {
     name = "hase";
+    version = "0.1.0";
+
     src = fetchFromGitHub {
       owner = "aszlig";
       repo = "hase";
-      rev = "6ecd0edebaefbf434429325597edce81fd19ec4e";
-      sha256 = "0awzw0ajk0dkp90jkvlfg9700jxq996p54321499bsrppr864a3l";
+      rev = "76704ba163c3878fc18590d895d1a5d9e16538dd";
+      sha256 = "0f479fm38canqwjd8046k6l39pfln2gpm0anmn0pjjhg991svk4n";
     };
-    installPhase = ''
-      mkdir -p "$out/lib/haxe/hase"
-      mv * "$out/lib/haxe/hase/"
-    '';
+
+    installPhase = haxePackages.installLibHaxe {
+      libname = "hase";
+      inherit version;
+      files = "hase";
+    };
   };
 
 in stdenv.mkDerivation {
@@ -20,7 +24,8 @@ in stdenv.mkDerivation {
 
   src = ./frontend;
 
-  buildInputs = [ haxe hase ];
+  nativeBuildInputs = [ haxe ];
+  buildInputs = [ hase ];
 
   buildPhase = ''
     haxe -main Headcounter -lib hase -js headcounter.js -dce full
