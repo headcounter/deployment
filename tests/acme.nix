@@ -3,14 +3,14 @@ import ./make-test.nix {
 
   nodes = let
     common = { nodes, lib, ... }: {
-      nixpkgs.config.packageOverrides = super: {
+      nixpkgs.overlays = lib.singleton (lib.const (super: {
         cacert = super.cacert.overrideDerivation (drv: {
           installPhase = (drv.installPhase or "") + ''
             cat "${nodes.ca.config.headcounter.snakeOilCaCert}" \
               >> "$out/etc/ssl/certs/ca-bundle.crt"
           '';
         });
-      };
+      }));
       networking.nameservers = lib.mkForce [
         nodes.resolver.config.networking.primaryIPAddress
       ];

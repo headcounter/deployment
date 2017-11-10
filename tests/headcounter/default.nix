@@ -31,14 +31,14 @@ let
   commonConfig = { config, lib, nodes, ... }: {
     imports = [ ../../modules/testing/network.nix ];
 
-    nixpkgs.config.packageOverrides = super: {
+    nixpkgs.overlays = lib.singleton (lib.const (super: {
       cacert = super.cacert.overrideDerivation (drv: {
         installPhase = (drv.installPhase or "") + ''
           cat "${nodes.ca.config.headcounter.snakeOilCaCert}" \
             >> "$out/etc/ssl/certs/ca-bundle.crt"
         '';
       });
-    };
+    }));
 
     networking.nameservers = lib.mkForce [
       nodes.resolver.config.networking.primaryIPAddress
@@ -71,24 +71,24 @@ let
         ];
       };
 
-      torservers = { pkgs, ... }: {
+      torservers = { pkgs, lib, ... }: {
         imports = [ commonConfig ];
 
         headcounter.mainIPv4 = "81.7.6.108";
         headcounter.mainIPv6 = "2a02:180:a:25:5::1";
 
-        nixpkgs.config.packageOverrides = super: {
+        nixpkgs.overlays = lib.singleton (self: super: {
           pythonPackages = (super.python.override {
-            packageOverrides = self: super: {
-              requests2 = super.requests2.overrideDerivation (drv: {
-                postPatch = (drv.postPatch or "") + ''
-                  cat "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
-                    > requests/cacert.pem
+            packageOverrides = lib.const (pysuper: {
+              certifi = pysuper.certifi.overridePythonAttrs (attrs: {
+                postPatch = (attrs.postPatch or "") + ''
+                  cat "${self.cacert}/etc/ssl/certs/ca-bundle.crt" \
+                    > certifi/cacert.pem
                 '';
               });
-            };
+            });
           }).pkgs;
-        };
+        });
 
         services.nginx.enable = true;
         services.nginx.virtualHosts."torservers.net" = {
