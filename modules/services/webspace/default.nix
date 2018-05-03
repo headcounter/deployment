@@ -114,7 +114,7 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf (cfg.enable && cfg.accounts != {}) {
     headcounter.services.lighttpd = {
       enable = true;
 
